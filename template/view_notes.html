@@ -122,11 +122,14 @@
                 
                 <h5 class="mb-3">Catégories</h5>
                 <div class="list-group">
-                    <a href="#" class="list-group-item list-group-item-action active">Toutes les notes</a>
-                    <a href="#" class="list-group-item list-group-item-action">Personnel</a>
-                    <a href="#" class="list-group-item list-group-item-action">Travail</a>
-                    <a href="#" class="list-group-item list-group-item-action">Voyage</a>
-                    <a href="#" class="list-group-item list-group-item-action">Idées</a>
+                    <a href="{% url 'view_notes' %}" class="list-group-item list-group-item-action {% if not selected_category_id %}active{% endif %}">
+                        Toutes les notes
+                    </a>
+                    {% for category in categories %}
+                    <a href="{% url 'view_notes' %}?category_id={{ category.id }}" class="list-group-item list-group-item-action {% if selected_category_id == category.id|stringformat:"s" %}active{% endif %}">
+                        <i class="{{ category.icon }} me-2"></i>{{ category.name }}
+                    </a>
+                    {% endfor %}
                 </div>
 
                 <h5 class="mt-4 mb-3">Archives</h5>
@@ -139,7 +142,12 @@
 
         <!-- Main Content Area for Notes -->
         <div class="col-md-8 col-lg-9">
-            <h2 class="mb-4">Mes Notes</h2>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">Mes Notes</h2>
+                <a href="{% url 'create_note' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i> Nouvelle note
+                </a>
+            </div>
 
             <!-- Example Note Card 1 -->
             <div class="note-card">

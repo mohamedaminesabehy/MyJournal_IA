@@ -10,7 +10,10 @@ class UserProfile(models.Model):
         return self.user.username
 
 class Category(models.Model):
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        unique_together = ('user', 'name')
     icon = models.CharField(max_length=50, blank=True, null=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='categories')
 

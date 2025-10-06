@@ -9,6 +9,7 @@ from .models import UserProfile, Category
 def home(request):
     return render(request, 'home.html')
 
+@login_required
 def base(request):
     return render(request, 'base.html')
 
@@ -18,6 +19,9 @@ def category_management(request):
         category_name = request.POST.get('categoryName')
         category_icon = request.POST.get('categoryIcon')
         if category_name:
+            # Check if a category with the same name already exists for the current user
+            if Category.objects.filter(user=request.user, name=category_name).exists():
+                return JsonResponse({'success': False, 'error': 'Category with this name already exists.'})
             try:
                 category = Category.objects.create(user=request.user, name=category_name, icon=category_icon)
                 return JsonResponse({'success': True, 'category': {'name': category.name, 'icon': category.icon}})
@@ -27,18 +31,23 @@ def category_management(request):
     categories = Category.objects.filter(user=request.user)
     return render(request, 'category_management.html', {'categories': categories})
 
+@login_required
 def create_note(request):
     return render(request, 'create_note.html')
 
+@login_required
 def dashboard(request):
     return render(request, 'dashboard.html')
 
+@login_required
 def gallery(request):
     return render(request, 'gallery.html')
 
+@login_required
 def hello(request):
     return render(request, 'hello.html')
 
+@login_required
 def modern_notes(request):
     return render(request, 'modern_notes.html')
 
@@ -78,14 +87,29 @@ def signup(request):
 def statistics(request):
     return render(request, 'statistics.html')
 
+@login_required
 def tags(request):
     return render(request, 'tags.html')
 
+@login_required
 def view_notes(request):
-    return render(request, 'view_notes.html')
+    categories = Category.objects.filter(user=request.user)
+    selected_category_id = request.GET.get('category_id')
 
+    context = {
+        'categories': categories,
+        'selected_category_id': selected_category_id,
+    }
+    return render(request, 'view_notes.html', context)
+
+@login_required
+def add_note(request):
+    return render(request, 'create_note.html')
+
+@login_required
 def tag_create(request):
     return render(request, 'tags.html')
 
+@login_required
 def event_create(request):
     return render(request, 'create_note.html')
