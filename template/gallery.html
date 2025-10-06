@@ -1,0 +1,285 @@
+{% extends 'base.html' %}
+
+{% block title %}Galerie Multimédia | Journal Personnel Intelligent{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-4 text-primary mb-3" data-aos="fade-up">Galerie Multimédia</h1>
+            <p class="lead" data-aos="fade-up" data-aos-delay="100">Explorez vos souvenirs en images et vidéos</p>
+            <hr class="my-4">
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                <div class="mb-3">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-primary active" data-filter="all">Tous</button>
+                        <button type="button" class="btn btn-outline-primary" data-filter="image">Images</button>
+                        <button type="button" class="btn btn-outline-primary" data-filter="video">Vidéos</button>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="Rechercher..." id="gallery-search">
+                        <button class="btn btn-primary" type="button"><i class="fas fa-search"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row" id="gallery-container">
+        {% for media in media_items %}
+        <div class="col-md-6 col-lg-4 mb-4 gallery-item" data-aos="fade-up" data-aos-delay="{{ forloop.counter|add:100 }}" data-type="{{ media.type }}" data-tags="{{ media.tags|join:',' }}">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="position-relative">
+                    {% if media.type == 'image' %}
+                    <a href="{{ media.url }}" class="gallery-link" data-lightbox="gallery" data-title="{{ media.title }}">
+                        <img src="{{ media.url }}" class="card-img-top" alt="{{ media.title }}" style="height: 200px; object-fit: cover;">
+                    </a>
+                    {% else %}
+                    <a href="{{ media.url }}" class="gallery-link video-link" data-title="{{ media.title }}">
+                        <div class="video-thumbnail" style="height: 200px; background-image: url('{{ media.thumbnail }}'); background-size: cover; background-position: center;">
+                            <div class="video-play-button">
+                                <i class="fas fa-play"></i>
+                            </div>
+                        </div>
+                    </a>
+                    {% endif %}
+                    <div class="media-date">{{ media.date }}</div>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ media.title }}</h5>
+                    <p class="card-text text-muted small">{{ media.description|truncatechars:100 }}</p>
+                    <div class="d-flex flex-wrap mt-2">
+                        {% for tag in media.tags %}
+                        <span class="badge bg-primary me-1 mb-1">{{ tag }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="card-footer bg-white d-flex justify-content-between align-items-center">
+                    <small class="text-muted">Ajouté le {{ media.created_at }}</small>
+                    <div class="btn-group">
+                        <a href="{% url 'event_detail' media.event_id %}" class="btn btn-sm btn-outline-secondary" title="Voir l'événement"><i class="fas fa-eye"></i></a>
+                        <a href="#" class="btn btn-sm btn-outline-danger" title="Supprimer"><i class="fas fa-trash"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <div class="empty-state" data-aos="fade-up">
+                <i class="fas fa-photo-video fa-5x text-muted mb-4"></i>
+                <h3>Aucun média trouvé</h3>
+                <p class="text-muted">Commencez à ajouter des images et des vidéos à vos événements pour les voir apparaître ici.</p>
+                <a href="{% url 'event_create' %}" class="btn btn-primary mt-3"><i class="fas fa-plus me-2"></i>Créer un événement</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if media_items %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <nav aria-label="Pagination de la galerie">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Précédent">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&laquo;</span>
+                    </li>
+                    {% endif %}
+                    
+                    {% for i in paginator.page_range %}
+                    {% if page_obj.number == i %}
+                    <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                    {% else %}
+                    <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+                    {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Suivant">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&raquo;</span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Filtrage par type de média
+        const filterButtons = document.querySelectorAll('[data-filter]');
+        const galleryItems = document.querySelectorAll('.gallery-item');
+        const searchInput = document.getElementById('gallery-search');
+        
+        filterButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const filterValue = this.getAttribute('data-filter');
+                
+                // Mise à jour des boutons actifs
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Filtrage des éléments
+                galleryItems.forEach(item => {
+                    if (filterValue === 'all' || item.getAttribute('data-type') === filterValue) {
+                        item.style.display = '';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        });
+        
+        // Recherche
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            
+            galleryItems.forEach(item => {
+                const title = item.querySelector('.card-title').textContent.toLowerCase();
+                const description = item.querySelector('.card-text').textContent.toLowerCase();
+                const tags = item.getAttribute('data-tags').toLowerCase();
+                
+                if (title.includes(searchTerm) || description.includes(searchTerm) || tags.includes(searchTerm)) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+        
+        // Configuration de Lightbox
+        lightbox.option({
+            'resizeDuration': 200,
+            'wrapAround': true,
+            'albumLabel': "Image %1 sur %2"
+        });
+        
+        // Gestion des vidéos
+        document.querySelectorAll('.video-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const videoUrl = this.getAttribute('href');
+                const videoTitle = this.getAttribute('data-title');
+                
+                // Création d'une modal pour la vidéo
+                const modal = document.createElement('div');
+                modal.className = 'modal fade';
+                modal.id = 'videoModal';
+                modal.setAttribute('tabindex', '-1');
+                modal.setAttribute('aria-hidden', 'true');
+                
+                modal.innerHTML = `
+                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">${videoTitle}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                            </div>
+                            <div class="modal-body p-0">
+                                <div class="ratio ratio-16x9">
+                                    <video src="${videoUrl}" controls></video>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+                const videoModal = new bootstrap.Modal(modal);
+                videoModal.show();
+                
+                modal.addEventListener('hidden.bs.modal', function() {
+                    document.body.removeChild(modal);
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css">
+<style>
+    .video-thumbnail {
+        position: relative;
+        border-top-left-radius: calc(0.375rem - 1px);
+        border-top-right-radius: calc(0.375rem - 1px);
+    }
+    
+    .video-play-button {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 60px;
+        height: 60px;
+        background-color: rgba(0, 0, 0, 0.7);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 24px;
+        transition: all 0.3s ease;
+    }
+    
+    .video-link:hover .video-play-button {
+        background-color: var(--primary-color);
+        transform: translate(-50%, -50%) scale(1.1);
+    }
+    
+    .media-date {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+    }
+    
+    .empty-state {
+        padding: 3rem 1rem;
+    }
+    
+    .gallery-link {
+        display: block;
+        overflow: hidden;
+        border-top-left-radius: calc(0.375rem - 1px);
+        border-top-right-radius: calc(0.375rem - 1px);
+    }
+    
+    .gallery-link img {
+        transition: transform 0.5s ease;
+    }
+    
+    .gallery-link:hover img {
+        transform: scale(1.05);
+    }
+</style>
+{% endblock %}

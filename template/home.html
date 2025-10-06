@@ -1,0 +1,358 @@
+{% extends 'base.html' %}
+
+{% block title %}Accueil | Journal Personnel Intelligent{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        color: white;
+        border-radius: 20px;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 400px;
+        height: 400px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        transform: translate(200px, -200px);
+    }
+    
+    .hero::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 300px;
+        height: 300px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        transform: translate(-150px, 150px);
+    }
+    
+    .feature-card {
+        height: 100%;
+        border-radius: 16px;
+        overflow: hidden;
+        border: none;
+    }
+    
+    .feature-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        color: var(--primary-color);
+        transition: all 0.3s ease;
+    }
+    
+    .feature-card:hover .feature-icon {
+        transform: scale(1.2);
+    }
+    
+    .testimonial {
+        background-color: white;
+        border-radius: 16px;
+        padding: 2rem;
+    }
+    
+    .testimonial-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    
+    .cta-section {
+        background: linear-gradient(135deg, #4f46e5 0%, #8b5cf6 100%);
+        border-radius: 20px;
+    }
+    
+    .floating-shape {
+        position: absolute;
+        opacity: 0.1;
+        background-color: white;
+        border-radius: 50%;
+    }
+    
+    .shape-1 {
+        width: 100px;
+        height: 100px;
+        top: 10%;
+        left: 5%;
+        animation: float 8s ease-in-out infinite;
+    }
+    
+    .shape-2 {
+        width: 150px;
+        height: 150px;
+        top: 60%;
+        right: 10%;
+        animation: float 10s ease-in-out infinite;
+    }
+    
+    .shape-3 {
+        width: 80px;
+        height: 80px;
+        bottom: 10%;
+        left: 30%;
+        animation: float 6s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+        0% { transform: translateY(0) rotate(0deg); }
+        50% { transform: translateY(-20px) rotate(5deg); }
+        100% { transform: translateY(0) rotate(0deg); }
+    }
+    
+    .scroll-down {
+        position: absolute;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        animation: bounce 2s infinite;
+    }
+    
+    @keyframes bounce {
+        0%, 20%, 50%, 80%, 100% { transform: translateY(0) translateX(-50%); }
+        40% { transform: translateY(-20px) translateX(-50%); }
+        60% { transform: translateY(-10px) translateX(-50%); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero position-relative py-5 mb-5">
+    <div class="container py-5">
+        <div class="row align-items-center">
+            <div class="col-lg-6" data-aos="fade-right">
+                <h1 class="display-4 fw-bold mb-4">Capturez vos pensées avec l'intelligence artificielle</h1>
+                <p class="lead mb-4">Un journal personnel intelligent qui vous aide à organiser vos idées, analyser vos émotions et garder vos souvenirs précieux.</p>
+                <div class="d-flex gap-3">
+                    <a href="{% url 'dashboard' %}" class="btn btn-light btn-lg px-4 py-2">
+                        <i class="fas fa-chart-line me-2"></i>Tableau de bord
+                    </a>
+                    <a href="{% url 'create_note' %}" class="btn btn-outline-light btn-lg px-4 py-2">
+                        <i class="fas fa-pen-to-square me-2"></i>Nouvelle note
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-6" data-aos="fade-left">
+                <img src="https://cdn.pixabay.com/photo/2018/01/17/07/06/laptop-3087585_1280.jpg" alt="Journal IA" class="img-fluid rounded-4 shadow-lg">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Floating shapes for visual interest -->
+    <div class="floating-shape shape-1"></div>
+    <div class="floating-shape shape-2"></div>
+    <div class="floating-shape shape-3"></div>
+    
+    <!-- Scroll down indicator -->
+    <div class="scroll-down text-white">
+        <i class="fas fa-chevron-down"></i>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features py-5">
+    <div class="container">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <h2 class="display-5 fw-bold">Fonctionnalités intelligentes</h2>
+            <p class="lead text-muted">Découvrez comment notre journal personnel peut transformer votre expérience d'écriture</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="card feature-card h-100 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <i class="fas fa-brain feature-icon"></i>
+                        <h3 class="h4 mb-3">Analyse IA</h3>
+                        <p class="card-text">Notre intelligence artificielle analyse vos entrées pour vous aider à comprendre vos émotions et habitudes.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="card feature-card h-100 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <i class="fas fa-images feature-icon"></i>
+                        <h3 class="h4 mb-3">Galerie multimédia</h3>
+                        <p class="card-text">Ajoutez des photos, vidéos et enregistrements audio pour enrichir vos souvenirs quotidiens.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
+                <div class="card feature-card h-100 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <i class="fas fa-chart-pie feature-icon"></i>
+                        <h3 class="h4 mb-3">Statistiques personnelles</h3>
+                        <p class="card-text">Visualisez vos habitudes d'écriture et suivez l'évolution de vos humeurs au fil du temps.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="how-it-works py-5 bg-light">
+    <div class="container">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <h2 class="display-5 fw-bold">Comment ça marche</h2>
+            <p class="lead text-muted">Trois étapes simples pour commencer votre voyage d'écriture</p>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="d-flex flex-column align-items-center">
+                    <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                        <h3 class="text-white m-0">1</h3>
+                    </div>
+                    <h4 class="text-center">Créez votre compte</h4>
+                    <p class="text-center">Inscrivez-vous en quelques secondes et personnalisez votre profil</p>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="d-flex flex-column align-items-center">
+                    <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                        <h3 class="text-white m-0">2</h3>
+                    </div>
+                    <h4 class="text-center">Écrivez vos pensées</h4>
+                    <p class="text-center">Utilisez notre éditeur intuitif pour capturer vos idées et émotions</p>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="300">
+                <div class="d-flex flex-column align-items-center">
+                    <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                        <h3 class="text-white m-0">3</h3>
+                    </div>
+                    <h4 class="text-center">Découvrez les insights</h4>
+                    <p class="text-center">Obtenez des analyses personnalisées et des visualisations de vos données</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials Section -->
+<section class="testimonials py-5">
+    <div class="container">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <h2 class="display-5 fw-bold">Ce que disent nos utilisateurs</h2>
+            <p class="lead text-muted">Découvrez comment notre journal a transformé leur vie quotidienne</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="testimonial shadow-sm">
+                    <div class="d-flex align-items-center mb-3">
+                        <img src="https://randomuser.me/api/portraits/women/32.jpg" alt="Avatar" class="testimonial-avatar me-3">
+                        <div>
+                            <h5 class="mb-0">Sophie Martin</h5>
+                            <small class="text-muted">Utilisatrice depuis 6 mois</small>
+                        </div>
+                    </div>
+                    <p class="mb-0">"Ce journal a complètement changé ma façon d'aborder l'écriture quotidienne. Les analyses IA m'ont aidée à mieux comprendre mes émotions."</p>
+                </div>
+            </div>
+            
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="testimonial shadow-sm">
+                    <div class="d-flex align-items-center mb-3">
+                        <img src="https://randomuser.me/api/portraits/men/45.jpg" alt="Avatar" class="testimonial-avatar me-3">
+                        <div>
+                            <h5 class="mb-0">Thomas Dubois</h5>
+                            <small class="text-muted">Utilisateur depuis 1 an</small>
+                        </div>
+                    </div>
+                    <p class="mb-0">"La galerie multimédia est incroyable ! Je peux maintenant capturer tous mes souvenirs en un seul endroit, avec des photos et des notes."</p>
+                </div>
+            </div>
+            
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
+                <div class="testimonial shadow-sm">
+                    <div class="d-flex align-items-center mb-3">
+                        <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="Avatar" class="testimonial-avatar me-3">
+                        <div>
+                            <h5 class="mb-0">Léa Bernard</h5>
+                            <small class="text-muted">Utilisatrice depuis 3 mois</small>
+                        </div>
+                    </div>
+                    <p class="mb-0">"Les statistiques personnelles m'ont permis de voir des tendances dans mon humeur que je n'aurais jamais remarquées autrement. Vraiment impressionnant !"</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="cta-section text-white p-5 position-relative overflow-hidden" data-aos="fade-up">
+            <div class="row align-items-center">
+                <div class="col-lg-8 mb-4 mb-lg-0">
+                    <h2 class="display-6 fw-bold">Prêt à commencer votre voyage d'écriture ?</h2>
+                    <p class="lead mb-0">Rejoignez des milliers d'utilisateurs qui transforment leur vie grâce à notre journal intelligent.</p>
+                </div>
+                <div class="col-lg-4 text-lg-end">
+                    <a href="{% url 'dashboard' %}" class="btn btn-light btn-lg px-4 py-2">
+                        <i class="fas fa-rocket me-2"></i>Commencer maintenant
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Decorative elements -->
+            <div class="floating-shape shape-1"></div>
+            <div class="floating-shape shape-2"></div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Animation for counting stats
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add scroll reveal animations
+        const scrollElements = document.querySelectorAll('.scroll-reveal');
+        
+        const elementInView = (el, dividend = 1) => {
+            const elementTop = el.getBoundingClientRect().top;
+            return (
+                elementTop <= (window.innerHeight || document.documentElement.clientHeight) / dividend
+            );
+        };
+        
+        const displayScrollElement = (element) => {
+            element.classList.add('scrolled');
+        };
+        
+        const hideScrollElement = (element) => {
+            element.classList.remove('scrolled');
+        };
+        
+        const handleScrollAnimation = () => {
+            scrollElements.forEach((el) => {
+                if (elementInView(el, 1.25)) {
+                    displayScrollElement(el);
+                } else {
+                    hideScrollElement(el);
+                }
+            });
+        };
+        
+        window.addEventListener('scroll', () => {
+            handleScrollAnimation();
+        });
+    });
+</script>
+{% endblock %}
