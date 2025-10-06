@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestion des Catégories{% endblock %}
+
+{% block extra_css %}
+<style>
+    .category-card {
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        padding: 20px;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    .category-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    .category-card i {
+        font-size: 3rem;
+        color: var(--primary-color);
+        margin-bottom: 15px;
+    }
+    .category-card h5 {
+        font-weight: 600;
+        color: var(--dark-color);
+    }
+    .add-category-btn-container {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 20px;
+    }
+    .popup-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        visibility: hidden;
+        opacity: 0;
+        transition: visibility 0s, opacity 0.3s ease;
+    }
+    .popup-overlay.active {
+        visibility: visible;
+        opacity: 1;
+    }
+    .popup-content {
+        background: #ffffff;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        width: 90%;
+        max-width: 500px;
+        transform: translateY(-20px);
+        transition: transform 0.3s ease;
+    }
+    .popup-overlay.active .popup-content {
+        transform: translateY(0);
+    }
+    .popup-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .popup-header h4 {
+        margin: 0;
+        color: var(--primary-color);
+    }
+    .popup-close-btn {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: #666;
+        cursor: pointer;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Gestion des Catégories</h2>
+        <button id="addCategoryBtn" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i> Ajouter Catégorie
+        </button>
+    </div>
+
+    <div class="row" id="categoriesContainer">
+        <div class="row" id="categoriesContainer">
+            {% for category in categories %}
+            <div class="col-md-4 mb-4">
+                <div class="category-card">
+                    <i class="{{ category.icon }}"></i>
+                    <h5>{{ category.name }}</h5>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <p>Aucune catégorie ajoutée pour le moment.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Add Category Popup -->
+    <div class="popup-overlay" id="addCategoryPopup">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h4>Ajouter une nouvelle catégorie</h4>
+                <button class="popup-close-btn" id="closePopupBtn">&times;</button>
+            </div>
+            <form method="post" action="{% url 'category_management' %}" id="addCategoryForm">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="categoryName" class="form-label">Nom de la catégorie</label>
+                    <input type="text" class="form-control" id="categoryName" name="categoryName" placeholder="Ex: Voyages, Technologie" required>
+                </div>
+                <div class="mb-3">
+                    <label for="categoryIcon" class="form-label">Icône de la catégorie (Font Awesome)</label>
+                    <input type="text" class="form-control" id="categoryIcon" name="categoryIcon" placeholder="Ex: fas fa-plane, fas fa-laptop">
+                    <small class="form-text text-muted">Trouvez des icônes sur <a href="https://fontawesome.com/icons" target="_blank">Font Awesome</a></small>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Ajouter</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const addCategoryBtn = document.getElementById('addCategoryBtn');
+        const addCategoryPopup = document.getElementById('addCategoryPopup');
+        const closePopupBtn = document.getElementById('closePopupBtn');
+        const addCategoryForm = document.getElementById('addCategoryForm');
+        const categoriesContainer = document.getElementById('categoriesContainer');
+
+        addCategoryBtn.addEventListener('click', function() {
+            addCategoryPopup.classList.add('active');
+        });
+
+        closePopupBtn.addEventListener('click', function() {
+            addCategoryPopup.classList.remove('active');
+        });
+
+        addCategoryPopup.addEventListener('click', function(e) {
+            if (e.target === addCategoryPopup) {
+                addCategoryPopup.classList.remove('active');
+            }
+        });
+
+        addCategoryForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const newCategoryHtml = `
+                        <div class="col-md-4 mb-4">
+                            <div class="category-card">
+                                <i class="${data.category.icon}"></i>
+                                <h5>${data.category.name}</h5>
+                            </div>
+                        </div>
+                    `;
+                    categoriesContainer.insertAdjacentHTML('beforeend', newCategoryHtml);
+                    addCategoryPopup.classList.remove('active');
+                    addCategoryForm.reset();
+                } else {
+                    alert('Erreur lors de l\'ajout de la catégorie: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Une erreur est survenue lors de l\'ajout de la catégorie.');
+            });
+        });
+    });
+</script>
+{% endblock %}
