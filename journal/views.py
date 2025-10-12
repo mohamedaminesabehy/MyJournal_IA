@@ -53,7 +53,7 @@ def modern_notes(request):
 
 @login_required
 def profile(request):
-    user_profile = request.user.userprofile
+    user_profile, created = UserProfile.objects.get_or_create(user=request.user)
     return render(request, 'profile.html', {'user_profile': user_profile})
 
 def signin(request):
@@ -75,6 +75,7 @@ def signup(request):
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
+            UserProfile.objects.create(user=user)
             user.userprofile.date_of_birth = form.cleaned_data.get('date_of_birth')
             user.userprofile.location = form.cleaned_data.get('location')
             user.userprofile.save()
