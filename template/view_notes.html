@@ -20,7 +20,7 @@
         box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
     }
     .note-card-header {
-        background-color: #6c757d; /* Darker shade for header */
+        background: linear-gradient(90deg, #4338ca 0%, #b8b8b8 100%);
         color: white;
         padding: 1rem 1.5rem;
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -54,38 +54,77 @@
     }
     .note-tags .badge {
         margin-right: 0.5rem;
-        background-color: #e0f7fa; /* Light blue for tags */
-        color: #007bff;
+        background-color: #eef2ff; /* Indigo-100 */
+        color: #4f46e5; /* Indigo-600 */
         font-weight: 500;
     }
+    /* Indigo-themed Sidebar refinements */
     .sidebar {
         background-color: white;
-        border-radius: 15px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        border-radius: 18px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
         padding: 1.5rem;
+        position: sticky;
+        top: 20px;
+        border: 1px solid #eef2f6;
     }
     .sidebar h5 {
         color: #343a40;
-        margin-bottom: 1.5rem;
-        font-weight: 600;
+        margin-bottom: 1.25rem;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+        position: relative;
+    }
+    .sidebar h5::after {
+        content: "";
+        display: block;
+        width: 40px;
+        height: 3px;
+        background: linear-gradient(90deg, #4f46e5 0%, #818cf8 100%);
+        border-radius: 2px;
+        margin-top: 8px;
     }
     .sidebar .list-group-item {
-        border: none;
-        padding: 0.75rem 0;
+        border: 1px solid #eef2f6;
+        border-radius: 12px;
+        padding: 0.65rem 0.9rem;
         color: #495057;
-        transition: background-color 0.2s ease;
+        margin-bottom: 0.5rem;
+        transition: all 0.15s ease-in-out;
+        display: flex;
+        align-items: center;
+    }
+    .sidebar .list-group-item i {
+        color: #6c757d;
     }
     .sidebar .list-group-item:hover {
-        background-color: #f8f9fa;
-        border-radius: 8px;
+        background-color: #f5f7ff; /* Indigo-50 */
+        border-color: #e0e7ff; /* Indigo-200 */
     }
     .sidebar .list-group-item.active {
-        background-color: #007bff;
+        background: linear-gradient(90deg, #4f46e5 0%, #6366f1 100%);
         color: white;
-        border-radius: 8px;
+        box-shadow: 0 6px 14px rgba(79, 70, 229, 0.25);
+        border-color: transparent;
+    }
+    .sidebar .list-group-item.active i {
+        color: #ffffff;
     }
     .search-bar {
         margin-bottom: 1.5rem;
+    }
+    .search-bar .input-group-text {
+        border-color: #e9ecef;
+        border-right: 0;
+    }
+    .search-bar .form-control {
+        border-color: #e9ecef;
+        border-left: 0;
+        box-shadow: none;
+    }
+    .search-bar .form-control:focus {
+        border-color: #a5b4fc; /* Indigo-300 */
+        box-shadow: 0 0 0 0.2rem rgba(79, 70, 229, 0.15);
     }
     .btn-add-note {
         position: fixed;
@@ -98,14 +137,35 @@
         align-items: center;
         justify-content: center;
         font-size: 2rem;
-        box-shadow: 0 8px 15px rgba(0, 123, 255, 0.3);
+        box-shadow: 0 8px 15px rgba(79, 70, 229, 0.3);
         z-index: 1000;
-        background-color: #007bff;
+        background-color: #4f46e5;
         color: white;
         transition: background-color 0.3s ease;
     }
     .btn-add-note:hover {
-        background-color: #0056b3;
+        background-color: #4338ca; /* Indigo-700 */
+    }
+
+    /* Override Bootstrap primary buttons locally to indigo theme */
+    .btn.btn-primary {
+        background-color: #4f46e5;
+        border-color: #4f46e5;
+    }
+    .btn.btn-primary:hover,
+    .btn.btn-primary:focus {
+        background-color: #4338ca;
+        border-color: #4338ca;
+    }
+    .btn.btn-outline-primary {
+        color: #4f46e5;
+        border-color: #4f46e5;
+    }
+    .btn.btn-outline-primary:hover,
+    .btn.btn-outline-primary:focus {
+        background-color: #4f46e5;
+        color: #ffffff;
+        border-color: #4f46e5;
     }
 </style>
 {% endblock %}
@@ -117,25 +177,30 @@
         <div class="col-md-4 col-lg-3">
             <div class="sidebar mb-4">
                 <div class="search-bar">
-                    <input type="text" class="form-control" placeholder="Rechercher des notes...">
+                    <div class="input-group input-group-lg rounded-pill shadow-sm">
+                        <span class="input-group-text bg-white border-end-0">
+                            <i class="fas fa-search text-muted"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0" placeholder="Rechercher des notes..." aria-label="Rechercher">
+                    </div>
                 </div>
                 
                 <h5 class="mb-3">Catégories</h5>
                 <div class="list-group">
-                    <a href="{% url 'view_notes' %}" class="list-group-item list-group-item-action {% if not selected_category_id %}active{% endif %}">
-                        Toutes les notes
+                    <a href="{% url 'view_notes' %}" class="list-group-item list-group-item-action {% if not category %}active{% endif %}">
+                        <i class="fas fa-stream me-2"></i>Toutes les notes
                     </a>
-                    {% for category in categories %}
-                    <a href="{% url 'view_notes' %}?category_id={{ category.id }}" class="list-group-item list-group-item-action {% if selected_category_id == category.id|stringformat:"s" %}active{% endif %}">
-                        <i class="{{ category.icon }} me-2"></i>{{ category.name }}
+                    {% for cat in categories %}
+                    <a href="{% url 'notes_by_category' cat.id %}" class="list-group-item list-group-item-action {% if category and category.id == cat.id %}active{% endif %}">
+                        <i class="{{ cat.icon }} me-2"></i>{{ cat.name }}
                     </a>
                     {% endfor %}
                 </div>
 
                 <h5 class="mt-4 mb-3">Archives</h5>
                 <div class="list-group">
-                    <a href="#" class="list-group-item list-group-item-action">2023</a>
-                    <a href="#" class="list-group-item list-group-item-action">2022</a>
+                    <a href="#" class="list-group-item list-group-item-action"><i class="fas fa-calendar-alt me-2"></i>2023</a>
+                    <a href="#" class="list-group-item list-group-item-action"><i class="fas fa-calendar-alt me-2"></i>2022</a>
                 </div>
             </div>
         </div>
@@ -143,99 +208,117 @@
         <!-- Main Content Area for Notes -->
         <div class="col-md-8 col-lg-9">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="mb-0">Mes Notes</h2>
+                <h2 class="mb-0">
+                    <a href="{% url 'category_management' %}" class="text-decoration-none text-muted">Catégories</a>
+                    <i class="fas fa-chevron-right mx-2 text-muted"></i>
+                    {% if category %}
+                        <a href="{% url 'notes_by_category' category.id %}" class="text-decoration-none text-dark">{{ category.name }}</a>
+                    {% else %}
+                        <span class="text-dark">Toutes les notes</span>
+                    {% endif %}
+                </h2>
                 <a href="{% url 'create_note' %}" class="btn btn-primary">
                     <i class="fas fa-plus me-2"></i> Nouvelle note
                 </a>
             </div>
 
-            <!-- Example Note Card 1 -->
-            <div class="note-card">
-                <div class="note-card-header">
-                    <span>Note du 15 octobre 2023</span>
-                    <div>
-                        <button class="btn btn-sm btn-light me-2"><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-sm btn-light me-2"><i class="fas fa-archive"></i></button>
-                        <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
-                    </div>
-                </div>
-                <div class="note-card-body">
-                    <h3 class="note-title">Réunion de projet hebdomadaire</h3>
-                    <div class="note-content">
-                        <p>Aujourd'hui, nous avons discuté des progrès du projet X. Les points clés abordés incluent la phase de développement, les défis rencontrés et les prochaines étapes. L'équipe est sur la bonne voie pour atteindre les objectifs fixés pour la fin du mois.</p>
-                        <p><em>Décision importante:</em> Prioriser le module d'authentification.</p>
-                    </div>
-                    <div class="note-tags">
-                        <span class="badge rounded-pill">#travail</span>
-                        <span class="badge rounded-pill">#projetX</span>
-                        <span class="badge rounded-pill">#réunion</span>
-                    </div>
-                </div>
-                <div class="note-card-footer">
-                    <span>Mood: <i class="fas fa-smile text-success"></i> Heureux</span>
-                    <span>Dernière modification: 15/10/2023 14:30</span>
-                </div>
-            </div>
+            <!-- Notes List -->
+            <div id="notesList">
+                {% if notes %}
+                    {% for note in notes %}
+                        <div class="note-card">
+                            <div class="note-card-header">
+                                <span>Note du {{ note.created_at|date:"d F Y" }}</span>
+                                <div>
+                                    <button class="btn btn-sm btn-light me-2" data-bs-toggle="modal" data-bs-target="#editModal{{ note.id }}"><i class="fas fa-edit"></i></button>
+                                    <button class="btn btn-sm btn-light me-2"><i class="fas fa-archive"></i></button>
+                                    <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ note.id }}"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </div>
+                            <div class="note-card-body">
+                                <h3 class="note-title">{{ note.title }}</h3>
+                                <div class="note-content">
+                                    <p>{{ note.content|truncatechars:200 }}</p>
+                                </div>
+                                <div class="note-tags">
+                                    {% for tag in note.tags.all %}
+                                        <span class="badge rounded-pill">#{{ tag.name }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="note-card-footer">
+                                <span>Mood: <i class="{{ note.mood.icon }} {{ note.mood.color }}"></i> {{ note.mood.name }}</span>
+                                <span>Dernière modification: {{ note.updated_at|date:"d/m/Y H:i" }}</span>
+                            </div>
+                        </div>
+                        <!-- Edit Modal -->
+                        <div class="modal fade" id="editModal{{ note.id }}" tabindex="-1" aria-labelledby="editModalLabel{{ note.id }}" aria-hidden="true">
+                          <div class="modal-dialog">
+                            <div class="modal-content">
+                              <div class="modal-header">
+                                <h5 class="modal-title" id="editModalLabel{{ note.id }}">Modifier la note</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                              </div>
+                              <form method="post" action="{% url 'edit_note' note.id %}">
+                                {% csrf_token %}
+                                {% if category %}<input type="hidden" name="category_id" value="{{ category.id }}">{% endif %}
+                                <div class="modal-body">
+                                  <div class="mb-3">
+                                    <label class="form-label">Titre</label>
+                                    <input type="text" name="title" class="form-control" value="{{ note.title }}" required>
+                                  </div>
+                                  <div class="mb-3">
+                                    <label class="form-label">Contenu</label>
+                                    <textarea name="content" class="form-control" rows="6" required>{{ note.content }}</textarea>
+                                  </div>
+                                </div>
+                                <div class="modal-footer">
+                                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                  <button type="submit" class="btn btn-primary">Enregistrer</button>
+                                </div>
+                              </form>
+                            </div>
+                          </div>
+                        </div>
 
-            <!-- Example Note Card 2 -->
-            <div class="note-card">
-                <div class="note-card-header">
-                    <span>Note du 14 octobre 2023</span>
-                    <div>
-                        <button class="btn btn-sm btn-light me-2"><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-sm btn-light me-2"><i class="fas fa-archive"></i></button>
-                        <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                        <!-- Delete Modal -->
+                        <div class="modal fade" id="deleteModal{{ note.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ note.id }}" aria-hidden="true">
+                          <div class="modal-dialog">
+                            <div class="modal-content">
+                              <div class="modal-header">
+                                <h5 class="modal-title" id="deleteModalLabel{{ note.id }}">Supprimer la note</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                              </div>
+                              <form method="post" action="{% url 'delete_note' note.id %}">
+                                {% csrf_token %}
+                                {% if category %}<input type="hidden" name="category_id" value="{{ category.id }}">{% endif %}
+                                <div class="modal-body">
+                                  <p>Êtes-vous sûr de vouloir supprimer la note "{{ note.title }}" ? Cette action est irréversible.</p>
+                                </div>
+                                <div class="modal-footer">
+                                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                  <button type="submit" class="btn btn-danger">Supprimer</button>
+                                </div>
+                              </form>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-info" role="alert">
+                        Aucune note trouvée pour cette catégorie.
                     </div>
-                </div>
-                <div class="note-card-body">
-                    <h3 class="note-title">Idées pour le prochain voyage</h3>
-                    <div class="note-content">
-                        <p>J'ai commencé à planifier mon prochain voyage en Italie. Je pense visiter Rome, Florence et Venise. J'ai noté quelques restaurants et musées à ne pas manquer. Il faut que je vérifie les vols et les hébergements.</p>
-                    </div>
-                    <div class="note-tags">
-                        <span class="badge rounded-pill">#voyage</span>
-                        <span class="badge rounded-pill">#italie</span>
-                        <span class="badge rounded-pill">#planification</span>
-                    </div>
-                </div>
-                <div class="note-card-footer">
-                    <span>Mood: <i class="fas fa-laugh-beam text-info"></i> Très heureux</span>
-                    <span>Dernière modification: 14/10/2023 10:00</span>
-                </div>
-            </div>
-
-            <!-- Example Note Card 3 -->
-            <div class="note-card">
-                <div class="note-card-header">
-                    <span>Note du 13 octobre 2023</span>
-                    <div>
-                        <button class="btn btn-sm btn-light me-2"><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-sm btn-light me-2"><i class="fas fa-archive"></i></button>
-                        <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
-                    </div>
-                </div>
-                <div class="note-card-body">
-                    <h3 class="note-title">Lecture du livre "Sapiens"</h3>
-                    <div class="note-content">
-                        <p>J'ai terminé le chapitre 3 de "Sapiens". Les idées sur la révolution cognitive sont fascinantes. Je dois prendre plus de notes la prochaine fois pour mieux retenir les informations clés.</p>
-                    </div>
-                    <div class="note-tags">
-                        <span class="badge rounded-pill">#lecture</span>
-                        <span class="badge rounded-pill">#réflexion</span>
-                    </div>
-                </div>
-                <div class="note-card-footer">
-                    <span>Mood: <i class="fas fa-meh text-warning"></i> Neutre</span>
-                    <span>Dernière modification: 13/10/2023 20:00</span>
-                </div>
+                {% endif %}
             </div>
 
         </div>
     </div>
 </div>
 
-<!-- Floating Action Button for Add New Note -->
-<a href="#" class="btn btn-add-note">
+
+<a href="{% url 'create_note' %}" class="btn btn-add-note">
     <i class="fas fa-plus"></i>
 </a>
 {% endblock %}
@@ -243,8 +326,7 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Add any specific JavaScript for animations or interactive elements here
-        // For example, a simple fade-in for note cards
+        // Fade-in animation
         const noteCards = document.querySelectorAll('.note-card');
         noteCards.forEach((card, index) => {
             card.style.opacity = 0;
@@ -253,38 +335,23 @@
                 card.style.transition = 'opacity 0.5s ease-out, transform 0.5s ease-out';
                 card.style.opacity = 1;
                 card.style.transform = 'translateY(0)';
-            }, index * 100); // Staggered animation
+            }, index * 100);
         });
 
-        // Placeholder for search functionality
+        // Functional search filtering
         const searchInput = document.querySelector('.search-bar input');
-        searchInput.addEventListener('keyup', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
-            console.log('Searching for:', searchTerm);
-            // In a real application, this would filter notes dynamically or make an API call
-        });
-
-        // Placeholder for category/archive navigation
-        const navLinks = document.querySelectorAll('.list-group-item-action');
-        navLinks.forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                navLinks.forEach(l => l.classList.remove('active'));
-                this.classList.add('active');
-                console.log('Navigating to:', this.textContent);
-                // In a real application, this would filter notes based on category/archive
+        const notesList = document.getElementById('notesList');
+        if (searchInput && notesList) {
+            searchInput.addEventListener('input', function(e) {
+                const term = e.target.value.toLowerCase();
+                notesList.querySelectorAll('.note-card').forEach(card => {
+                    const title = card.querySelector('.note-title')?.textContent.toLowerCase() || '';
+                    const content = card.querySelector('.note-content')?.textContent.toLowerCase() || '';
+                    const matches = title.includes(term) || content.includes(term);
+                    card.style.display = matches ? '' : 'none';
+                });
             });
-        });
-
-        // Placeholder for CRUD operations (Edit, Archive, Delete)
-        document.querySelectorAll('.note-card-header button').forEach(button => {
-            button.addEventListener('click', function() {
-                const action = this.querySelector('i').classList[1]; // e.g., 'fa-edit', 'fa-archive', 'fa-trash'
-                const noteTitle = this.closest('.note-card').querySelector('.note-title').textContent;
-                alert(`Action "${action.replace('fa-', '')}" sur la note: "${noteTitle}"`);
-                // In a real application, this would trigger a modal, redirect, or API call
-            });
-        });
+        }
     });
 </script>
 {% endblock %}

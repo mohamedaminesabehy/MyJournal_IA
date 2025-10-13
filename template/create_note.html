@@ -32,206 +32,11 @@
         min-height: 300px;
     }
     
-    .mood-selector {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 1.5rem;
-    }
-    
-    .mood-option {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        cursor: pointer;
-        padding: 0.75rem;
-        border-radius: 12px;
-        transition: all 0.3s ease;
-    }
-    
-    .mood-option:hover {
-        background-color: #f3f4f6;
-        transform: translateY(-5px);
-    }
-    
-    .mood-option.selected {
-        background-color: rgba(99, 102, 241, 0.1);
-    }
-    
-    .mood-icon {
-        font-size: 2rem;
-        margin-bottom: 0.5rem;
-    }
-    
-    .mood-very-happy { color: #10b981; }
-    .mood-happy { color: #34d399; }
-    .mood-neutral { color: #f59e0b; }
-    .mood-sad { color: #f87171; }
-    .mood-very-sad { color: #ef4444; }
-    
-    .tag-input-container {
-        position: relative;
-        margin-bottom: 1.5rem;
-    }
-    
-    .tag-suggestions {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        background-color: white;
-        border: 1px solid #e5e7eb;
-        border-radius: 0 0 12px 12px;
-        z-index: 10;
-        max-height: 200px;
-        overflow-y: auto;
-    }
-    
-    .tag-suggestion-item {
-        padding: 0.5rem 1rem;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-    
-    .tag-suggestion-item:hover {
-        background-color: #f3f4f6;
-    }
-    
-    .selected-tags {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-        margin-top: 1rem;
-    }
-    
-    .selected-tag {
-        display: inline-flex;
-        align-items: center;
-        background-color: rgba(99, 102, 241, 0.1);
-        color: var(--primary-color);
-        padding: 0.25rem 0.75rem;
-        border-radius: 9999px;
-        font-size: 0.875rem;
-    }
-    
-    .remove-tag {
-        margin-left: 0.5rem;
-        cursor: pointer;
-        font-size: 0.75rem;
-    }
-    
-    .media-preview {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-    }
-    
-    .media-item {
-        position: relative;
-        width: 100px;
-        height: 100px;
-        border-radius: 8px;
-        overflow: hidden;
-    }
-    
-    .media-item img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-    
-    .media-item video {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-    
-    .media-item audio {
-        width: 100%;
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        background-color: rgba(0, 0, 0, 0.5);
-    }
-    
-    .remove-media {
-        position: absolute;
-        top: 5px;
-        right: 5px;
-        background-color: rgba(0, 0, 0, 0.5);
-        color: white;
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.75rem;
-        cursor: pointer;
-    }
-    
-    .ai-suggestions {
-        background-color: #f3f4f6;
-        border-radius: 12px;
-        padding: 1rem;
-        margin-bottom: 1.5rem;
-    }
-    
-    .suggestion-item {
-        background-color: white;
-        border-radius: 8px;
-        padding: 0.75rem;
-        margin-bottom: 0.5rem;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-    
-    .suggestion-item:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    }
-    
-    .suggestion-item:last-child {
-        margin-bottom: 0;
-    }
-    
-    .btn-floating {
-        position: fixed;
-        bottom: 2rem;
-        right: 2rem;
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        z-index: 100;
-    }
-    
     .location-preview {
         height: 200px;
         border-radius: 12px;
         overflow: hidden;
         margin-bottom: 1.5rem;
-    }
-    
-    .custom-file-upload {
-        display: inline-block;
-        padding: 0.5rem 1rem;
-        cursor: pointer;
-        background-color: #f3f4f6;
-        border-radius: 8px;
-        transition: all 0.3s ease;
-    }
-    
-    .custom-file-upload:hover {
-        background-color: #e5e7eb;
-    }
-    
-    input[type="file"] {
-        display: none;
     }
 </style>
 {% endblock %}
@@ -241,280 +46,168 @@
     <div class="row justify-content-center">
         <div class="col-lg-10">
             <div class="note-container" data-aos="fade-up">
-                <h1 class="mb-4">Nouvelle note</h1>
-                
-                <!-- Title Input -->
-                <div class="mb-4">
-                    <label for="note-title" class="form-label">Titre</label>
-                    <input type="text" class="form-control form-control-lg" id="note-title" placeholder="Donnez un titre à votre note...">
-                </div>
-                
-                <!-- Mood Selector -->
-                <div class="mb-4">
-                    <label class="form-label">Comment vous sentez-vous aujourd'hui ?</label>
-                    <div class="mood-selector">
-                        <div class="mood-option" data-mood="very-happy">
-                            <div class="mood-icon mood-very-happy">
-                                <i class="fas fa-laugh-beam"></i>
-                            </div>
-                            <span>Très heureux</span>
+                <form method="post" action="{% url 'create_note' %}">
+                    {% csrf_token %}
+                    {% if form.errors %}
+                        <div class="alert alert-danger" role="alert">
+                            Veuillez corriger les erreurs suivantes :
+                            <ul>
+                                {% for field in form %}
+                                    {% for error in field.errors %}
+                                        <li>{{ field.label }}: {{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                                {% for error in form.non_field_errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
                         </div>
-                        <div class="mood-option" data-mood="happy">
-                            <div class="mood-icon mood-happy">
-                                <i class="fas fa-smile"></i>
+                    {% endif %}
+                    <!-- Title Input -->
+                    <div class="mb-4">
+                        <label for="{{ form.title.id_for_label }}" class="form-label">Titre</label>
+                        {{ form.title }}
+                        {% if form.title.errors %}
+                            <div class="text-danger">
+                                {% for error in form.title.errors %}
+                                    {{ error }}
+                                {% endfor %}
                             </div>
-                            <span>Heureux</span>
-                        </div>
-                        <div class="mood-option selected" data-mood="neutral">
-                            <div class="mood-icon mood-neutral">
-                                <i class="fas fa-meh"></i>
-                            </div>
-                            <span>Neutre</span>
-                        </div>
-                        <div class="mood-option" data-mood="sad">
-                            <div class="mood-icon mood-sad">
-                                <i class="fas fa-frown"></i>
-                            </div>
-                            <span>Triste</span>
-                        </div>
-                        <div class="mood-option" data-mood="very-sad">
-                            <div class="mood-icon mood-very-sad">
-                                <i class="fas fa-sad-tear"></i>
-                            </div>
-                            <span>Très triste</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Rich Text Editor -->
-                <div class="mb-4">
-                    <label class="form-label">Contenu</label>
-                    <div class="editor-container">
-                        <div id="editor"></div>
-                    </div>
-                </div>
-                
-                <!-- AI Writing Assistant -->
-                <div class="ai-suggestions mb-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="mb-0">Suggestions d'écriture IA</h5>
-                        <button class="btn btn-sm btn-outline-primary" id="refresh-suggestions">
-                            <i class="fas fa-sync-alt me-1"></i>Rafraîchir
-                        </button>
-                    </div>
-                    <div class="suggestion-item" onclick="insertSuggestion(this)">
-                        <p class="mb-0">Aujourd'hui, j'ai fait une découverte intéressante sur moi-même...</p>
-                    </div>
-                    <div class="suggestion-item" onclick="insertSuggestion(this)">
-                        <p class="mb-0">Je me suis senti inspiré par une conversation que j'ai eue avec...</p>
-                    </div>
-                    <div class="suggestion-item" onclick="insertSuggestion(this)">
-                        <p class="mb-0">En réfléchissant à mes objectifs, je réalise que je devrais...</p>
-                    </div>
-                </div>
-                
-                <!-- Media Upload -->
-                <div class="mb-4">
-                    <label class="form-label">Ajouter des médias</label>
-                    <div class="d-flex gap-3 mb-3">
-                        <label class="custom-file-upload">
-                            <input type="file" accept="image/*" multiple id="image-upload">
-                            <i class="fas fa-image me-2"></i>Photos
-                        </label>
-                        <label class="custom-file-upload">
-                            <input type="file" accept="video/*" id="video-upload">
-                            <i class="fas fa-video me-2"></i>Vidéo
-                        </label>
-                        <label class="custom-file-upload">
-                            <input type="file" accept="audio/*" id="audio-upload">
-                            <i class="fas fa-microphone me-2"></i>Audio
-                        </label>
+                        {% endif %}
                     </div>
                     
-                    <!-- Media Preview -->
-                    <div class="media-preview">
-                        <div class="media-item">
-                            <img src="https://images.unsplash.com/photo-1500964757637-c85e8a162699?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8bGFuZHNjYXBlfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60" alt="Preview">
-                            <div class="remove-media">
-                                <i class="fas fa-times"></i>
-                            </div>
+                    <!-- Rich Text Editor -->
+                    <div class="mb-4">
+                        <label class="form-label">Contenu</label>
+                        <div class="editor-container">
+                            <div id="editor"></div>
                         </div>
-                        <div class="media-item">
-                            <img src="https://images.unsplash.com/photo-1682687220063-4742bd7fd538?ixlib=rb-4.0.3&ixid=M3wxMjA3fDF8MHxzZWFyY2h8MXx8bmF0dXJlfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60" alt="Preview">
-                            <div class="remove-media">
-                                <i class="fas fa-times"></i>
+                        <input type="hidden" name="content" id="id_content" />
+
+                        {% if form.content.errors %}
+                            <div class="text-danger">
+                                {% for error in form.content.errors %}
+                                    {{ error }}
+                                {% endfor %}
                             </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Category -->
+                    <div class="mb-4">
+                        <label for="{{ form.category.id_for_label }}" class="form-label">Catégorie</label>
+                        {{ form.category }}
+                        {% if form.category.errors %}
+                            <div class="text-danger">
+                                {% for error in form.category.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Location -->
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label for="{{ form.location.id_for_label }}" class="form-label mb-0">Localisation</label>
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="get-location">
+                                <i class="fas fa-map-marker-alt me-1"></i>Utiliser ma position
+                            </button>
+                        </div>
+                        {{ form.location }}
+                        {% if form.location.errors %}
+                            <div class="text-danger">
+                                {% for error in form.location.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="location-preview">
+                            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d83998.76457410133!2d2.2769947739270855!3d48.85894658138276!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47e66e1f06e2b70f%3A0x40b82c3688c9460!2sParis%2C%20France!5e0!3m2!1sfr!2sfr!4v1623252352796!5m2!1sfr!2sfr" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
                         </div>
                     </div>
-                </div>
-                
-                <!-- Location -->
-                <div class="mb-4">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <label class="form-label mb-0">Localisation</label>
-                        <button class="btn btn-sm btn-outline-primary" id="get-location">
-                            <i class="fas fa-map-marker-alt me-1"></i>Utiliser ma position
+                    
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-between">
+                        <button type="submit" name="is_draft" value="true" class="btn btn-outline-secondary">
+                            <i class="fas fa-save me-2"></i>Enregistrer comme brouillon
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane me-2"></i>Publier
                         </button>
                     </div>
-                    <input type="text" class="form-control mb-3" id="location-input" placeholder="Entrez un lieu ou utilisez votre position actuelle">
-                    <div class="location-preview">
-                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d83998.76457410133!2d2.2769947739270855!3d48.85894658138276!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47e66e1f06e2b70f%3A0x40b82c3688c9460!2sParis%2C%20France!5e0!3m2!1sfr!2sfr!4v1623252352796!5m2!1sfr!2sfr" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
-                    </div>
-                </div>
-                
-                <!-- Tags -->
-                <div class="mb-4">
-                    <label class="form-label">Tags</label>
-                    <div class="tag-input-container">
-                        <input type="text" class="form-control" id="tag-input" placeholder="Ajoutez des tags (ex: #voyage, #réflexion)">
-                        <div class="selected-tags">
-                            <div class="selected-tag">
-                                #voyage
-                                <span class="remove-tag">
-                                    <i class="fas fa-times"></i>
-                                </span>
-                            </div>
-                            <div class="selected-tag">
-                                #réflexion
-                                <span class="remove-tag">
-                                    <i class="fas fa-times"></i>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Privacy Settings -->
-                <div class="mb-4">
-                    <label class="form-label">Confidentialité</label>
-                    <select class="form-select">
-                        <option value="private" selected>Privé (visible uniquement par moi)</option>
-                        <option value="shared">Partagé (visible par des personnes spécifiques)</option>
-                        <option value="public">Public (visible par tous)</option>
-                    </select>
-                </div>
-                
-                <!-- Action Buttons -->
-                <div class="d-flex justify-content-between">
-                    <button class="btn btn-outline-secondary">
-                        <i class="fas fa-save me-2"></i>Enregistrer comme brouillon
-                    </button>
-                    <button class="btn btn-primary">
-                        <i class="fas fa-paper-plane me-2"></i>Publier
-                    </button>
-                </div>
+                </form>
             </div>
         </div>
     </div>
 </div>
-
-<!-- Floating Action Button -->
-<button class="btn btn-primary btn-floating" id="voice-note">
-    <i class="fas fa-microphone"></i>
-</button>
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initialize Quill editor
-        var quill = new Quill('#editor', {
-            theme: 'snow',
-            placeholder: 'Commencez à écrire votre note...',
-            modules: {
-                toolbar: [
-                    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-                    ['bold', 'italic', 'underline', 'strike'],
-                    [{ 'color': [] }, { 'background': [] }],
-                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                    ['blockquote', 'code-block'],
-                    ['link', 'image'],
-                    ['clean']
-                ]
-            }
-        });
-        
-        // Mood selector
-        const moodOptions = document.querySelectorAll('.mood-option');
-        moodOptions.forEach(option => {
-            option.addEventListener('click', function() {
-                moodOptions.forEach(opt => opt.classList.remove('selected'));
-                this.classList.add('selected');
+    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+    <script>
+        try {
+            // Initialize Quill editor
+            var quill = new Quill('#editor', {
+                theme: 'snow',
+                placeholder: 'Commencez à écrire votre note...', 
+                modules: {
+                    toolbar: [
+                        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                        ['bold', 'italic', 'underline', 'strike'],
+                        [{ 'color': [] }, { 'background': [] }],
+                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                        ['blockquote', 'code-block'],
+                        ['link', 'image'],
+                        ['clean']
+                    ]
+                }
             });
-        });
-        
-        // Voice note button animation
-        const voiceNoteBtn = document.getElementById('voice-note');
-        voiceNoteBtn.addEventListener('click', function() {
-            this.classList.toggle('recording');
-            if (this.classList.contains('recording')) {
-                this.innerHTML = '<i class="fas fa-stop"></i>';
-                this.style.backgroundColor = '#ef4444';
-                // Start recording logic would go here
-            } else {
-                this.innerHTML = '<i class="fas fa-microphone"></i>';
-                this.style.backgroundColor = '';
-                // Stop recording logic would go here
-            }
-        });
-        
-        // Media upload preview
-        document.getElementById('image-upload').addEventListener('change', function(e) {
-            if (e.target.files.length > 0) {
-                // Logic to preview uploaded images would go here
-                console.log('Images uploaded:', e.target.files);
-            }
-        });
-        
-        // Refresh AI suggestions
-        document.getElementById('refresh-suggestions').addEventListener('click', function() {
-            // Animation to show loading
-            this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Chargement';
-            
-            // Simulate API call delay
-            setTimeout(() => {
-                this.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Rafraîchir';
-                // Logic to get new suggestions would go here
-            }, 1500);
-        });
-        
-        // Get location
-        document.getElementById('get-location').addEventListener('click', function() {
-            if (navigator.geolocation) {
-                this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Localisation';
-                
-                navigator.geolocation.getCurrentPosition(
-                    function(position) {
-                        document.getElementById('get-location').innerHTML = '<i class="fas fa-map-marker-alt me-1"></i>Utiliser ma position';
-                        document.getElementById('location-input').value = `Latitude: ${position.coords.latitude}, Longitude: ${position.coords.longitude}`;
-                        // Logic to update map would go here
-                    },
-                    function(error) {
-                        document.getElementById('get-location').innerHTML = '<i class="fas fa-map-marker-alt me-1"></i>Utiliser ma position';
-                        console.error('Error getting location:', error);
-                    }
-                );
-            }
-        });
-    });
-    
-    // Function to insert AI suggestion into editor
-    function insertSuggestion(element) {
-        const suggestionText = element.querySelector('p').innerText;
-        const quill = Quill.find(document.getElementById('editor'));
-        
-        // Get current cursor position
-        const range = quill.getSelection(true);
-        
-        // Insert text at cursor position
-        quill.insertText(range.index, suggestionText);
-        
-        // Highlight the suggestion briefly to show it was inserted
-        element.style.backgroundColor = '#e9ecef';
-        setTimeout(() => {
-            element.style.backgroundColor = 'white';
-        }, 300);
-    }
-</script>
+
+            // Populate Quill editor with existing content if available
+            // var existingContent = document.getElementById('id_content').value;
+            // if (existingContent) {
+            //     quill.root.innerHTML = existingContent;
+            // }
+
+            // Keep hidden input in sync with Quill content
+            quill.on('text-change', function() {
+                var hiddenContent = document.getElementById('id_content');
+                if (hiddenContent) {
+                    hiddenContent.value = quill.root.innerHTML;
+                }
+            });
+
+            // Get location
+            document.getElementById('get-location').addEventListener('click', function() {
+                if (navigator.geolocation) {
+                    this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Localisation';
+                    
+                    navigator.geolocation.getCurrentPosition(
+                        function(position) {
+                            document.getElementById('get-location').innerHTML = '<i class="fas fa-map-marker-alt me-1"></i>Utiliser ma position';
+                            document.getElementById('id_location').value = `Latitude: ${position.coords.latitude}, Longitude: ${position.coords.longitude}`;
+                            const mapIframe = document.querySelector('.location-preview iframe');
+                            mapIframe.src = `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d10000!2d${position.coords.longitude}!3d${position.coords.latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2z${position.coords.latitude},${position.coords.longitude}!5e0!3m2!1sfr!2sfr!4v1623252352796!5m2!1sfr!2sfr`;
+                        },
+                        function(error) {
+                            document.getElementById('get-location').innerHTML = '<i class="fas fa-map-marker-alt me-1"></i>Utiliser ma position';
+                            alert('Erreur lors de la récupération de la localisation : ' + error.message);
+                        }
+                    );
+                } else {
+                    alert('La géolocalisation n\'est pas prise en charge par votre navigateur.');
+                }
+            });
+
+            // Populate hidden content input before form submission with sanitized content
+            document.querySelector('form').addEventListener('submit', function() {
+                var raw = quill.root.innerHTML || '';
+                var sanitized = raw.replace(/<\/?p>/g, '');
+                document.getElementById('id_content').value = sanitized;
+            });
+        } catch (e) {
+            console.error("JavaScript Error:", e);
+        }
+    </script>
 {% endblock %}
