@@ -745,12 +745,12 @@ def signup(request):
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            UserProfile.objects.create(user=user)
-            user.userprofile.date_of_birth = form.cleaned_data.get('date_of_birth')
-            user.userprofile.location = form.cleaned_data.get('location')
-            user.userprofile.save()
+            user_profile, created = UserProfile.objects.get_or_create(user=user)
+            user_profile.date_of_birth = form.cleaned_data.get('date_of_birth')
+            user_profile.location = form.cleaned_data.get('location')
+            user_profile.save()
             login(request, user)
-            return redirect('home')  # Redirect to home or a success page
+            return redirect('home')
     else:
         form = CustomUserCreationForm()
     return render(request, 'signup.html', {'form': form})
