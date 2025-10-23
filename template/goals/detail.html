@@ -1,78 +1,224 @@
 {% extends 'base.html' %}
 {% block title %}{{ goal.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .goal-detail-wrapper {
+    background: linear-gradient(to bottom, #f8fafc 0%, #f1f5f9 100%);
+    min-height: 100vh;
+    padding: 2.5rem 0;
+  }
+  .goal-detail-card {
+    background: white;
+    border-radius: 16px;
+    padding: 2.5rem;
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.08);
+    border-left: 5px solid #6366f1;
+  }
+  .goal-detail-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 1rem;
+  }
+  .goal-status-badge {
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.4rem 0.9rem;
+    border-radius: 12px;
+  }
+  .goal-status-badge.ongoing { background: #dbeafe; color: #1e40af; }
+  .goal-status-badge.completed { background: #d1fae5; color: #065f46; }
+  .goal-status-badge.abandoned { background: #e5e7eb; color: #475569; }
+  .goal-priority-badge {
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 12px;
+    margin-left: 0.5rem;
+  }
+  .goal-priority-badge.low { background: #d1fae5; color: #065f46; }
+  .goal-priority-badge.medium { background: #fef3c7; color: #92400e; }
+  .goal-priority-badge.high { background: #fee2e2; color: #991b1b; }
+  .goal-info-section {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+  }
+  .goal-info-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+  }
+  .goal-motivation-bar {
+    height: 12px;
+    border-radius: 10px;
+    background: #e5e7eb;
+    overflow: hidden;
+  }
+  .goal-motivation-bar .bar {
+    height: 100%;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    border-radius: 10px;
+  }
+  .goal-tasks-list {
+    list-style: none;
+    padding: 0;
+  }
+  .goal-tasks-list li {
+    padding: 0.75rem 1rem;
+    background: white;
+    border-radius: 10px;
+    margin-bottom: 0.5rem;
+    border: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .goal-tasks-list input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #6366f1;
+  }
+  .goal-tasks-list label {
+    flex: 1;
+    cursor: pointer;
+    margin: 0;
+  }
+  .goal-action-btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .goal-action-btn.secondary {
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+  }
+  .goal-action-btn.secondary:hover {
+    background: #e0e7ff;
+    color: #6366f1;
+    border-color: #6366f1;
+  }
+  .goal-action-btn.danger {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+  }
+  .goal-action-btn.danger:hover {
+    background: #fca5a5;
+    color: white;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
+<div class="goal-detail-wrapper">
 <div class="container">
-  <div class="card p-4">
-    <div class="d-flex justify-content-between align-items-start">
-      <div>
-        <h2 class="mb-1">{{ goal.title }}</h2>
-        <div class="mb-2 d-flex gap-2 align-items-center">
-          {% if goal.status == 'ongoing' %}
-            <span class="badge bg-info">En cours</span>
-          {% elif goal.status == 'completed' %}
-            <span class="badge bg-success">Terminé</span>
-          {% else %}
-            <span class="badge bg-secondary">Abandonné</span>
-          {% endif %}
-          {% if goal.priority == 1 %}<span class="goal-badge-priority goal-priority-low">Faible</span>
-          {% elif goal.priority == 2 %}<span class="goal-badge-priority goal-priority-medium">Moyenne</span>
-          {% else %}<span class="goal-badge-priority goal-priority-high">Haute</span>{% endif %}
-          {# Visibility removed from detail view per user request #}
-          <small class="text-muted ms-2">Créé le {{ goal.created_at|date:'d M Y' }}</small>
+  <div class="goal-detail-card">
+    <h1 class="goal-detail-title">{{ goal.title }}</h1>
+    <div class="d-flex align-items-center gap-2 flex-wrap mb-4">
+      {% if goal.status == 'ongoing' %}
+        <span class="goal-status-badge ongoing">En cours</span>
+      {% elif goal.status == 'completed' %}
+        <span class="goal-status-badge completed">Terminé</span>
+      {% else %}
+        <span class="goal-status-badge abandoned">Abandonné</span>
+      {% endif %}
+      {% if goal.priority == 1 %}
+        <span class="goal-priority-badge low">Priorité Faible</span>
+      {% elif goal.priority == 2 %}
+        <span class="goal-priority-badge medium">Priorité Moyenne</span>
+      {% else %}
+        <span class="goal-priority-badge high">Priorité Haute</span>
+      {% endif %}
+      <small class="text-muted ms-2">Créé le {{ goal.created_at|date:'d M Y' }}</small>
+    </div>
+
+    {% if goal.description %}
+      <p style="font-size: 1.05rem; color: #475569; line-height: 1.7; margin: 1.5rem 0;">{{ goal.description|linebreaks }}</p>
+    {% endif %}
+
+    <div class="goal-info-section">
+      <div class="goal-info-label">Motivation</div>
+      <div class="d-flex align-items-center gap-3">
+        <div class="goal-motivation-bar flex-grow-1">
+          <div class="bar" style="width: {{ goal.motivation_level|default:0 }}0%;"></div>
         </div>
-        {% if goal.description %}
-          <p class="lead">{{ goal.description|linebreaks }}</p>
-        {% endif %}
-
-        <div class="d-flex align-items-center mt-3">
-          <div class="me-3 small text-muted">Motivation</div>
-          <div class="goal-progress w-50">
-            <div class="bar" style="width: {{ goal.motivation_level|default:0 }}0%;"></div>
-          </div>
-          <div class="ms-3 small fw-bold">{{ goal.motivation_level }}/10</div>
-        </div>
-
-        {% if goal.start_date or goal.end_date %}
-          <div class="mt-3 small text-muted">
-            {% if goal.start_date %}<strong>Début:</strong> {{ goal.start_date }}{% endif %}
-            {% if goal.end_date %}<span class="ms-3"><strong>Fin:</strong> {{ goal.end_date }}</span>{% endif %}
-          </div>
-        {% endif %}
-
-        {% comment %}Use .exists to check whether there are linked entries (manager is always truthy){% endcomment %}
-        {% if goal.linked_entries.exists %}
-          <h5 class="mt-4">Entrées liées</h5>
-          <ul>
-            {% for note in goal.linked_entries.all %}
-              <li><a href="{% url 'edit_note' note.pk %}">{{ note.title }}</a> <small class="text-muted">{{ note.created_at|date:'d M Y' }}</small></li>
-            {% endfor %}
-          </ul>
-        {% endif %}
-        {% if goal.milestones %}
-          <div class="mt-3">
-            <h5>Liste de tâches</h5>
-            <ul id="milestones-list">
-              {% for m in goal.milestones %}
-                <li>
-                  <input type="checkbox" class="milestone-checkbox" data-index="{{ forloop.counter0 }}" id="ms-{{ forloop.counter0 }}" {% if m.done %}checked{% endif %}>
-                  <label for="ms-{{ forloop.counter0 }}">{{ m.title }}</label>
-                  {% if m.due %}<small class="text-muted ms-2">({{ m.due }})</small>{% endif %}
-                </li>
-              {% endfor %}
-            </ul>
-          </div>
-        {% endif %}
-      </div>
-      <div class="text-end">
-        <a class="btn btn-outline-secondary mb-2" href="{% url 'goal_update' goal.pk %}">Modifier</a>
-        <a class="btn btn-danger" href="{% url 'goal_delete' goal.pk %}">Supprimer</a>
+        <div class="fw-bold" style="color: #6366f1;">{{ goal.motivation_level }}/10</div>
       </div>
     </div>
-    <div class="mt-3">
-      <a class="btn btn-link" href="{% url 'goals_list' %}">&larr; Retour</a>
+
+    {% if goal.start_date or goal.end_date %}
+      <div class="goal-info-section">
+        <div class="goal-info-label">Période</div>
+        <div class="d-flex gap-4 flex-wrap">
+          {% if goal.start_date %}
+            <div><span class="text-muted">Début:</span> <strong>{{ goal.start_date }}</strong></div>
+          {% endif %}
+          {% if goal.end_date %}
+            <div><span class="text-muted">Fin:</span> <strong>{{ goal.end_date }}</strong></div>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+
+    {% if goal.linked_entries.exists %}
+      <div class="goal-info-section">
+        <div class="goal-info-label mb-3">Entrées liées</div>
+        <ul style="list-style: none; padding: 0;">
+          {% for note in goal.linked_entries.all %}
+            <li style="padding: 0.75rem 1rem; background: white; border-radius: 10px; margin-bottom: 0.5rem; border: 1px solid #e5e7eb;">
+              <a href="{% url 'edit_note' note.pk %}" style="color: #6366f1; text-decoration: none; font-weight: 500;">{{ note.title }}</a>
+              <small class="text-muted ms-2">{{ note.created_at|date:'d M Y' }}</small>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    {% if goal.milestones %}
+      <div class="goal-info-section">
+        <div class="goal-info-label mb-3">Liste de tâches</div>
+        <ul class="goal-tasks-list" id="milestones-list">
+          {% for m in goal.milestones %}
+            <li>
+              <input type="checkbox" class="milestone-checkbox" data-index="{{ forloop.counter0 }}" id="ms-{{ forloop.counter0 }}" {% if m.done %}checked{% endif %}>
+              <label for="ms-{{ forloop.counter0 }}">{{ m.title }}</label>
+              {% if m.due %}<small class="text-muted">({{ m.due }})</small>{% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mt-4 pt-3" style="border-top: 2px solid #e5e7eb;">
+      <a href="{% url 'goals_list' %}" style="color: #6366f1; text-decoration: none; font-weight: 500;">
+        <i class="fas fa-arrow-left me-2"></i>Retour aux objectifs
+      </a>
+      <div class="d-flex gap-2">
+        <a class="goal-action-btn secondary" href="{% url 'goal_update' goal.pk %}">
+          <i class="fas fa-edit"></i> Modifier
+        </a>
+        <a class="goal-action-btn danger" href="{% url 'goal_delete' goal.pk %}">
+          <i class="fas fa-trash"></i> Supprimer
+        </a>
+      </div>
     </div>
   </div>
 </div>
+</div>
+
 <script>
 function getCookie(name) {
   const value = `; ${document.cookie}`;
@@ -93,18 +239,6 @@ document.addEventListener('DOMContentLoaded', function(){
         if(!data.ok){
           alert('Erreur: ' + (data.error || 'Impossible de basculer le jalon'));
           e.target.checked = !e.target.checked;
-        } else {
-          // update progress bar if present
-          const prog = document.getElementById('goal-progress');
-          if(prog && data.progress !== undefined){
-            if(prog.tagName.toLowerCase() === 'progress'){
-              prog.value = data.progress;
-            } else {
-              // fallback: width style
-              const bar = prog.querySelector('.bar');
-              if(bar) bar.style.width = data.progress + '%';
-            }
-          }
         }
       }).catch(err => {
         alert('Erreur réseau');

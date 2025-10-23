@@ -1,50 +1,276 @@
 {% extends 'base.html' %}
 {% block title %}Mes objectifs{% endblock %}
-{% block content %}
-<div class="container py-4">
-  <div class="d-flex justify-content-start align-items-center mb-5">
-    <a class="btn btn-lg goals-create-btn me-4" href="{% url 'goal_create' %}">
-      <i class="fas fa-plus me-2"></i>Créer un objectif
-    </a>
-    <h1 class="goals-page-title mb-0">Mes objectifs</h1>
-  </div>
+{% block extra_css %}
+<style>
+  /* Clean & elegant goals list - following site's color scheme */
+  .goals-page-wrapper {
+    background: linear-gradient(to bottom, #f8fafc 0%, #f1f5f9 100%);
+    min-height: 100vh;
+    padding: 2.5rem 0;
+  }
 
-  <div>
-    <div class="row g-3">
+  .goals-header {
+    margin-bottom: 2.5rem;
+  }
+
+  .goals-page-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 0;
+  }
+
+  .goals-create-btn {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 12px 28px !important;
+    font-weight: 600 !important;
+    color: white !important;
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3) !important;
+    transition: all 0.3s ease !important;
+  }
+
+  .goals-create-btn:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4) !important;
+  }
+
+  .goals-grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); 
+    gap: 24px;
+    padding: 1rem 0;
+  }
+
+  @media (max-width: 576px) { 
+    .goals-grid { grid-template-columns: 1fr; } 
+  }
+
+  /* Simple & elegant card design */
+  .goal-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.75rem;
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.08);
+    border-left: 4px solid #6366f1;
+    position: relative;
+    transition: all 0.3s ease;
+  }
+
+  .goal-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(99, 102, 241, 0.15);
+  }
+
+  .goal-title { 
+    font-weight: 600;
+    font-size: 1.3rem;
+    color: #1e293b;
+    text-decoration: none;
+    display: block;
+    margin-bottom: 0.75rem;
+    transition: color 0.2s ease;
+  }
+
+  .goal-title:hover {
+    color: #6366f1;
+  }
+
+  .goal-meta { 
+    color: #94a3b8;
+    font-size: 0.875rem;
+  }
+
+  .goal-description { 
+    color: #64748b;
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+    line-height: 1.6;
+  }
+
+  /* Priority badges - simple and clean */
+  .goal-badge { 
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 12px;
+    display: inline-block;
+  }
+
+  .goal-badge.low { 
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  .goal-badge.medium { 
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .goal-badge.high { 
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  /* Progress bar */
+  .goal-progress-wrapper {
+    margin: 1rem 0 0.75rem 0;
+  }
+
+  .goal-progress { 
+    height: 8px;
+    border-radius: 10px;
+    background: #e5e7eb;
+    overflow: hidden;
+  }
+
+  .goal-progress > .bar { 
+    height: 100%;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    width: calc(var(--progress) * 1%);
+    border-radius: 10px;
+    transition: width 0.6s ease;
+  }
+
+  .goal-motivation {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+    color: #475569;
+  }
+
+  .goal-motivation i {
+    color: #8b5cf6;
+  }
+
+  .goal-motivation strong {
+    color: #1e293b;
+    font-weight: 600;
+  }
+
+  /* Action buttons - simple and clean */
+  .goal-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  .goal-action-btn {
+    flex: 1;
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    border: 1px solid;
+    text-decoration: none;
+    text-align: center;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+  }
+
+  .goal-action-btn.edit {
+    background: #f1f5f9;
+    color: #6366f1;
+    border-color: #e2e8f0;
+  }
+
+  .goal-action-btn.edit:hover {
+    background: #e0e7ff;
+    border-color: #6366f1;
+  }
+
+  .goal-action-btn.delete {
+    background: #f1f5f9;
+    color: #ef4444;
+    border-color: #e2e8f0;
+  }
+
+  .goal-action-btn.delete:hover {
+    background: #fee2e2;
+    border-color: #ef4444;
+  }
+
+  /* Empty state */
+  .goal-empty {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: white;
+    border-radius: 16px;
+    border: 2px dashed #cbd5e1;
+  }
+
+  .goal-empty i {
+    color: #cbd5e1;
+    margin-bottom: 1rem;
+  }
+
+  .goal-empty p {
+    font-size: 1.1rem;
+    color: #64748b;
+    margin: 0;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="goals-page-wrapper">
+  <div class="container py-4">
+    <div class="goals-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <h1 class="goals-page-title">Mes objectifs</h1>
+      <a class="btn btn-lg goals-create-btn" href="{% url 'goal_create' %}">
+        <i class="fas fa-plus me-2"></i>Créer un objectif
+      </a>
+    </div>
+
+    <div class="goals-grid">
     {% for goal in goals %}
-      <div class="col-12 col-md-6">
-        <div class="goal-card d-flex justify-content-between align-items-start">
-          <div class="flex-grow-1">
-            <a href="{% url 'goal_detail' goal.pk %}" class="h5 mb-1 d-block text-decoration-none text-dark">{{ goal.title }}</a>
-            <div class="d-flex gap-2 align-items-center mb-2">
-              {% if goal.priority == 1 %}
-                <span class="goal-badge-priority goal-priority-low">Faible</span>
-              {% elif goal.priority == 2 %}
-                <span class="goal-badge-priority goal-priority-medium">Moyenne</span>
-              {% else %}
-                <span class="goal-badge-priority goal-priority-high">Haute</span>
-              {% endif %}
-              {# visibility (Public/Privé) intentionally removed from list view per user request #}
-              <small class="goal-meta">• Créé {{ goal.created_at|date:'d M Y' }}</small>
-            </div>
-            {% if goal.description %}
-              <div class="text-muted mb-2">{{ goal.description|truncatechars:120 }}</div>
-            {% endif %}
-            <div class="goal-progress mb-2"><div class="bar" style="width: {{ goal.progress_cached|default:0 }}%;"></div></div>
-            <div class="goal-meta">Motivation: <strong>{{ goal.motivation_level }}/10</strong></div>
-          </div>
-          <div class="goal-actions text-end ms-3">
-            <a class="btn btn-sm btn-outline-secondary" href="{% url 'goal_update' goal.pk %}"><i class="fas fa-edit"></i></a>
-            <a class="btn btn-sm btn-danger" href="{% url 'goal_delete' goal.pk %}"><i class="fas fa-trash"></i></a>
-          </div>
+      <div class="goal-card">
+        <a href="{% url 'goal_detail' goal.pk %}" class="goal-title">{{ goal.title }}</a>
+        
+        <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+          {% if goal.priority == 1 %}
+            <span class="goal-badge low">Faible</span>
+          {% elif goal.priority == 2 %}
+            <span class="goal-badge medium">Moyenne</span>
+          {% else %}
+            <span class="goal-badge high">Haute</span>
+          {% endif %}
+          <small class="goal-meta">• Créé le {{ goal.created_at|date:'d M Y' }}</small>
+        </div>
+        
+        {% if goal.description %}
+          <div class="goal-description">{{ goal.description|truncatechars:100 }}</div>
+        {% endif %}
+        
+        <div class="goal-progress-wrapper">
+          <div class="goal-progress" style="--progress: {{ goal.progress_cached|default:0 }};"><div class="bar"></div></div>
+        </div>
+        
+        <div class="goal-motivation">
+          <i class="fas fa-heart"></i>
+          Motivation: <strong>{{ goal.motivation_level }}/10</strong>
+        </div>
+        
+        <div class="goal-actions">
+          <a class="goal-action-btn edit" href="{% url 'goal_update' goal.pk %}">
+            <i class="fas fa-edit"></i> Modifier
+          </a>
+          <a class="goal-action-btn delete" href="{% url 'goal_delete' goal.pk %}">
+            <i class="fas fa-trash"></i> Supprimer
+          </a>
         </div>
       </div>
     {% empty %}
-      <div class="col-12">
-        <div class="goal-card text-center py-5">
-          <i class="fas fa-bullseye fa-3x text-muted mb-3"></i>
-          <p class="text-muted mb-0">Aucun objectif pour le moment. Cliquez sur "Créer un objectif" pour commencer votre parcours.</p>
-        </div>
+      <div class="goal-empty">
+        <i class="fas fa-bullseye fa-4x"></i>
+        <p>Aucun objectif pour le moment.<br>Cliquez sur "Créer un objectif" pour commencer !</p>
       </div>
     {% endfor %}
     </div>
