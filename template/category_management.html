@@ -1,0 +1,401 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestion des Catégories{% endblock %}
+
+{% block extra_css %}
+<style>
+    .category-card {
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        padding: 20px;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    .category-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    .category-card i {
+        font-size: 3rem;
+        color: var(--primary-color);
+        margin-bottom: 15px;
+    }
+    .category-card h5 {
+        font-weight: 600;
+        color: var(--dark-color);
+    }
+    .add-category-btn-container {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 20px;
+    }
+    .popup-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        visibility: hidden;
+        opacity: 0;
+        transition: visibility 0s, opacity 0.3s ease;
+    }
+    .popup-overlay.active {
+        visibility: visible;
+        opacity: 1;
+    }
+    .popup-content {
+        background: #ffffff;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        width: 90%;
+        max-width: 500px;
+        transform: translateY(-20px);
+        transition: transform 0.3s ease;
+    }
+    .popup-overlay.active .popup-content {
+        transform: translateY(0);
+    }
+    .popup-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .popup-header h4 {
+        margin: 0;
+        color: var(--primary-color);
+    }
+    .popup-close-btn {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: #666;
+        cursor: pointer;
+    }
+
+    /* Styles for Icon Picker Modal */
+    #iconPickerModal .popup-content {
+        max-width: 700px;
+    }
+
+    .icon-list {
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid #eee;
+        padding: 10px;
+        border-radius: 8px;
+    }
+
+    .icon-list .icon-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 5px;
+        border: 1px solid #f0f0f0;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 1.5rem;
+        color: #555;
+    }
+
+    .icon-list .icon-item:hover {
+        background-color: #f8f8f8;
+        border-color: var(--primary-color);
+    }
+
+    .icon-list .icon-item.selected {
+        background-color: var(--primary-color);
+        color: #ffffff;
+        border-color: var(--primary-color);
+    }
+
+    .icon-list .icon-item.selected i {
+        color: #ffffff;
+    }
+
+    .icon-list .icon-item span {
+        font-size: 0.7rem;
+        margin-top: 5px;
+        text-align: center;
+        word-break: break-all;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Gestion des Catégories</h2>
+        <button id="addCategoryBtn" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i> Ajouter Catégorie
+        </button>
+    </div>
+
+    <div class="row" id="categoriesContainer">
+        {% for category in categories %}
+        <div class="col-md-4 mb-4">
+            <a href="{% url 'view_notes' %}?category_id={{ category.id }}" class="text-decoration-none">
+                <div class="category-card">
+                    <i class="{{ category.icon }}"></i>
+                    <h5>{{ category.name }}</h5>
+                </div>
+            </a>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <p>Aucune catégorie ajoutée pour le moment.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Add Category Popup -->
+    <div class="popup-overlay" id="addCategoryPopup">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h4>Ajouter une nouvelle catégorie</h4>
+                <button class="popup-close-btn" id="closePopupBtn">&times;</button>
+            </div>
+            <form method="post" action="{% url 'category_management' %}" id="addCategoryForm">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="categoryName" class="form-label">Nom de la catégorie</label>
+                    <input type="text" class="form-control" id="categoryName" name="categoryName" placeholder="Ex: Voyages, Technologie" required>
+                </div>
+                <div class="mb-3">
+                    <label for="categoryIcon" class="form-label">Icône de la catégorie (Font Awesome)</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="selectedIconDisplay" placeholder="Sélectionnez une icône" readonly>
+                        <button class="btn btn-outline-secondary" type="button" id="openIconPickerBtn">
+                            <i class="fas fa-icons"></i>
+                        </button>
+                    </div>
+                    <input type="hidden" id="categoryIcon" name="categoryIcon">
+                    <small class="form-text text-muted">Trouvez des icônes sur <a href="https://fontawesome.com/icons" target="_blank">Font Awesome</a></small>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Ajouter</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Icon Picker Modal -->
+    <div class="popup-overlay" id="iconPickerModal">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h4>Sélectionner une icône</h4>
+                <button class="popup-close-btn" id="closeIconPickerBtn">&times;</button>
+            </div>
+            <input type="text" class="form-control mb-3" id="iconSearchInput" placeholder="Rechercher une icône...">
+            <div class="icon-list row row-cols-6 g-2" id="iconList">
+                <!-- Icons will be loaded here -->
+            </div>
+            <button class="btn btn-primary w-100 mt-3" id="selectIconButton" style="display: none;">Sélectionner</button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const addCategoryBtn = document.getElementById('addCategoryBtn');
+        const addCategoryPopup = document.getElementById('addCategoryPopup');
+        const closePopupBtn = document.getElementById('closePopupBtn');
+        const addCategoryForm = document.getElementById('addCategoryForm');
+        const categoriesContainer = document.getElementById('categoriesContainer');
+
+        // Icon Picker elements
+        const iconPickerModal = document.getElementById('iconPickerModal');
+        const openIconPickerBtn = document.getElementById('openIconPickerBtn');
+        const closeIconPickerBtn = document.getElementById('closeIconPickerBtn');
+        const iconSearchInput = document.getElementById('iconSearchInput');
+        const iconList = document.getElementById('iconList');
+        const selectedIconDisplay = document.getElementById('selectedIconDisplay');
+        const categoryIconInput = document.getElementById('categoryIcon');
+        const selectIconButton = document.getElementById('selectIconButton');
+
+        let selectedIcon = '';
+
+        // Font Awesome Icons (a subset for demonstration)
+        const fontAwesomeIcons = [
+            'fas fa-star', 'fas fa-heart', 'fas fa-bell', 'fas fa-home', 'fas fa-cog',
+            'fas fa-user', 'fas fa-envelope', 'fas fa-camera', 'fas fa-image', 'fas fa-file',
+            'fas fa-folder', 'fas fa-tag', 'fas fa-bookmark', 'fas fa-calendar', 'fas fa-map-marker-alt',
+            'fas fa-globe', 'fas fa-chart-bar', 'fas fa-shopping-cart', 'fas fa-gift', 'fas fa-plane',
+            'fas fa-car', 'fas fa-bicycle', 'fas fa-bus', 'fas fa-train', 'fas fa-ship',
+            'fas fa-moon', 'fas fa-sun', 'fas fa-cloud', 'fas fa-snowflake', 'fas fa-fire',
+            'fas fa-lightbulb', 'fas fa-wrench', 'fas fa-hammer', 'fas fa-screwdriver', 'fas fa-paint-brush',
+            'fas fa-music', 'fas fa-film', 'fas fa-book', 'fas fa-graduation-cap', 'fas fa-briefcase',
+            'fas fa-money-bill-alt', 'fas fa-credit-card', 'fas fa-wallet', 'fas fa-piggy-bank', 'fas fa-dollar-sign',
+            'fas fa-utensils', 'fas fa-coffee', 'fas fa-pizza-slice', 'fas fa-hamburger', 'fas fa-ice-cream',
+            'fas fa-tree', 'fas fa-mountain', 'fas fa-water', 'fas fa-fish', 'fas fa-paw',
+            'fas fa-gamepad', 'fas fa-chess', 'fas fa-puzzle-piece', 'fas fa-dice', 'fas fa-robot',
+            'fas fa-flask', 'fas fa-microscope', 'fas fa-atom', 'fas fa-dna', 'fas fa-brain',
+            'fas fa-laptop', 'fas fa-desktop', 'fas fa-tablet-alt', 'fas fa-mobile-alt', 'fas fa-keyboard',
+            'fas fa-mouse', 'fas fa-headphones', 'fas fa-microphone', 'fas fa-print', 'fas fa-fax',
+            'fas fa-code', 'fas fa-terminal', 'fas fa-bug', 'fas fa-database', 'fas fa-server',
+            'fas fa-shield-alt', 'fas fa-lock', 'fas fa-key', 'fas fa-fingerprint', 'fas fa-user-secret',
+            'fas fa-heartbeat', 'fas fa-medkit', 'fas fa-hospital', 'fas fa-syringe', 'fas fa-pills',
+            'fas fa-baby', 'fas fa-child', 'fas fa-male', 'fas fa-female', 'fas fa-users',
+            'fas fa-comments', 'fas fa-quote-left', 'fas fa-paper-plane', 'fas fa-share-alt', 'fas fa-thumbs-up',
+            'fas fa-thumbs-down', 'fas fa-smile', 'fas fa-frown', 'fas fa-meh', 'fas fa-grin',
+            'fas fa-surprise', 'fas fa-tired', 'fas fa-angry', 'fas fa-sad-tear', 'fas fa-dizzy',
+            'fas fa-poo', 'fas fa-ghost', 'fas fa-dragon', 'fas fa-spider', 'fas fa-skull',
+            'fas fa-umbrella', 'fas fa-gem', 'fas fa-crown', 'fas fa-ring', 'fas fa-trophy',
+            'fas fa-award', 'fas fa-medal', 'fas fa-ribbon', 'fas fa-certificate', 'fas fa-ticket-alt',
+            'fas fa-barcode', 'fas fa-qrcode', 'fas fa-compass', 'fas fa-location-arrow', 'fas fa-directions',
+            'fas fa-road', 'fas fa-bus-alt', 'fas fa-subway', 'fas fa-taxi', 'fas fa-truck',
+            'fas fa-warehouse', 'fas fa-factory', 'fas fa-building', 'fas fa-city', 'fas fa-landmark',
+            'fas fa-gavel', 'fas fa-balance-scale', 'fas fa-scale-balanced', 'fas fa-handshake', 'fas fa-sitemap',
+            'fas fa-network-wired', 'fas fa-wifi', 'fas fa-bluetooth-b', 'fas fa-satellite', 'fas fa-satellite-dish',
+            'fas fa-hdd', 'fas fa-memory', 'fas fa-microchip', 'fas fa-sd-card', 'fas fa-sim-card',
+            'fas fa-battery-full', 'fas fa-battery-half', 'fas fa-battery-quarter', 'fas fa-battery-empty', 'fas fa-plug',
+            'fas fa-power-off', 'fas fa-toggle-on', 'fas fa-toggle-off', 'fas fa-sliders-h', 'fas fa-cogs',
+            'fas fa-tools', 'fas fa-screwdriver-wrench', 'fas fa-ruler', 'fas fa-pencil-alt', 'fas fa-eraser',
+            'fas fa-highlighter', 'fas fa-paint-roller', 'fas fa-palette', 'fas fa-brush', 'fas fa-spray-can',
+            'fas fa-cut', 'fas fa-copy', 'fas fa-paste', 'fas fa-undo', 'fas fa-redo',
+            'fas fa-sync-alt', 'fas fa-history', 'fas fa-save', 'fas fa-upload', 'fas fa-download',
+            'fas fa-share', 'fas fa-reply', 'fas fa-forward', 'fas fa-backward', 'fas fa-play',
+            'fas fa-pause', 'fas fa-stop', 'fas fa-volume-up', 'fas fa-volume-down', 'fas fa-volume-mute',
+            'fas fa-expand', 'fas fa-compress', 'fas fa-search', 'fas fa-plus', 'fas fa-minus',
+            'fas fa-times', 'fas fa-check', 'fas fa-info-circle', 'fas fa-exclamation-triangle', 'fas fa-question-circle',
+            'fas fa-ban', 'fas fa-trash', 'fas fa-edit', 'fas fa-print', 'fas fa-link',
+            'fas fa-unlink', 'fas fa-paperclip', 'fas fa-thumbtack', 'fas fa-pushpin', 'fas fa-map-pin',
+            'fas fa-location-dot', 'fas fa-house-chimney', 'fas fa-building-columns', 'fas fa-school', 'fas fa-hospital-user',
+            'fas fa-hotel', 'fas fa-store', 'fas fa-warehouse', 'fas fa-industry', 'fas fa-tractor',
+            'fas fa-seedling', 'fas fa-leaf', 'fas fa-globe-americas', 'fas fa-globe-asia', 'fas fa-globe-europe',
+            'fas fa-globe-africa', 'fas fa-globe-oceania', 'fas fa-mountain-sun', 'fas fa-water-ladder', 'fas fa-umbrella-beach',
+            'fas fa-person-swimming', 'fas fa-person-walking', 'fas fa-person-running', 'fas fa-person-biking', 'fas fa-person-hiking',
+            'fas fa-person-skiing', 'fas fa-person-snowboarding', 'fas fa-person-skating', 'fas fa-person-digging', 'fas fa-person-falling',
+            'fas fa-person-falling-burst', 'fas fa-person-booth', 'fas fa-person-dress', 'fas fa-person-dress-burst', 'fas fa-person-pregnant',
+            'fas fa-person-breastfeeding', 'fas fa-person-cane', 'fas fa-person-dots-from-line', 'fas fa-person-harassing', 'fas fa-person-military-to-person',
+            'fas fa-person-rifle', 'fas fa-person-shelter', 'fas fa-person-through-window', 'fas fa-person-walking-arrow-loop-left', 'fas fa-person-walking-arrow-right',
+            'fas fa-person-walking-dashed-line-arrow-right', 'fas fa-person-walking-luggage', 'fas fa-person-walking-with-cane', 'fas fa-person-wheelchair', 'fas fa-person-running-fast',
+            'fas fa-person-running-lean', 'fas fa-person-running-steps', 'fas fa-person-running-with-gait', 'fas fa-person-running-with-sprint', 'fas fa-person-running-with-stride',
+            'fas fa-person-running-with-stretch', 'fas fa-person-running-with-swing', 'fas fa-person-running-with-twist', 'fas fa-person-running-with-turn', 'fas fa-person-running-with-walk',
+            'fas fa-person-running-with-jog', 'fas fa-person-running-with-run', 'fas fa-person-running-with-dash', 'fas fa-person-running-with-sprint-fast', 'fas fa-person-running-with-sprint-lean',
+            'fas fa-person-running-with-sprint-steps', 'fas fa-person-running-with-sprint-with-gait', 'fas fa-person-running-with-sprint-with-sprint', 'fas fa-person-running-with-sprint-with-stride', 'fas fa-person-running-with-sprint-with-stretch',
+            'fas fa-person-running-with-sprint-with-swing', 'fas fa-person-running-with-sprint-with-twist', 'fas fa-person-running-with-sprint-with-turn', 'fas fa-person-running-with-sprint-with-walk', 'fas fa-person-running-with-sprint-with-jog',
+            'fas fa-person-running-with-sprint-with-run', 'fas fa-person-running-with-sprint-with-dash', 'fas fa-person-running-with-sprint-with-sprint-fast', 'fas fa-person-running-with-sprint-with-sprint-lean', 'fas fa-person-running-with-sprint-with-sprint-steps',
+            'fas fa-person-running-with-sprint-with-sprint-with-gait', 'fas fa-person-running-with-sprint-with-sprint-with-sprint', 'fas fa-person-running-with-sprint-with-sprint-with-stride', 'fas fa-person-running-with-sprint-with-sprint-with-stretch', 'fas fa-person-running-with-sprint-with-sprint-with-swing',
+            'fas fa-person-running-with-sprint-with-sprint-with-twist', 'fas fa-person-running-with-sprint-with-sprint-with-turn', 'fas fa-person-running-with-sprint-with-sprint-with-walk', 'fas fa-person-running-with-sprint-with-sprint-with-jog', 'fas fa-person-running-with-sprint-with-sprint-with-run',
+            'fas fa-person-running-with-sprint-with-sprint-with-dash', 'fas fa-person-running-with-sprint-with-sprint-with-sprint-fast', 'fas fa-person-running-with-sprint-with-sprint-with-sprint-lean', 'fas fa-person-running-with-sprint-with-sprint-with-sprint-steps', 'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-gait',
+            'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-sprint', 'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-stride', 'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-stretch', 'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-swing', 'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-twist',
+            'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-turn', 'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-walk', 'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-jog', 'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-run', 'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-dash'
+        ];
+
+        function loadIcons(query = '') {
+            iconList.innerHTML = '';
+            const filteredIcons = fontAwesomeIcons.filter(icon => icon.includes(query.toLowerCase()));
+            filteredIcons.forEach(iconClass => {
+                const iconName = iconClass.split(' ')[1].replace('fa-', '');
+                const iconItem = document.createElement('div');
+                iconItem.classList.add('col', 'icon-item');
+                iconItem.innerHTML = `<i class="${iconClass}"></i><span>${iconName}</span>`;
+                iconItem.addEventListener('click', () => {
+                    // Remove selected from previously selected icon
+                    const currentSelected = iconList.querySelector('.icon-item.selected');
+                    if (currentSelected) {
+                        currentSelected.classList.remove('selected');
+                    }
+                    iconItem.classList.add('selected');
+                    selectedIcon = iconClass;
+                    selectIconButton.style.display = 'block';
+                });
+                iconList.appendChild(iconItem);
+            });
+        }
+
+        // Event Listeners for Add Category Popup
+        addCategoryBtn.addEventListener('click', function() {
+            addCategoryPopup.classList.add('active');
+        });
+
+        closePopupBtn.addEventListener('click', function() {
+            addCategoryPopup.classList.remove('active');
+        });
+
+        addCategoryPopup.addEventListener('click', function(e) {
+            if (e.target === addCategoryPopup) {
+                addCategoryPopup.classList.remove('active');
+            }
+        });
+
+        // Event Listeners for Icon Picker Modal
+        openIconPickerBtn.addEventListener('click', function() {
+            iconPickerModal.classList.add('active');
+            loadIcons(); // Load all icons when opening the picker
+            selectedIcon = ''; // Reset selected icon
+            selectIconButton.style.display = 'none'; // Hide select button initially
+            iconSearchInput.value = ''; // Clear search input
+        });
+
+        closeIconPickerBtn.addEventListener('click', function() {
+            iconPickerModal.classList.remove('active');
+        });
+
+        iconPickerModal.addEventListener('click', function(e) {
+            if (e.target === iconPickerModal) {
+                iconPickerModal.classList.remove('active');
+            }
+        });
+
+        iconSearchInput.addEventListener('input', function() {
+            loadIcons(this.value);
+        });
+
+        selectIconButton.addEventListener('click', function() {
+            if (selectedIcon) {
+                selectedIconDisplay.value = selectedIcon;
+                categoryIconInput.value = selectedIcon;
+                iconPickerModal.classList.remove('active');
+            }
+        });
+
+        addCategoryForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const newCategoryHtml = `
+                        <div class="col-md-4 mb-4">
+                            <div class="category-card">
+                                <i class="${data.category.icon}"></i>
+                                <h5>${data.category.name}</h5>
+                            </div>
+                        </div>
+                    `;
+                    categoriesContainer.insertAdjacentHTML('beforeend', newCategoryHtml);
+                    addCategoryPopup.classList.remove('active');
+                    addCategoryForm.reset();
+                    selectedIconDisplay.value = ''; // Clear selected icon display
+                    categoryIconInput.value = ''; // Clear hidden input
+                } else {
+                    alert('Erreur lors de l\'ajout de la catégorie: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Une erreur est survenue lors de l\'ajout de la catégorie.');
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,290 @@
+{% extends 'base.html' %}
+
+{% block title %}Mes Notes | Journal Personnel Intelligent{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background-color: #f8f9fa;
+    }
+    .note-card {
+        background-color: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+    .note-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    }
+    .note-card-header {
+        background-color: #6c757d; /* Darker shade for header */
+        color: white;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .note-card-body {
+        padding: 1.5rem;
+    }
+    .note-card-footer {
+        background-color: #f1f3f5;
+        padding: 0.75rem 1.5rem;
+        border-top: 1px solid #e9ecef;
+        font-size: 0.85rem;
+        color: #6c757d;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .note-title {
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: #343a40;
+        margin-bottom: 0.75rem;
+    }
+    .note-content {
+        color: #495057;
+        line-height: 1.6;
+        margin-bottom: 1rem;
+    }
+    .note-tags .badge {
+        margin-right: 0.5rem;
+        background-color: #e0f7fa; /* Light blue for tags */
+        color: #007bff;
+        font-weight: 500;
+    }
+    .sidebar {
+        background-color: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        padding: 1.5rem;
+    }
+    .sidebar h5 {
+        color: #343a40;
+        margin-bottom: 1.5rem;
+        font-weight: 600;
+    }
+    .sidebar .list-group-item {
+        border: none;
+        padding: 0.75rem 0;
+        color: #495057;
+        transition: background-color 0.2s ease;
+    }
+    .sidebar .list-group-item:hover {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+    }
+    .sidebar .list-group-item.active {
+        background-color: #007bff;
+        color: white;
+        border-radius: 8px;
+    }
+    .search-bar {
+        margin-bottom: 1.5rem;
+    }
+    .btn-add-note {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        box-shadow: 0 8px 15px rgba(0, 123, 255, 0.3);
+        z-index: 1000;
+        background-color: #007bff;
+        color: white;
+        transition: background-color 0.3s ease;
+    }
+    .btn-add-note:hover {
+        background-color: #0056b3;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <!-- Sidebar for Navigation and Search -->
+        <div class="col-md-4 col-lg-3">
+            <div class="sidebar mb-4">
+                <div class="search-bar">
+                    <input type="text" class="form-control" placeholder="Rechercher des notes...">
+                </div>
+                
+                <h5 class="mb-3">Catégories</h5>
+                <div class="list-group">
+                    <a href="{% url 'view_notes' %}" class="list-group-item list-group-item-action {% if not selected_category_id %}active{% endif %}">
+                        Toutes les notes
+                    </a>
+                    {% for category in categories %}
+                    <a href="{% url 'view_notes' %}?category_id={{ category.id }}" class="list-group-item list-group-item-action {% if selected_category_id == category.id|stringformat:"s" %}active{% endif %}">
+                        <i class="{{ category.icon }} me-2"></i>{{ category.name }}
+                    </a>
+                    {% endfor %}
+                </div>
+
+                <h5 class="mt-4 mb-3">Archives</h5>
+                <div class="list-group">
+                    <a href="#" class="list-group-item list-group-item-action">2023</a>
+                    <a href="#" class="list-group-item list-group-item-action">2022</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Area for Notes -->
+        <div class="col-md-8 col-lg-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">Mes Notes</h2>
+                <a href="{% url 'create_note' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i> Nouvelle note
+                </a>
+            </div>
+
+            <!-- Example Note Card 1 -->
+            <div class="note-card">
+                <div class="note-card-header">
+                    <span>Note du 15 octobre 2023</span>
+                    <div>
+                        <button class="btn btn-sm btn-light me-2"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-light me-2"><i class="fas fa-archive"></i></button>
+                        <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+                <div class="note-card-body">
+                    <h3 class="note-title">Réunion de projet hebdomadaire</h3>
+                    <div class="note-content">
+                        <p>Aujourd'hui, nous avons discuté des progrès du projet X. Les points clés abordés incluent la phase de développement, les défis rencontrés et les prochaines étapes. L'équipe est sur la bonne voie pour atteindre les objectifs fixés pour la fin du mois.</p>
+                        <p><em>Décision importante:</em> Prioriser le module d'authentification.</p>
+                    </div>
+                    <div class="note-tags">
+                        <span class="badge rounded-pill">#travail</span>
+                        <span class="badge rounded-pill">#projetX</span>
+                        <span class="badge rounded-pill">#réunion</span>
+                    </div>
+                </div>
+                <div class="note-card-footer">
+                    <span>Mood: <i class="fas fa-smile text-success"></i> Heureux</span>
+                    <span>Dernière modification: 15/10/2023 14:30</span>
+                </div>
+            </div>
+
+            <!-- Example Note Card 2 -->
+            <div class="note-card">
+                <div class="note-card-header">
+                    <span>Note du 14 octobre 2023</span>
+                    <div>
+                        <button class="btn btn-sm btn-light me-2"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-light me-2"><i class="fas fa-archive"></i></button>
+                        <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+                <div class="note-card-body">
+                    <h3 class="note-title">Idées pour le prochain voyage</h3>
+                    <div class="note-content">
+                        <p>J'ai commencé à planifier mon prochain voyage en Italie. Je pense visiter Rome, Florence et Venise. J'ai noté quelques restaurants et musées à ne pas manquer. Il faut que je vérifie les vols et les hébergements.</p>
+                    </div>
+                    <div class="note-tags">
+                        <span class="badge rounded-pill">#voyage</span>
+                        <span class="badge rounded-pill">#italie</span>
+                        <span class="badge rounded-pill">#planification</span>
+                    </div>
+                </div>
+                <div class="note-card-footer">
+                    <span>Mood: <i class="fas fa-laugh-beam text-info"></i> Très heureux</span>
+                    <span>Dernière modification: 14/10/2023 10:00</span>
+                </div>
+            </div>
+
+            <!-- Example Note Card 3 -->
+            <div class="note-card">
+                <div class="note-card-header">
+                    <span>Note du 13 octobre 2023</span>
+                    <div>
+                        <button class="btn btn-sm btn-light me-2"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-light me-2"><i class="fas fa-archive"></i></button>
+                        <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+                <div class="note-card-body">
+                    <h3 class="note-title">Lecture du livre "Sapiens"</h3>
+                    <div class="note-content">
+                        <p>J'ai terminé le chapitre 3 de "Sapiens". Les idées sur la révolution cognitive sont fascinantes. Je dois prendre plus de notes la prochaine fois pour mieux retenir les informations clés.</p>
+                    </div>
+                    <div class="note-tags">
+                        <span class="badge rounded-pill">#lecture</span>
+                        <span class="badge rounded-pill">#réflexion</span>
+                    </div>
+                </div>
+                <div class="note-card-footer">
+                    <span>Mood: <i class="fas fa-meh text-warning"></i> Neutre</span>
+                    <span>Dernière modification: 13/10/2023 20:00</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Floating Action Button for Add New Note -->
+<a href="#" class="btn btn-add-note">
+    <i class="fas fa-plus"></i>
+</a>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add any specific JavaScript for animations or interactive elements here
+        // For example, a simple fade-in for note cards
+        const noteCards = document.querySelectorAll('.note-card');
+        noteCards.forEach((card, index) => {
+            card.style.opacity = 0;
+            card.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                card.style.transition = 'opacity 0.5s ease-out, transform 0.5s ease-out';
+                card.style.opacity = 1;
+                card.style.transform = 'translateY(0)';
+            }, index * 100); // Staggered animation
+        });
+
+        // Placeholder for search functionality
+        const searchInput = document.querySelector('.search-bar input');
+        searchInput.addEventListener('keyup', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            console.log('Searching for:', searchTerm);
+            // In a real application, this would filter notes dynamically or make an API call
+        });
+
+        // Placeholder for category/archive navigation
+        const navLinks = document.querySelectorAll('.list-group-item-action');
+        navLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                navLinks.forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+                console.log('Navigating to:', this.textContent);
+                // In a real application, this would filter notes based on category/archive
+            });
+        });
+
+        // Placeholder for CRUD operations (Edit, Archive, Delete)
+        document.querySelectorAll('.note-card-header button').forEach(button => {
+            button.addEventListener('click', function() {
+                const action = this.querySelector('i').classList[1]; // e.g., 'fa-edit', 'fa-archive', 'fa-trash'
+                const noteTitle = this.closest('.note-card').querySelector('.note-title').textContent;
+                alert(`Action "${action.replace('fa-', '')}" sur la note: "${noteTitle}"`);
+                // In a real application, this would trigger a modal, redirect, or API call
+            });
+        });
+    });
+</script>
+{% endblock %}

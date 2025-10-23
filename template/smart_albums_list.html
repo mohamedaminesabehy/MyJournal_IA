@@ -1,0 +1,363 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Albums Intelligents - Galerie{% endblock %}
+
+{% block extra_css %}
+<style>
+    .albums-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px 0;
+        margin-bottom: 40px;
+        border-radius: 0 0 30px 30px;
+    }
+    
+    .album-card {
+        background: white;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        transition: all 0.3s;
+        cursor: pointer;
+        margin-bottom: 30px;
+    }
+    
+    .album-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    }
+    
+    .album-cover {
+        height: 250px;
+        background-size: cover;
+        background-position: center;
+        position: relative;
+        background-color: #f7fafc;
+    }
+    
+    .album-cover::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 50%;
+        background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+    }
+    
+    .album-badge {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: rgba(255,255,255,0.95);
+        padding: 8px 15px;
+        border-radius: 25px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        z-index: 2;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    
+    .album-info {
+        padding: 25px;
+    }
+    
+    .album-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #2d3748;
+        margin-bottom: 10px;
+    }
+    
+    .album-description {
+        color: #718096;
+        font-size: 0.95rem;
+        margin-bottom: 15px;
+    }
+    
+    .album-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 15px;
+        border-top: 1px solid #e2e8f0;
+    }
+    
+    .album-type-badge {
+        padding: 5px 12px;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .badge-auto {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .badge-manual {
+        background: #e2e8f0;
+        color: #4a5568;
+    }
+    
+    .create-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 25px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        transition: all 0.3s;
+    }
+    
+    .create-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 35px rgba(102, 126, 234, 0.5);
+        color: white;
+    }
+    
+    .suggestion-card {
+        background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 15px;
+        box-shadow: 0 5px 15px rgba(253, 203, 110, 0.3);
+    }
+    
+    .suggestion-title {
+        font-weight: 700;
+        font-size: 1.2rem;
+        color: #2d3748;
+        margin-bottom: 8px;
+    }
+    
+    .stats-box {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+    }
+    
+    .stats-number {
+        font-size: 3rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    
+    .stats-label {
+        color: #718096;
+        font-weight: 600;
+        margin-top: 10px;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    }
+    
+    .empty-icon {
+        font-size: 5rem;
+        margin-bottom: 20px;
+        opacity: 0.3;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="albums-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1><i class="fas fa-folder-open"></i> Albums Intelligents</h1>
+                <p class="lead mb-0">L'IA organise automatiquement vos photos en albums thématiques</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <form method="POST" action="{% url 'create_auto_albums' %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="create-btn">
+                        <i class="fas fa-magic"></i> Créer Albums Auto
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Statistiques -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="stats-box">
+                <div class="stats-number">{{ total_auto }}</div>
+                <div class="stats-label">Albums Automatiques</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stats-box">
+                <div class="stats-number">{{ total_manual }}</div>
+                <div class="stats-label">Albums Manuels</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stats-box">
+                <div class="stats-number">{{ suggestions|length }}</div>
+                <div class="stats-label">Suggestions Disponibles</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Suggestions d'albums -->
+    {% if suggestions %}
+    <div class="row mb-5">
+        <div class="col-12">
+            <h3><i class="fas fa-lightbulb"></i> Suggestions d'Albums</h3>
+            <p class="text-muted">Ces albums peuvent être créés automatiquement</p>
+            
+            {% for suggestion in suggestions %}
+            <div class="suggestion-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="suggestion-title">
+                            {{ suggestion.icon }} {{ suggestion.name }}
+                        </div>
+                        <div>{{ suggestion.description }}</div>
+                    </div>
+                    <div>
+                        <span class="badge bg-dark" style="font-size: 1rem; padding: 10px 20px;">
+                            {{ suggestion.media_count }} photo{{ suggestion.media_count|pluralize }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Albums automatiques -->
+    {% if auto_albums %}
+    <div class="row mb-5">
+        <div class="col-12">
+            <h3><i class="fas fa-robot"></i> Albums Automatiques (IA)</h3>
+            <p class="text-muted">Créés automatiquement par l'intelligence artificielle</p>
+        </div>
+        
+        {% for album in auto_albums %}
+        {% if album.id %}
+        <div class="col-md-4">
+            <a href="{% url 'album_detail' album.id %}" style="text-decoration: none; color: inherit;">
+                <div class="album-card">
+                    <div class="album-cover" 
+                         style="background-image: url('{% if album.cover_image %}{{ album.cover_image.file.url }}{% else %}{% static 'images/default-album.jpg' %}{% endif %}');">
+                        <div class="album-badge">
+                            <i class="fas fa-images"></i> {{ album.media.count }}
+                        </div>
+                    </div>
+                    <div class="album-info">
+                        <div class="album-title">{{ album.name }}</div>
+                        <div class="album-description">{{ album.description }}</div>
+                        <div class="album-meta">
+                            <span class="album-type-badge badge-auto">
+                                <i class="fas fa-magic"></i> Auto
+                            </span>
+                            <small class="text-muted">
+                                <i class="far fa-clock"></i> {{ album.updated_at|date:"d M Y" }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="empty-state">
+                <div class="empty-icon">🤖</div>
+                <h3>Aucun album automatique</h3>
+                <p class="text-muted mb-4">Cliquez sur "Créer Albums Auto" pour que l'IA analyse vos photos et crée des albums thématiques</p>
+                <form method="POST" action="{% url 'create_auto_albums' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="create-btn">
+                        <i class="fas fa-magic"></i> Créer Albums Automatiques
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Albums manuels -->
+    {% if manual_albums %}
+    <div class="row">
+        <div class="col-12">
+            <h3><i class="fas fa-user"></i> Albums Manuels</h3>
+            <p class="text-muted">Créés et gérés par vous</p>
+        </div>
+        
+        {% for album in manual_albums %}
+        {% if album.id %}
+        <div class="col-md-4">
+            <a href="{% url 'album_detail' album.id %}" style="text-decoration: none; color: inherit;">
+                <div class="album-card">
+                    <div class="album-cover" 
+                         style="background-image: url('{% if album.cover_image %}{{ album.cover_image.file.url }}{% else %}{% static 'images/default-album.jpg' %}{% endif %}');">
+                        <div class="album-badge">
+                            <i class="fas fa-images"></i> {{ album.media.count }}
+                        </div>
+                    </div>
+                    <div class="album-info">
+                        <div class="album-title">{{ album.name }}</div>
+                        <div class="album-description">{{ album.description|default:"Aucune description" }}</div>
+                        <div class="album-meta">
+                            <span class="album-type-badge badge-manual">
+                                <i class="fas fa-user"></i> Manuel
+                            </span>
+                            <small class="text-muted">
+                                <i class="far fa-clock"></i> {{ album.updated_at|date:"d M Y" }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// Animation au scroll
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.album-card, .suggestion-card');
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, {threshold: 0.1});
+    
+    cards.forEach(card => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        card.style.transition = 'all 0.5s ease';
+        observer.observe(card);
+    });
+});
+</script>
+{% endblock %}

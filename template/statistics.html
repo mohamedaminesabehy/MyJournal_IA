@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+
+{% block title %}Statistiques | Journal Personnel Intelligent{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-4 text-primary mb-3" data-aos="fade-up">Statistiques</h1>
+            <p class="lead" data-aos="fade-up" data-aos-delay="100">Visualisez et analysez vos données d'événements</p>
+            <hr class="my-4">
+        </div>
+    </div>
+
+    <div class="row mb-5">
+        <div class="col-md-6 col-lg-3 mb-4" data-aos="fade-up" data-aos-delay="100">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-calendar-check fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Événements Totaux</h5>
+                    <p class="display-4 fw-bold text-primary">{{ total_events }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3 mb-4" data-aos="fade-up" data-aos-delay="200">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-star fa-3x text-warning mb-3"></i>
+                    <h5 class="card-title">Événements Favoris</h5>
+                    <p class="display-4 fw-bold text-warning">{{ favorite_events }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3 mb-4" data-aos="fade-up" data-aos-delay="300">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-tags fa-3x text-success mb-3"></i>
+                    <h5 class="card-title">Tags Utilisés</h5>
+                    <p class="display-4 fw-bold text-success">{{ total_tags }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3 mb-4" data-aos="fade-up" data-aos-delay="400">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-image fa-3x text-info mb-3"></i>
+                    <h5 class="card-title">Médias Ajoutés</h5>
+                    <p class="display-4 fw-bold text-info">{{ total_media }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-5">
+        <div class="col-lg-8 mb-4" data-aos="fade-up" data-aos-delay="100">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Événements par Mois</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="eventsChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 mb-4" data-aos="fade-up" data-aos-delay="200">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Distribution par Catégorie</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="categoriesChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="100">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Tags les Plus Utilisés</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Tag</th>
+                                    <th>Nombre d'utilisations</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for tag in popular_tags %}
+                                <tr>
+                                    <td><span class="badge bg-primary">{{ tag.name }}</span></td>
+                                    <td>{{ tag.count }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="2" class="text-center">Aucun tag utilisé pour le moment</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="200">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Activité Récente</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% for activity in recent_activities %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-{{ activity.icon }} text-{{ activity.color }} me-2"></i>
+                                {{ activity.description }}
+                            </div>
+                            <small class="text-muted">{{ activity.date }}</small>
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item text-center">Aucune activité récente</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script id="events-data" type="application/json">
+    {{ events_by_month|json_script:"events_by_month_data" }}
+</script>
+<script id="categories-data" type="application/json">
+    {{ category_labels|json_script:"category_labels_data" }}
+    {{ category_data|json_script:"category_data_data" }}
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const eventsData = JSON.parse(document.getElementById('events-data').textContent).events_by_month_data;
+        const categoryLabels = JSON.parse(document.getElementById('categories-data').textContent).category_labels_data;
+        const categoryData = JSON.parse(document.getElementById('categories-data').textContent).category_data_data;
+
+        // Données pour le graphique des événements par mois
+        const eventsCtx = document.getElementById('eventsChart').getContext('2d');
+        const eventsChart = new Chart(eventsCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'],
+                datasets: [{
+                    label: 'Événements',
+                    data: eventsData,
+                    backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                    borderColor: 'rgba(99, 102, 241, 1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    pointBackgroundColor: 'rgba(99, 102, 241, 1)',
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+
+        // Données pour le graphique des catégories
+        const categoriesCtx = document.getElementById('categoriesChart').getContext('2d');
+        const categoriesChart = new Chart(categoriesCtx, {
+            type: 'doughnut',
+            data: {
+                labels: categoryLabels,
+                datasets: [{
+                    data: categoryData,
+                    backgroundColor: [
+                        'rgba(99, 102, 241, 0.8)',
+                        'rgba(139, 92, 246, 0.8)',
+                        'rgba(16, 185, 129, 0.8)',
+                        'rgba(245, 158, 11, 0.8)',
+                        'rgba(239, 68, 68, 0.8)',
+                        'rgba(59, 130, 246, 0.8)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

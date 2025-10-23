@@ -1,0 +1,86 @@
+# Python
+*.py[cod]
+*$py.class
+*.so
+.Python
+__pycache__/
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+/media/gallery/*
+!/media/gallery/.gitkeep
+/static/
+/staticfiles/
+
+# Environment
+.env
+.venv
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Backup files
+*.bak
+*.tmp
+*.temp
+
+# Test files
+test_*.py
+*_test.py
+debug_*.py
+check_*.py
+cleanup_*.py
+fix_*.py
+force_*.py
+analyze_*.py
+reanalyze_*.py
+show_*.py
+simple_*.py
+update_*.py
+create_*.py
+convert_*.py
+remove_*.py
+detailed_*.py
+
+# Documentation temporaire (garder seulement les docs officiels)
+*.md
+!README.md
+!LICENSE.md
+!QUICKSTART.md
+!PROJECT_STRUCTURE.md
+!CHANGELOG.md
+!CLEANUP_REPORT.md
+
+# Fichiers de cache
+*.cache
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node modules (si besoin)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Uploads utilisateur (sauf structure)
+media/gallery/**/*
+!media/gallery/.gitkeep

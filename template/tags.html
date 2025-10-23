@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestion des Tags | Journal Personnel Intelligent{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-4 text-primary mb-3" data-aos="fade-up">Gestion des Tags</h1>
+            <p class="lead" data-aos="fade-up" data-aos-delay="100">Organisez et gérez les tags de vos événements</p>
+            <hr class="my-4">
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-4 mb-4" data-aos="fade-up">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Ajouter un nouveau tag</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'tag_create' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="tag-name" class="form-label">Nom du tag</label>
+                            <input type="text" class="form-control" id="tag-name" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="tag-color" class="form-label">Couleur</label>
+                            <input type="color" class="form-control form-control-color" id="tag-color" name="color" value="#6366f1">
+                        </div>
+                        <div class="mb-3">
+                            <label for="tag-description" class="form-label">Description (optionnelle)</label>
+                            <textarea class="form-control" id="tag-description" name="description" rows="3"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-plus me-2"></i>Ajouter
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-8" data-aos="fade-up" data-aos-delay="100">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Liste des tags</h5>
+                    <div class="input-group" style="max-width: 300px;">
+                        <input type="text" class="form-control" placeholder="Rechercher..." id="tag-search">
+                        <button class="btn btn-outline-secondary" type="button"><i class="fas fa-search"></i></button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Tag</th>
+                                    <th>Description</th>
+                                    <th>Utilisations</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tags-table">
+                                {% for tag in tags %}
+                                <tr>
+                                    <td>
+                                        <span class="badge" style="background-color: '{{ tag.color }}';">{{ tag.name }}</span>
+                                    </td>
+                                    <td>{{ tag.description|default:"--" }}</td>
+                                    <td>{{ tag.count }}</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-sm btn-outline-primary edit-tag" data-id="{{ tag.id }}" data-name="{{ tag.name }}" data-color="{{ tag.color }}" data-description="{{ tag.description }}">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger delete-tag" data-id="{{ tag.id }}" data-name="{{ tag.name }}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-4">
+                                        <div class="empty-state">
+                                            <i class="fas fa-tags fa-3x text-muted mb-3"></i>
+                                            <h5>Aucun tag trouvé</h5>
+                                            <p class="text-muted">Commencez par créer un nouveau tag</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .empty-state {
+        padding: 2rem 1rem;
+        text-align: center;
+    }
+    
+    .form-control-color {
+        width: 100%;
+        height: 38px;
+    }
+</style>
+{% endblock %}

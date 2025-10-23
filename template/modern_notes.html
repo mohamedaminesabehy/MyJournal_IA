@@ -1,0 +1,308 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Notes Modernes{% endblock %}
+
+{% block content %}
+<main class="container mt-4">
+    <h1 class="mb-4">Mes Notes</h1>
+
+    <!-- Filter Section -->
+    <section class="card mb-4" role="region" aria-labelledby="filter-heading">
+        <div class="card-header">
+            <h2 id="filter-heading" class="h5 mb-0">Filtres</h2>
+        </div>
+        <div class="card-body">
+            <form id="filter-form">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="category-filter" class="form-label">Catégorie</label>
+                        <select class="form-select" id="category-filter" aria-label="Filtrer par catégorie">
+                            <option value="">Toutes</option>
+                            <!-- Categories will be populated by JS -->
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="tag-filter" class="form-label">Tag</label>
+                        <select class="form-select" id="tag-filter" aria-label="Filtrer par tag">
+                            <option value="">Tous</option>
+                            <!-- Tags will be populated by JS -->
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="date-filter" class="form-label">Date</label>
+                        <input type="date" class="form-control" id="date-filter" aria-label="Filtrer par date">
+                    </div>
+                </div>
+                <button type="button" class="btn btn-primary" id="apply-filters">Appliquer les filtres</button>
+                <button type="button" class="btn btn-secondary" id="reset-filters">Réinitialiser</button>
+            </form>
+        </div>
+    </section>
+
+    <div class="row">
+        <!-- Notes Display Section -->
+        <section class="col-md-8" role="region" aria-labelledby="notes-display-heading">
+            <h2 id="notes-display-heading" class="visually-hidden">Notes</h2>
+            <div id="notes-container" class="row row-cols-1 row-cols-md-2 g-4">
+                <!-- Notes will be loaded here by JS -->
+            </div>
+        </section>
+
+        <!-- Summary and Ideas Section -->
+        <aside class="col-md-4" role="complementary" aria-labelledby="selected-note-heading">
+            <div class="card sticky-top" style="top: 20px;">
+                <div class="card-header">
+                    <h2 id="selected-note-heading" class="h5 mb-0">Détails de la Note Sélectionnée</h2>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title" id="selected-note-title">Sélectionnez une note</h5>
+                    <p class="card-text" id="selected-note-summary">Un résumé concis de la note sélectionnée apparaîtra ici.</p>
+                    <h6 class="mt-4">Idées Suggérées:</h6>
+                    <ul id="suggested-ideas" class="list-group list-group-flush">
+                        <li class="list-group-item">Les idées pertinentes basées sur le contenu de la note apparaîtront ici.</li>
+                    </ul>
+                </div>
+            </div>
+        </aside>
+    </div>
+</main>
+
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'modern_notes.css' %}">
+{% endblock %}
+
+{% block extra_body %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const notesContainer = document.getElementById('notes-container');
+        if (notesContainer) {
+            notesContainer.innerHTML = '<p class="col-12">Le JavaScript est exécuté !</p>';
+            console.log('Message de test affiché dans notes-container.');
+        } else {
+            console.error('notes-container non trouvé.');
+        }
+    });
+</script>
+    const categoryFilter = document.getElementById('category-filter');
+    const tagFilter = document.getElementById('tag-filter');
+    const dateFilter = document.getElementById('date-filter');
+    const applyFiltersBtn = document.getElementById('apply-filters');
+    const resetFiltersBtn = document.getElementById('reset-filters');
+
+    const selectedNoteTitle = document.getElementById('selected-note-title');
+    const selectedNoteSummary = document.getElementById('selected-note-summary');
+    const suggestedIdeasList = document.getElementById('suggested-ideas');
+
+    let allNotes = [
+        {
+            id: '1',
+            title: 'Préparer la présentation du projet',
+            content: 'Revoir les diapositives, répéter le discours, et préparer les réponses aux questions potentielles.',
+            category: 'Travail',
+            tags: ['présentation', 'projet', 'réunion'],
+            date: '2023-03-10',
+            summary: 'Préparation complète pour la présentation du projet, incluant la révision des diapositives et la répétition.',
+            ideas: ['Ajouter des études de cas récentes', 'Préparer une démo interactive']
+        },
+        {
+            id: '2',
+            title: 'Liste de courses hebdomadaire',
+            content: 'Lait, œufs, pain, légumes frais, poulet, pâtes, sauce tomate.',
+            category: 'Personnel',
+            tags: ['courses', 'maison'],
+            date: '2023-03-09',
+            summary: 'Établir la liste des courses essentielles pour la semaine.',
+            ideas: ['Essayer une nouvelle recette de pâtes', 'Acheter des fruits de saison']
+        },
+        {
+            id: '3',
+            title: 'Idées pour le prochain voyage',
+            content: 'Explorer les options pour un voyage en Italie : Rome, Florence, Venise. Vérifier les vols et hébergements.',
+            category: 'Voyage',
+            tags: ['vacances', 'Italie', 'planification'],
+            date: '2023-03-05',
+            summary: 'Recherche et planification des destinations et logistiques pour un voyage en Italie.',
+            ideas: ['Consulter des guides de voyage locaux', 'Demander des recommandations à des amis']
+        },
+        {
+            id: '4',
+            title: 'Apprendre une nouvelle recette',
+            content: 'Tarte aux pommes maison : ingrédients, étapes de préparation, temps de cuisson.',
+            category: 'Loisirs',
+            tags: ['cuisine', 'recette', 'dessert'],
+            date: '2023-03-08',
+            summary: 'Étude d'une recette de tarte aux pommes pour une réalisation prochaine.',
+            ideas: ['Filmer le processus de cuisson', 'Partager la recette avec la famille']
+        },
+        {
+            id: '5',
+            title: 'Réunion d'équipe mensuelle',
+            content: 'Ordre du jour : avancement des projets, points bloquants, planification du mois à venir.',
+            category: 'Travail',
+            tags: ['réunion', 'équipe', 'rapport'],
+            date: '2023-03-11',
+            summary: 'Préparation de l'ordre du jour pour la réunion d'équipe mensuelle.',
+            ideas: ['Préparer un rapport d'avancement détaillé', 'Proposer de nouvelles méthodes de collaboration']
+        },
+        {
+            id: '6',
+            title: 'Livre à lire : "Dune"',
+            content: 'Commencer la lecture du roman "Dune" de Frank Herbert. Noter les personnages principaux et l'intrigue.',
+            category: 'Loisirs',
+            tags: ['lecture', 'science-fiction', 'livre'],
+            date: '2023-03-07',
+            summary: 'Début de la lecture du roman "Dune" avec un focus sur les éléments clés de l'histoire.',
+            ideas: ['Rechercher des analyses du livre en ligne', 'Discuter du livre avec un club de lecture']
+        },
+        {
+            id: '7',
+            title: 'Entraînement sportif',
+            content: 'Séance de course à pied de 30 minutes, suivie d'exercices de renforcement musculaire.',
+            category: 'Santé',
+            tags: ['sport', 'exercice', 'bien-être'],
+            date: '2023-03-06',
+            summary: 'Planification d'une séance d'entraînement combinant cardio et renforcement.',
+            ideas: ['Essayer un nouveau parcours de course', 'Intégrer des étirements plus longs']
+        },
+        {
+            id: '8',
+            title: 'Planifier l'anniversaire de Maman',
+            content: 'Choisir un cadeau, envoyer les invitations, organiser le dîner.',
+            category: 'Personnel',
+            tags: ['famille', 'anniversaire', 'événement'],
+            date: '2023-03-12',
+            summary: 'Organisation complète de l'anniversaire de Maman, des invitations au dîner.',
+            ideas: ['Préparer un gâteau surprise', 'Demander aux invités d'écrire un petit mot']
+        }
+    ];
+    console.log('allNotes:', allNotes);
+
+    function populateFilters() {
+        const categories = [...new Set(allNotes.map(note => note.category))];
+        categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category;
+            option.textContent = category;
+            categoryFilter.appendChild(option);
+        });
+
+        const tags = [...new Set(allNotes.flatMap(note => note.tags))];
+        tags.forEach(tag => {
+            const option = document.createElement('option');
+            option.value = tag;
+            option.textContent = tag;
+            tagFilter.appendChild(option);
+        });
+    }
+
+    function renderNotes(notes) {
+        console.log('renderNotes called with notes:', notes);
+        if (!notesContainer) {
+            console.error('notesContainer not found in renderNotes');
+            return;
+        }
+        notesContainer.innerHTML = '';
+        if (notes.length === 0) {
+            notesContainer.innerHTML = '<p class="col-12">Aucune note trouvée pour les filtres sélectionnés.</p>';
+            console.log('No notes found, message displayed.');
+            return;
+        }
+        notes.forEach(note => {
+            const noteCard = `
+                <div class="col">
+                    <div class="card h-100 shadow-sm note-card" data-id="${note.id}" tabindex="0" role="button">
+                        <div class="card-body">
+                            <h5 class="card-title">${note.title}</h5>
+                            <p class="card-text"><small class="text-muted">${note.category} | ${note.date}</small></p>
+                            <p class="card-text">${note.summary}</p>
+                        </div>
+                        <div class="card-footer bg-transparent border-top-0">
+                            ${note.tags.map(tag => `<span class="badge bg-info text-dark me-1">${tag}</span>`).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+            notesContainer.innerHTML += noteCard;
+        });
+        console.log('notesContainer.innerHTML updated.');
+        addNoteCardEventListeners();
+    }
+
+    function addNoteCardEventListeners() {
+        document.querySelectorAll('.note-card').forEach(card => {
+            card.addEventListener('click', (event) => {
+                const noteId = event.currentTarget.dataset.id;
+                displaySelectedNote(noteId);
+            });
+            card.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    const noteId = event.currentTarget.dataset.id;
+                    displaySelectedNote(noteId);
+                }
+            });
+        });
+    }
+
+    function displaySelectedNote(noteId) {
+        const note = allNotes.find(n => n.id === noteId);
+        if (note) {
+            selectedNoteTitle.textContent = note.title;
+            selectedNoteSummary.textContent = note.content; // Display full content in details
+            displaySuggestedIdeas(note.ideas);
+        }
+    }
+
+    function generateSummary(content) {
+        // Simple summary generation: take the first sentence or a fixed number of words.
+        const firstSentence = content.match(/[^.!?]*[.!?]/);
+        return firstSentence ? firstSentence[0] : content.split(' ').slice(0, 20).join(' ') + '...';
+    }
+
+    function displaySuggestedIdeas(ideas) {
+        suggestedIdeasList.innerHTML = '';
+        if (ideas && ideas.length > 0) {
+            ideas.forEach(idea => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item';
+                li.textContent = idea;
+                suggestedIdeasList.appendChild(li);
+            });
+        } else {
+            const li = document.createElement('li');
+            li.className = 'list-group-item';
+            li.textContent = 'Aucune idée suggérée.';
+            suggestedIdeasList.appendChild(li);
+        }
+    }
+
+    applyFiltersBtn.addEventListener('click', () => {
+        const selectedCategory = categoryFilter.value;
+        const selectedTag = tagFilter.value;
+        const selectedDate = dateFilter.value;
+
+        const filteredNotes = allNotes.filter(note => {
+            const matchesCategory = !selectedCategory || note.category === selectedCategory;
+            const matchesTag = !selectedTag || note.tags.includes(selectedTag);
+            const matchesDate = !selectedDate || note.date === selectedDate;
+            return matchesCategory && matchesTag && matchesDate;
+        });
+        renderNotes(filteredNotes);
+    });
+
+    resetFiltersBtn.addEventListener('click', () => {
+        categoryFilter.value = '';
+        tagFilter.value = '';
+        dateFilter.value = '';
+        renderNotes(allNotes);
+    });
+
+    // Initialisation
+    populateFilters();
+    renderNotes(allNotes);
+});
+</script>
+{% endblock %}
