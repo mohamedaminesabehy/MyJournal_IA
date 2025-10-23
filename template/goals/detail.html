@@ -159,6 +159,39 @@
       </div>
     </div>
 
+    {% if goal.milestones %}
+    <div class="goal-info-section">
+      <div class="goal-info-label mb-2">Progression</div>
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span style="font-size: 0.9rem; color: #64748b; font-weight: 600;">
+          Tâches terminées
+        </span>
+        <span style="font-size: 2rem; color: #6366f1; font-weight: 700;">
+          {{ goal.progress_cached|default:0 }}%
+        </span>
+      </div>
+      <div style="height: 20px; border-radius: 12px; background: #e5e7eb; overflow: hidden; position: relative; box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);">
+        <div style="height: 100%; background: linear-gradient(90deg, #6366f1, #8b5cf6); width: {{ goal.progress_cached|default:0 }}%; transition: width 0.6s ease; border-radius: 12px; box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4); display: flex; align-items: center; justify-content: end; padding-right: 8px;">
+          {% if goal.progress_cached > 15 %}
+            <span style="color: white; font-size: 0.75rem; font-weight: 700; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">{{ goal.progress_cached }}%</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="mt-2 text-center" style="font-size: 0.85rem; color: #64748b;">
+        {% with total=goal.milestones|length %}
+          {% with done_count=0 %}
+            {% for m in goal.milestones %}
+              {% if m.done %}
+                {% with done_count=done_count|add:1 %}{% endwith %}
+              {% endif %}
+            {% endfor %}
+          {% endwith %}
+          <span style="font-weight: 600; color: #6366f1;">{{ total }}</span> tâche{{ total|pluralize }} au total
+        {% endwith %}
+      </div>
+    </div>
+    {% endif %}
+
     {% if goal.start_date or goal.end_date %}
       <div class="goal-info-section">
         <div class="goal-info-label">Période</div>
@@ -170,20 +203,6 @@
             <div><span class="text-muted">Fin:</span> <strong>{{ goal.end_date }}</strong></div>
           {% endif %}
         </div>
-      </div>
-    {% endif %}
-
-    {% if goal.linked_entries.exists %}
-      <div class="goal-info-section">
-        <div class="goal-info-label mb-3">Entrées liées</div>
-        <ul style="list-style: none; padding: 0;">
-          {% for note in goal.linked_entries.all %}
-            <li style="padding: 0.75rem 1rem; background: white; border-radius: 10px; margin-bottom: 0.5rem; border: 1px solid #e5e7eb;">
-              <a href="{% url 'edit_note' note.pk %}" style="color: #6366f1; text-decoration: none; font-weight: 500;">{{ note.title }}</a>
-              <small class="text-muted ms-2">{{ note.created_at|date:'d M Y' }}</small>
-            </li>
-          {% endfor %}
-        </ul>
       </div>
     {% endif %}
 
@@ -239,6 +258,33 @@ document.addEventListener('DOMContentLoaded', function(){
         if(!data.ok){
           alert('Erreur: ' + (data.error || 'Impossible de basculer le jalon'));
           e.target.checked = !e.target.checked;
+        } else {
+          // Update status badge if all tasks are completed
+          if(data.status){
+            const statusBadge = document.querySelector('.goal-status-badge');
+            if(statusBadge){
+              if(data.status === 'completed'){
+                statusBadge.textContent = 'Terminé';
+                statusBadge.className = 'goal-status-badge completed';
+                // Show success message
+                if(data.progress === 100){
+                  const msg = document.createElement('div');
+                  msg.className = 'alert alert-success mt-3';
+                  msg.innerHTML = '<i class="fas fa-check-circle me-2"></i><strong>Félicitations !</strong> Toutes les tâches sont terminées. Cet objectif est maintenant marqué comme terminé.';
+                  msg.style.borderRadius = '12px';
+                  msg.style.border = 'none';
+                  msg.style.background = 'linear-gradient(135deg, #d1fae5, #a7f3d0)';
+                  msg.style.color = '#065f46';
+                  const card = document.querySelector('.goal-detail-card');
+                  if(card) card.insertBefore(msg, card.firstChild);
+                  setTimeout(() => msg.remove(), 5000);
+                }
+              } else if(data.status === 'ongoing'){
+                statusBadge.textContent = 'En cours';
+                statusBadge.className = 'goal-status-badge ongoing';
+              }
+            }
+          }
         }
       }).catch(err => {
         alert('Erreur réseau');

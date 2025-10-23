@@ -113,16 +113,74 @@
     color: #991b1b;
   }
 
+  /* Status badge for completed goals */
+  .goal-status-mini {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.6rem;
+    border-radius: 10px;
+    display: inline-block;
+  }
+
+  .goal-status-mini.completed {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  .goal-status-mini.ongoing {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+
+  .goal-status-mini.abandoned {
+    background: #e5e7eb;
+    color: #475569;
+  }
+
+  /* Completed goal card styling */
+  .goal-card.completed {
+    border-left-color: #10b981;
+    opacity: 0.85;
+  }
+
+  .goal-card.completed .goal-title {
+    color: #059669;
+  }
+
   /* Progress bar */
   .goal-progress-wrapper {
     margin: 1rem 0 0.75rem 0;
+    padding: 0.75rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+  }
+  
+  .goal-progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+  
+  .goal-progress-label {
+    font-size: 0.8rem;
+    color: #64748b;
+    font-weight: 600;
+  }
+  
+  .goal-progress-percentage {
+    font-size: 1.2rem;
+    color: #6366f1;
+    font-weight: 700;
   }
 
   .goal-progress { 
-    height: 8px;
+    height: 14px;
     border-radius: 10px;
     background: #e5e7eb;
     overflow: hidden;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
   }
 
   .goal-progress > .bar { 
@@ -131,6 +189,7 @@
     width: calc(var(--progress) * 1%);
     border-radius: 10px;
     transition: width 0.6s ease;
+    box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
   }
 
   .goal-motivation {
@@ -231,10 +290,18 @@
 
     <div class="goals-grid">
     {% for goal in goals %}
-      <div class="goal-card">
+      <div class="goal-card {% if goal.status == 'completed' %}completed{% endif %}">
         <a href="{% url 'goal_detail' goal.pk %}" class="goal-title">{{ goal.title }}</a>
         
         <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+          {% if goal.status == 'completed' %}
+            <span class="goal-status-mini completed">✓ Terminé</span>
+          {% elif goal.status == 'ongoing' %}
+            <span class="goal-status-mini ongoing">En cours</span>
+          {% elif goal.status == 'abandoned' %}
+            <span class="goal-status-mini abandoned">Abandonné</span>
+          {% endif %}
+          
           {% if goal.priority == 1 %}
             <span class="goal-badge low">Faible</span>
           {% elif goal.priority == 2 %}
@@ -250,6 +317,10 @@
         {% endif %}
         
         <div class="goal-progress-wrapper">
+          <div class="goal-progress-header">
+            <span class="goal-progress-label">Progression</span>
+            <span class="goal-progress-percentage">{{ goal.progress_cached|default:0 }}%</span>
+          </div>
           <div class="goal-progress" style="--progress: {{ goal.progress_cached|default:0 }};"><div class="bar"></div></div>
         </div>
         

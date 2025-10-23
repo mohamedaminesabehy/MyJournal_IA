@@ -38,7 +38,7 @@ class GoalForm(forms.ModelForm):
     class Meta:
         model = Goal
         # Removed 'visibility' from the form fields intentionally (kept at model level)
-        fields = ['title', 'description', 'start_date', 'end_date', 'status', 'motivation_level', 'priority', 'difficulty', 'reward', 'recurrence', 'milestones', 'linked_entries']
+        fields = ['title', 'description', 'start_date', 'end_date', 'status', 'motivation_level', 'priority', 'difficulty', 'reward', 'recurrence', 'milestones']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control form-control-lg', 'placeholder': 'Titre de l\'objectif'}),
             'start_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
@@ -51,14 +51,11 @@ class GoalForm(forms.ModelForm):
             'reward': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Récompense prévue (optionnel)'}),
             'recurrence': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'ex: daily, weekly, monthly (optionnel)'}),
             'milestones': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Entrez les jalons en JSON simple: [{"title": "Étape 1", "due": "2025-10-31"}]'}),
-            'linked_entries': forms.SelectMultiple(attrs={'size': 6, 'class': 'form-select'}),
         }
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        if user:
-            self.fields['linked_entries'].queryset = Note.objects.filter(user=user)
         # Provide a friendly placeholder for milestones when none
         if not self.instance or not self.instance.milestones:
             example = '[{"title": "Étape 1", "due": "2025-11-01", "done": false}]'
