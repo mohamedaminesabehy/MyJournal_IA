@@ -121,15 +121,13 @@ class Goal(models.Model):
         return f"{self.title} ({self.get_status_display()})"
 
     def progress_pct(self):
-        """Return percentage of elapsed time between start and end (0-100) when both dates set."""
-        if not self.start_date or not self.end_date:
+        """Return percentage of completed milestones (0-100). If no milestones, return None."""
+        if not isinstance(self.milestones, list) or len(self.milestones) == 0:
             return None
         try:
-            total = (self.end_date - self.start_date).days
-            if total <= 0:
-                return None
-            elapsed = (date.today() - self.start_date).days
-            pct = int((elapsed / total) * 100)
+            total = len(self.milestones)
+            done_count = sum(1 for m in self.milestones if isinstance(m, dict) and m.get('done'))
+            pct = int((done_count / total) * 100)
             return max(0, min(100, pct))
         except Exception:
             return None

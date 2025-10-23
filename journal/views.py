@@ -314,8 +314,21 @@ def toggle_milestone(request, pk):
     done_count = sum(1 for m in goal.milestones if m.get('done'))
     progress = int((done_count / total) * 100) if total > 0 else 0
     goal.progress_cached = progress
+    
+    # Automatically mark goal as completed when all tasks are done
+    if total > 0 and done_count == total:
+        goal.status = Goal.STATUS_COMPLETED
+    # If goal was completed but not all tasks are done anymore, set it back to ongoing
+    elif goal.status == Goal.STATUS_COMPLETED and done_count < total:
+        goal.status = Goal.STATUS_ONGOING
+    
     goal.save()
-    return JsonResponse({'ok': True, 'done': goal.milestones[idx]['done'], 'progress': progress})
+    return JsonResponse({
+        'ok': True, 
+        'done': goal.milestones[idx]['done'], 
+        'progress': progress,
+        'status': goal.status
+    })
 
 @login_required
 def notes_by_category(request, category_id):
