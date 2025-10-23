@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h1>Supprimer l'objectif</h1>
+  <p>Voulez-vous vraiment supprimer "{{ goal.title }}" ? Cette action est irréversible.</p>
+  <form method="post">
+    {% csrf_token %}
+    <button class="btn btn-danger" type="submit">Supprimer</button>
+    <a class="btn btn-link" href="{% url 'goals_list' %}">Annuler</a>
+  </form>
+{% endblock %}

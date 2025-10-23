@@ -1,0 +1,249 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <div class="container">
+    <div class="row">
+      <div class="col-md-3 d-flex align-items-start">
+        <a class="btn goals-create-btn w-100 mb-3" href="{% url 'goals_list' %}"><i class="fas fa-angle-left me-2"></i>Retour aux objectifs</a>
+      </div>
+      <div class="col-md-9">
+        <div class="card p-4">
+          <h3 class="mb-3">{% if creating %}Créer un objectif{% else %}Modifier l'objectif{% endif %}</h3>
+          <form method="post">
+            {% csrf_token %}
+            {% if form.errors %}
+              <div class="alert alert-danger">
+                <ul class="mb-0">
+                  {% for field, errors in form.errors.items %}
+                    {% for err in errors %}
+                      <li>
+                        {% if field == '__all__' %}
+                          {{ err }}
+                        {% else %}
+                          <strong>{{ field }}:</strong> {{ err }}
+                        {% endif %}
+                      </li>
+                    {% endfor %}
+                  {% endfor %}
+                </ul>
+              </div>
+            {% endif %}
+
+            <div class="mb-3">
+              {{ form.title.label_tag }}
+              {{ form.title }}
+            </div>
+
+            <div class="mb-3">
+              {{ form.description.label_tag }}
+              {{ form.description }}
+              <div class="form-text">Astuce: décrivez pourquoi cet objectif est important pour vous.</div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-4">
+                {{ form.priority.label_tag }}
+                {{ form.priority }}
+              </div>
+              <div class="col-md-4"></div>
+              <div class="col-md-4">
+                {{ form.difficulty.label_tag }}
+                {{ form.difficulty }}
+                <div class="form-text">(1 facile — 5 difficile)</div>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                {{ form.reward.label_tag }}
+                {{ form.reward }}
+              </div>
+              <div class="col-md-6">
+                {{ form.recurrence.label_tag }}
+                {{ form.recurrence }}
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="ms-title" class="form-label">Liste de tâches</label>
+              <div id="milestones-ui" class="mb-2">
+                <div class="input-group mb-2">
+                  <input type="text" id="ms-title" class="form-control" placeholder="Nouvelle tâche (titre)">
+                  <input type="date" id="ms-due" class="form-control ms-2" style="max-width:180px;">
+                  <button type="button" id="ms-add" class="btn btn-primary ms-2">Ajouter</button>
+                </div>
+                <ul id="ms-list" class="list-group"></ul>
+                <input type="hidden" id="id_milestones" name="milestones" value="">
+                {% if form.instance and form.instance.milestones %}
+                  {{ form.instance.milestones|json_script:"ms-data" }}
+                {% endif %}
+                <noscript>
+                  <div class="mt-2">
+                    <label for="milestones-noscript" class="form-label">(JS désactivé) Liste JSON des tâches</label>
+                    <textarea id="milestones-noscript" name="milestones" class="form-control" rows="4">{{ form.instance.milestones|default:'[]' }}</textarea>
+                  </div>
+                </noscript>
+                <div class="form-text mt-2">Ajoute des tâches, tu pourras les cocher ensuite dans la fiche.</div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                {{ form.start_date.label_tag }}
+                {{ form.start_date }}
+              </div>
+              <div class="col-md-6 mb-3">
+                {{ form.end_date.label_tag }}
+                {{ form.end_date }}
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                {{ form.status.label_tag }}
+                {{ form.status }}
+              </div>
+              <div class="col-md-6 mb-3">
+                {{ form.motivation_level.label_tag }}
+                {{ form.motivation_level }}
+                <div class="small text-muted mt-1">Valeur: <span id="motivation_val">{{ form.instance.motivation_level|default:5 }}</span>/10</div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              {{ form.linked_entries.label_tag }}
+              {{ form.linked_entries }}
+            </div>
+
+            {% if form.instance and form.instance.progress_cached is not None %}
+            <div class="mb-3">
+              <label for="goal-progress" class="form-label">Progression estimée</label>
+              <progress id="goal-progress" value="{{ form.instance.progress_cached }}" max="100" class="w-100" aria-valuetext="{{ form.instance.progress_cached }} %">{{ form.instance.progress_cached }}%</progress>
+            </div>
+            {% endif %}
+
+            <div class="d-flex justify-content-end">
+              <a class="btn btn-link me-3" href="{% url 'goals_list' %}">Annuler</a>
+              <button class="btn goals-create-btn" type="submit">Enregistrer</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Sync motivation range value display
+  document.addEventListener('DOMContentLoaded', function(){
+    var range = document.querySelector('input[type="range"][name="motivation_level"]') || document.querySelector('input[type="range"][name$="motivation_level"]');
+    var out = document.getElementById('motivation_val');
+    if(range && out){
+      out.textContent = range.value || '{{ form.instance.motivation_level|default:5 }}';
+      range.addEventListener('input', function(e){ out.textContent = e.target.value; });
+    }
+  });
+</script>
+
+<script>
+// Milestones UI handling
+document.addEventListener('DOMContentLoaded', function(){
+  const addBtn = document.getElementById('ms-add');
+  const titleInput = document.getElementById('ms-title');
+  const dueInput = document.getElementById('ms-due');
+  const listEl = document.getElementById('ms-list');
+  const hidden = document.getElementById('id_milestones');
+
+  function escapeHtml(text){
+    return String(text).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'' : '&#39;'}[c]; });
+  }
+
+  function renderList(items){
+    listEl.innerHTML = '';
+    for(let idx = 0; idx < items.length; idx++){
+      const it = items[idx];
+      const li = document.createElement('li');
+      li.className = 'list-group-item d-flex justify-content-between align-items-center';
+      li.innerHTML = `<div><strong>${escapeHtml(it.title)}</strong>${it.due ? ' <small class="text-muted">('+it.due+')</small>' : ''}</div>` +
+        `<div>` +
+          `<button type="button" class="btn btn-sm btn-outline-secondary ms-1 ms-edit" data-idx="${idx}">✎</button>` +
+          `<button type="button" class="btn btn-sm btn-danger ms-1 ms-remove" data-idx="${idx}">🗑</button>` +
+        `</div>`;
+      listEl.appendChild(li);
+    }
+    try{ hidden.value = JSON.stringify(items); }catch(e){ console.warn('Could not stringify items:', e); }
+  }
+
+  let items = [];
+  try{
+    const pre = document.getElementById('ms-data');
+    if(pre){ items = JSON.parse(pre.textContent || pre.innerText || '[]'); }
+    else { const hid = document.getElementById('id_milestones'); if(hid && hid.value){ items = JSON.parse(hid.value); } }
+  }catch(e){ console.warn('Could not parse initial milestones JSON:', e); items = []; }
+
+  renderList(items);
+
+  function handleAdd(){
+    const title = titleInput && titleInput.value && titleInput.value.trim();
+    const due = dueInput && dueInput.value || null;
+    if(!title){ return; }
+    items.push({title: title, due: due, done: false});
+    renderList(items);
+    if(titleInput){ titleInput.value = ''; titleInput.focus(); }
+    if(dueInput) dueInput.value = '';
+  }
+
+  if(addBtn){
+    addBtn.addEventListener('click', function(e){ e.preventDefault(); handleAdd(); });
+  }
+
+  // Delegated click handler as fallback
+  document.addEventListener('click', function(e){
+    const t = e.target && (e.target.id === 'ms-add' || (e.target.closest && e.target.closest('#ms-add')));
+    if(t){ e.preventDefault(); handleAdd(); }
+  });
+
+  listEl.addEventListener('click', function(e){
+    const rem = e.target.closest && e.target.closest('.ms-remove');
+    if(rem){ const idx = Number(rem.dataset.idx); if(!Number.isNaN(idx)) { items.splice(idx,1); renderList(items); } return; }
+    const ed = e.target.closest && e.target.closest('.ms-edit');
+    if(ed){ const idx = Number(ed.dataset.idx); if(!Number.isNaN(idx)){ const it = items[idx]; if(titleInput) titleInput.value = it.title; if(dueInput) dueInput.value = it.due || ''; items.splice(idx,1); renderList(items); if(titleInput) titleInput.focus(); } return; }
+  });
+
+  const form = document.querySelector('form');
+  if(form){ form.addEventListener('submit', function(){ hidden.value = JSON.stringify(items); }); }
+});
+</script>
+
+<script>
+function addMilestoneInline(e){
+  try{
+    if(e && e.preventDefault) e.preventDefault();
+    const titleInput = document.getElementById('ms-title');
+    const dueInput = document.getElementById('ms-due');
+    const listEl = document.getElementById('ms-list');
+    const hidden = document.getElementById('id_milestones');
+    if(!titleInput || !listEl || !hidden) return;
+    const title = (titleInput.value || '').trim();
+    const due = dueInput && dueInput.value ? dueInput.value : null;
+    if(!title) return;
+    let items = [];
+    try{ items = hidden.value ? JSON.parse(hidden.value) : []; }catch(err){ items = []; }
+    items.push({title: title, due: due, done: false});
+    hidden.value = JSON.stringify(items);
+    const li = document.createElement('li');
+    li.className = 'list-group-item d-flex justify-content-between align-items-center';
+    li.innerHTML = `<div><strong>${title.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</strong>${due ? ' <small class="text-muted">('+due+')</small>' : ''}</div>` +
+      `<div>` +
+        `<button type="button" class="btn btn-sm btn-outline-secondary ms-1 ms-edit">✎</button>` +
+        `<button type="button" class="btn btn-sm btn-danger ms-1 ms-remove">🗑</button>` +
+      `</div>`;
+    listEl.appendChild(li);
+    titleInput.value = '';
+    if(dueInput) dueInput.value = '';
+    titleInput.focus();
+  }catch(err){ console.error('addMilestoneInline error', err); }
+}
+</script>
+{% endblock %}

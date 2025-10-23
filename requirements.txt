@@ -1,4 +1,10 @@
+Django>=4.2.0
 scikit-learn 
 pandas 
 numpy
 joblib
+Pillow
+python-decouple
+dnspython
+pymongo
+djongo
