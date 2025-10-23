@@ -8,7 +8,7 @@ if defined _OLD_CODEPAGE (
     "%SystemRoot%\System32\chcp.com" 65001 > nul
 )
 
-set VIRTUAL_ENV=C:\Users\asus\OneDrive\Bureau\Myjournal\venv
+set VIRTUAL_ENV=C:\Users\asus\Downloads\MyJournal_IA-zitouniBranch\MyJournal_IA-zitouniBranch\venv
 
 if not defined PROMPT set PROMPT=$P$G
 

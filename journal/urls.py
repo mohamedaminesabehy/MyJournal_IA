@@ -23,4 +23,8 @@ urlpatterns = [
     path('notes/category/<int:category_id>/', views.notes_by_category, name='notes_by_category'),
     path('tag_create/', views.tag_create, name='tag_create'),
     path('event_create/', views.event_create, name='event_create'),
+    path('predict/', views.predict_emotion_api, name='predict_emotion'),
+    path('notes/<int:note_id>/recommendations/', views.generate_recommendations, name='generate_recommendations'),
+    path('notes/<int:note_id>/recommendations/regenerate/', views.regenerate_recommendations, name='regenerate_recommendations'),
+
 ]
