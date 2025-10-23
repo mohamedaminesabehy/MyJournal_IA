@@ -333,6 +333,35 @@ def dashboard(request):
             emotion_chart_labels.append(emotion_translations.get(emotion, emotion))
             emotion_chart_colors.append(color_map.get(emotion, '#6b7280'))
     
+    # Données pour le graphique des recommandations (7 derniers jours)
+    recommendations_chart_data = []
+    recommendations_chart_labels = []
+    
+    for i in range(6, -1, -1):  # 7 jours en arrière
+        date = today - timedelta(days=i)
+        start_datetime = datetime.datetime.combine(date, datetime.time.min)
+        end_datetime = datetime.datetime.combine(date, datetime.time.max)
+        # Rendre aware si naïf pour éviter RuntimeWarning
+        start_datetime = timezone.make_aware(start_datetime) if timezone.is_naive(start_datetime) else start_datetime
+        end_datetime = timezone.make_aware(end_datetime) if timezone.is_naive(end_datetime) else end_datetime
+        
+        # Compter les recommandations générées pour ce jour
+        day_recommendations = ActivityRecommendation.objects.filter(
+            note__user=request.user,
+            created_at__gte=start_datetime,
+            created_at__lte=end_datetime
+        ).count()
+        
+        recommendations_chart_data.append(day_recommendations)
+        
+        # Noms des jours en français avec date
+        day_names = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
+        day_label = f"{day_names[date.weekday()]} {date.strftime('%d/%m')}"
+        recommendations_chart_labels.append(day_label)
+    
+    # Statistiques des recommandations
+    total_recommendations = ActivityRecommendation.objects.filter(note__user=request.user).count()
+    
     context = {
         'total_notes': total_notes,
         'average_mood': average_mood,
@@ -346,6 +375,9 @@ def dashboard(request):
         'emotion_chart_labels': json.dumps(emotion_chart_labels),
         'emotion_chart_colors': json.dumps(emotion_chart_colors),
         'emotion_distribution': dict(emotion_distribution),
+        'recommendations_chart_data': json.dumps(recommendations_chart_data),
+        'recommendations_chart_labels': json.dumps(recommendations_chart_labels),
+        'total_recommendations': total_recommendations,
     }
     
     return render(request, 'dashboard.html', context)

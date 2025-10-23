@@ -304,6 +304,16 @@
                 </div>
             </div>
             
+            <!-- Recommendations Analysis -->
+            <div class="card shadow-sm mb-4" data-aos="fade-up">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Recommandations générées (7 derniers jours)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="recommendationsChart" height="250"></canvas>
+                </div>
+            </div>
+            
             <!-- Emotion Distribution -->
             {% if emotion_chart_data %}
             <div class="card shadow-sm mb-4" data-aos="fade-up">
@@ -548,6 +558,92 @@
             }
         });
         
+        // Recommendations Chart (Bar Chart)
+        var recommendationsData = JSON.parse('{{ recommendations_chart_data|escapejs }}');
+        var recommendationsLabels = JSON.parse('{{ recommendations_chart_labels|escapejs }}');
+        
+        var recommendationsCtx = document.getElementById('recommendationsChart');
+        if (recommendationsCtx && Array.isArray(recommendationsData) && recommendationsData.length > 0) {
+            var recommendationsChart = new Chart(recommendationsCtx.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: recommendationsLabels || [],
+                    datasets: [{
+                        label: 'Nombre de recommandations',
+                        data: recommendationsData || [],
+                        backgroundColor: 'rgba(34, 197, 94, 0.7)',
+                        borderColor: '#22c55e',
+                        borderWidth: 2,
+                        borderRadius: 8,
+                        borderSkipped: false,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1,
+                                callback: function(value) {
+                                    return Number.isInteger(value) ? value : '';
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    return context[0].label;
+                                },
+                                label: function(context) {
+                                    var value = context.parsed.y;
+                                    return 'Recommandations: ' + value;
+                                }
+                            },
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: '#22c55e',
+                            borderWidth: 1
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeInOutQuart'
+                    }
+                }
+            });
+        }
+                        }
+                    
+                
+            );
+        
+        
         // Emotion Distribution Chart (Pie Chart)
         var emotionData = JSON.parse('{{ emotion_chart_data|escapejs }}');
         var emotionLabels = JSON.parse('{{ emotion_chart_labels|escapejs }}');
@@ -588,6 +684,5 @@
                 }
             });
         }
-        });
  </script>
 {% endblock %}
