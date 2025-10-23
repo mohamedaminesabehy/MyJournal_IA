@@ -65,6 +65,137 @@
             transition: all 0.3s ease;
         }
 
+        /* Goals specific styles - Modern & Beautiful */
+        .goals-create-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 12px 28px;
+            font-weight: 600;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .goals-create-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+        }
+
+        .goals-list-item {
+            border-radius: 16px;
+            background: linear-gradient(145deg, #ffffff 0%, #f8f9ff 100%);
+            box-shadow: 0 8px 24px rgba(149, 157, 165, 0.15);
+            border: 1px solid rgba(102, 126, 234, 0.08);
+            padding: 24px 28px;
+            margin-bottom: 20px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .goals-list-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .goals-list-item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(149, 157, 165, 0.25);
+        }
+
+        .goals-list-item:hover::before {
+                /* Goals-specific styling to visually distinguish from Notes */
+                .goal-card {
+                    background: linear-gradient(180deg, #fff 0%, #fbfbff 100%);
+                    border-radius: 14px;
+                    padding: 1.25rem;
+                    box-shadow: 0 8px 20px rgba(78, 70, 225, 0.08);
+                    border-left: 6px solid rgba(99,102,241,0.12);
+                    transition: transform .15s ease, box-shadow .15s ease;
+                }
+                .goal-card:hover { transform: translateY(-4px); box-shadow: 0 18px 40px rgba(78,70,225,0.12);} 
+                .goal-badge-priority { padding: .25rem .5rem; border-radius: 999px; font-weight:600; font-size:.8rem; }
+                .goal-priority-low { background: #ecfccb; color: #4b7d0d; }
+                .goal-priority-medium { background: #fef9c3; color: #7a5a00; }
+                .goal-priority-high { background: linear-gradient(90deg,#ff7a7a,#ff3d3d); color: #fff; }
+                .goal-visibility { font-size: .8rem; padding: .2rem .45rem; border-radius: 6px; background: rgba(0,0,0,0.03); }
+                .goal-progress { height: 10px; border-radius: 999px; overflow: hidden; background: linear-gradient(90deg,#eef2ff,#f8fafc); }
+                .goal-progress > .bar { height:100%; background: linear-gradient(90deg,var(--primary-color), var(--accent-color)); }
+                .goal-meta { color: #6b7280; font-size: .9rem; }
+                .goal-actions .btn { margin-left: .4rem; }
+            opacity: 1;
+        }
+
+        .goals-list-item a.h6 { 
+            color: #1e293b; 
+            font-weight: 600;
+            font-size: 1.15rem;
+            transition: color 0.2s ease;
+        }
+
+        .goals-list-item a.h6:hover {
+            color: #667eea;
+        }
+
+        .goals-list-item small.text-muted { 
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .goal-status-badge {
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .goal-status-ongoing {
+            background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
+            color: #667eea;
+            border: 1px solid #667eea40;
+        }
+
+        .goal-status-completed {
+            background: linear-gradient(135deg, #10b98120 0%, #059e6920 100%);
+            color: #059669;
+            border: 1px solid #10b98140;
+        }
+
+        .goal-status-abandoned {
+            background: linear-gradient(135deg, #6b728020 0%, #47505920 100%);
+            color: #475569;
+            border: 1px solid #6b728040;
+        }
+
+        .goals-page-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 0;
+        }
+
+        .goals-action-btn {
+            border-radius: 8px;
+            font-weight: 500;
+            padding: 8px 16px;
+            transition: all 0.2s ease;
+        }
+
+        .goals-action-btn:hover {
+            transform: scale(1.05);
+        }
+
         .btn-primary:hover {
             background-color: var(--secondary-color);
             border-color: var(--secondary-color);
@@ -240,6 +371,10 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'view_notes' %}"><i class="fas fa-book me-1"></i> Mes Notes</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'goals_list' %}"><i class="fas fa-bullseye me-1"></i> Objectifs</a>
                     </li>
 
                     <li class="nav-item">

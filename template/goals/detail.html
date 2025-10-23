@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% block title %}{{ goal.title }}{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="card p-4">
+    <div class="d-flex justify-content-between align-items-start">
+      <div>
+        <h2 class="mb-1">{{ goal.title }}</h2>
+        <div class="mb-2 d-flex gap-2 align-items-center">
+          {% if goal.status == 'ongoing' %}
+            <span class="badge bg-info">En cours</span>
+          {% elif goal.status == 'completed' %}
+            <span class="badge bg-success">Terminé</span>
+          {% else %}
+            <span class="badge bg-secondary">Abandonné</span>
+          {% endif %}
+          {% if goal.priority == 1 %}<span class="goal-badge-priority goal-priority-low">Faible</span>
+          {% elif goal.priority == 2 %}<span class="goal-badge-priority goal-priority-medium">Moyenne</span>
+          {% else %}<span class="goal-badge-priority goal-priority-high">Haute</span>{% endif %}
+          {# Visibility removed from detail view per user request #}
+          <small class="text-muted ms-2">Créé le {{ goal.created_at|date:'d M Y' }}</small>
+        </div>
+        {% if goal.description %}
+          <p class="lead">{{ goal.description|linebreaks }}</p>
+        {% endif %}
+
+        <div class="d-flex align-items-center mt-3">
+          <div class="me-3 small text-muted">Motivation</div>
+          <div class="goal-progress w-50">
+            <div class="bar" style="width: {{ goal.motivation_level|default:0 }}0%;"></div>
+          </div>
+          <div class="ms-3 small fw-bold">{{ goal.motivation_level }}/10</div>
+        </div>
+
+        {% if goal.start_date or goal.end_date %}
+          <div class="mt-3 small text-muted">
+            {% if goal.start_date %}<strong>Début:</strong> {{ goal.start_date }}{% endif %}
+            {% if goal.end_date %}<span class="ms-3"><strong>Fin:</strong> {{ goal.end_date }}</span>{% endif %}
+          </div>
+        {% endif %}
+
+        {% comment %}Use .exists to check whether there are linked entries (manager is always truthy){% endcomment %}
+        {% if goal.linked_entries.exists %}
+          <h5 class="mt-4">Entrées liées</h5>
+          <ul>
+            {% for note in goal.linked_entries.all %}
+              <li><a href="{% url 'edit_note' note.pk %}">{{ note.title }}</a> <small class="text-muted">{{ note.created_at|date:'d M Y' }}</small></li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+        {% if goal.milestones %}
+          <div class="mt-3">
+            <h5>Liste de tâches</h5>
+            <ul id="milestones-list">
+              {% for m in goal.milestones %}
+                <li>
+                  <input type="checkbox" class="milestone-checkbox" data-index="{{ forloop.counter0 }}" id="ms-{{ forloop.counter0 }}" {% if m.done %}checked{% endif %}>
+                  <label for="ms-{{ forloop.counter0 }}">{{ m.title }}</label>
+                  {% if m.due %}<small class="text-muted ms-2">({{ m.due }})</small>{% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+      </div>
+      <div class="text-end">
+        <a class="btn btn-outline-secondary mb-2" href="{% url 'goal_update' goal.pk %}">Modifier</a>
+        <a class="btn btn-danger" href="{% url 'goal_delete' goal.pk %}">Supprimer</a>
+      </div>
+    </div>
+    <div class="mt-3">
+      <a class="btn btn-link" href="{% url 'goals_list' %}">&larr; Retour</a>
+    </div>
+  </div>
+</div>
+<script>
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+}
+document.addEventListener('DOMContentLoaded', function(){
+  const csrftoken = getCookie('csrftoken');
+  const checkboxes = document.querySelectorAll('.milestone-checkbox');
+  for (const cb of checkboxes) {
+    cb.addEventListener('change', function(e){
+      const index = Number(e.target.dataset.index);
+      fetch('{% url "toggle_milestone" goal.pk %}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+        body: JSON.stringify({ index: index })
+      }).then(resp => resp.json()).then(data => {
+        if(!data.ok){
+          alert('Erreur: ' + (data.error || 'Impossible de basculer le jalon'));
+          e.target.checked = !e.target.checked;
+        } else {
+          // update progress bar if present
+          const prog = document.getElementById('goal-progress');
+          if(prog && data.progress !== undefined){
+            if(prog.tagName.toLowerCase() === 'progress'){
+              prog.value = data.progress;
+            } else {
+              // fallback: width style
+              const bar = prog.querySelector('.bar');
+              if(bar) bar.style.width = data.progress + '%';
+            }
+          }
+        }
+      }).catch(err => {
+        alert('Erreur réseau');
+        e.target.checked = !e.target.checked;
+      });
+    });
+  }
+});
+</script>
+{% endblock %}

@@ -4,12 +4,17 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+import logging
 from django.db import IntegrityError
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from .forms import CustomUserCreationForm, NoteForm
-from .models import UserProfile, Category, Note
+from .forms import GoalForm
+from .models import UserProfile, Category, Note, Goal
 from .utils import lr_model, clean_text, predict_emotion
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_protect
+from django.http import JsonResponse
 
 
 @login_required
@@ -218,6 +223,99 @@ def view_notes(request):
         'notes': notes,
     }
     return render(request, 'view_notes.html', context)
+
+
+@login_required
+def goals_list(request):
+    goals = Goal.objects.filter(user=request.user).order_by('-created_at')
+    return render(request, 'goals/list.html', {'goals': goals})
+
+
+@login_required
+def goal_detail(request, pk):
+    goal = get_object_or_404(Goal, pk=pk, user=request.user)
+    return render(request, 'goals/detail.html', {'goal': goal})
+
+
+@login_required
+def goal_create(request):
+    if request.method == 'POST':
+        form = GoalForm(request.POST, user=request.user)
+        # log raw posted milestones for debugging
+        try:
+            logging.getLogger(__name__).info('Posted milestones raw: %s', request.POST.get('milestones'))
+        except Exception:
+            pass
+        if form.is_valid():
+            goal = form.save(commit=False)
+            goal.user = request.user
+            goal.save()
+            form.save_m2m()
+            return redirect('goals_list')
+        else:
+            # log errors for debugging
+            logging.getLogger(__name__).warning('Goal create form invalid: %s', form.errors.as_json())
+    else:
+        form = GoalForm(user=request.user)
+    return render(request, 'goals/form.html', {'form': form, 'creating': True})
+
+
+@login_required
+def goal_update(request, pk):
+    goal = get_object_or_404(Goal, pk=pk, user=request.user)
+    if request.method == 'POST':
+        form = GoalForm(request.POST, instance=goal, user=request.user)
+        if form.is_valid():
+            form.save()
+            # Ensure ManyToMany relations are saved
+            try:
+                form.save_m2m()
+            except Exception:
+                pass
+            return redirect('goal_detail', pk=goal.pk)
+        else:
+            logging.getLogger(__name__).warning('Goal update form invalid: %s', form.errors.as_json())
+    else:
+        form = GoalForm(instance=goal, user=request.user)
+    return render(request, 'goals/form.html', {'form': form, 'creating': False, 'goal': goal})
+
+
+@login_required
+def goal_delete(request, pk):
+    goal = get_object_or_404(Goal, pk=pk, user=request.user)
+    if request.method == 'POST':
+        goal.delete()
+        return redirect('goals_list')
+    return render(request, 'goals/confirm_delete.html', {'goal': goal})
+
+
+@csrf_protect
+@require_POST
+@login_required
+def toggle_milestone(request, pk):
+    """Toggle milestone done state. Expects JSON body: {"index": 0}. Returns {"ok": True, "done": True, "progress": 42} or error."""
+    import json
+    goal = get_object_or_404(Goal, pk=pk, user=request.user)
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+        idx = int(data.get('index', -1))
+    except Exception:
+        return JsonResponse({'ok': False, 'error': 'Invalid payload'}, status=400)
+
+    if idx < 0 or not isinstance(goal.milestones, list) or idx >= len(goal.milestones):
+        return JsonResponse({'ok': False, 'error': 'Invalid index'}, status=400)
+
+    # toggle
+    current = bool(goal.milestones[idx].get('done'))
+    goal.milestones[idx]['done'] = not current
+
+    # recalculate cached progress as percentage of completed milestones
+    total = len(goal.milestones)
+    done_count = sum(1 for m in goal.milestones if m.get('done'))
+    progress = int((done_count / total) * 100) if total > 0 else 0
+    goal.progress_cached = progress
+    goal.save()
+    return JsonResponse({'ok': True, 'done': goal.milestones[idx]['done'], 'progress': progress})
 
 @login_required
 def notes_by_category(request, category_id):
