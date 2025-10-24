@@ -2,17 +2,8 @@ from django.contrib import admin
 from .models import UserProfile, Category, Media, MediaAnalysis, MediaTag, SmartAlbum
 
 
-@admin.register(UserProfile)
-class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'date_of_birth', 'location')
-    search_fields = ('user__username', 'location')
 
 
-@admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'user', 'icon')
-    list_filter = ('user',)
-    search_fields = ('name',)
 
 
 @admin.register(Media)
@@ -87,3 +78,8 @@ class SmartAlbumAdmin(admin.ModelAdmin):
     def media_count(self, obj):
         return obj.media.count()
     media_count.short_description = 'Nombre de médias'
+from .models import UserProfile, Category, Note
+
+admin.site.register(UserProfile)
+admin.site.register(Category)
+admin.site.register(Note)

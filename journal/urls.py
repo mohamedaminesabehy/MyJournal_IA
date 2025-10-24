@@ -30,6 +30,13 @@ urlpatterns = [
     path('albums/<int:album_id>/remove-media/<int:media_id>/', views_albums.remove_media_from_album, name='remove_media_from_album'),
     path('api/albums/suggestions/', views_albums.album_suggestions_json, name='album_suggestions_json'),
     
+    path('category/edit/<int:category_id>/', views.edit_category, name='edit_category'),
+    path('category/delete/<int:category_id>/', views.delete_category, name='delete_category'),
+    path('create_note/', views.create_note, name='create_note'),
+    path('notes/<int:note_id>/edit/', views.edit_note, name='edit_note'),
+    path('notes/<int:note_id>/delete/', views.delete_note, name='delete_note'),
+    path('dashboard/', views.dashboard, name='dashboard'),
+    path('gallery/', views.gallery, name='gallery'),
     path('hello/', views.hello, name='hello'),
     path('modern_notes/', views.modern_notes, name='modern_notes'),
     path('profile/', views.profile, name='profile'),
@@ -40,4 +47,11 @@ urlpatterns = [
     path('view_notes/', views.view_notes, name='view_notes'),
     path('tag_create/', views.tag_create, name='tag_create'),
     path('event_create/', views.event_create, name='event_create'),
+    path('notes/category/<int:category_id>/', views.notes_by_category, name='notes_by_category'),
+    path('tag_create/', views.tag_create, name='tag_create'),
+    path('event_create/', views.event_create, name='event_create'),
+    path('predict/', views.predict_emotion_api, name='predict_emotion'),
+    path('notes/<int:note_id>/recommendations/', views.generate_recommendations, name='generate_recommendations'),
+    path('notes/<int:note_id>/recommendations/regenerate/', views.regenerate_recommendations, name='regenerate_recommendations'),
+
 ]
