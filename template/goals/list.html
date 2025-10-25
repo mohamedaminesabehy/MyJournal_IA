@@ -291,7 +291,7 @@
     <div class="goals-grid">
     {% for goal in goals %}
       <div class="goal-card {% if goal.status == 'completed' %}completed{% endif %}">
-        <a href="{% url 'goal_detail' goal.pk %}" class="goal-title">{{ goal.title }}</a>
+        <a href="{% url 'goal_detail' goal.slug %}" class="goal-title">{{ goal.title }}</a>
         
         <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
           {% if goal.status == 'completed' %}
@@ -330,10 +330,10 @@
         </div>
         
         <div class="goal-actions">
-          <a class="goal-action-btn edit" href="{% url 'goal_update' goal.pk %}">
+          <a class="goal-action-btn edit" href="{% url 'goal_update' goal.slug %}">
             <i class="fas fa-edit"></i> Modifier
           </a>
-          <a class="goal-action-btn delete" href="{% url 'goal_delete' goal.pk %}">
+          <a class="goal-action-btn delete" href="{% url 'goal_delete' goal.slug %}">
             <i class="fas fa-trash"></i> Supprimer
           </a>
         </div>

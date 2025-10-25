@@ -3,7 +3,7 @@ import re
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404
 import logging
 from django.db import IntegrityError
 from django.views.decorators.csrf import csrf_exempt
@@ -14,7 +14,6 @@ from .models import UserProfile, Category, Note, Goal
 from .utils import lr_model, clean_text, predict_emotion
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_protect
-from django.http import JsonResponse
 
 
 @login_required
@@ -227,13 +226,32 @@ def view_notes(request):
 
 @login_required
 def goals_list(request):
+    # Get all goals for current user
     goals = Goal.objects.filter(user=request.user).order_by('-created_at')
+    
+    # Update progress for all goals to ensure progress_cached is set
+    for goal in goals:
+        # Ensure progress_cached is calculated
+        if goal.progress_cached is None:
+            pct = goal.progress_pct()
+            goal.progress_cached = pct if pct is not None else 0
+            try:
+                goal.save()
+            except Exception as e:
+                # Log error but continue
+                import logging
+                logging.getLogger(__name__).error(f'Error saving goal: {e}')
+    
     return render(request, 'goals/list.html', {'goals': goals})
 
 
 @login_required
-def goal_detail(request, pk):
-    goal = get_object_or_404(Goal, pk=pk, user=request.user)
+def goal_detail(request, slug):
+    # Handle duplicate slugs by taking the most recent one
+    goals = Goal.objects.filter(slug=slug, user=request.user).order_by('-created_at')
+    if not goals.exists():
+        raise Http404("Objectif non trouvé")
+    goal = goals.first()
     return render(request, 'goals/detail.html', {'goal': goal})
 
 
@@ -261,18 +279,43 @@ def goal_create(request):
 
 
 @login_required
-def goal_update(request, pk):
-    goal = get_object_or_404(Goal, pk=pk, user=request.user)
+def goal_update(request, slug):
+    # Handle duplicate slugs by taking the most recent one
+    goals = Goal.objects.filter(slug=slug, user=request.user).order_by('-created_at')
+    if not goals.exists():
+        raise Http404("Objectif non trouvé")
+    goal = goals.first()
+    
     if request.method == 'POST':
         form = GoalForm(request.POST, instance=goal, user=request.user)
         if form.is_valid():
-            form.save()
-            # Ensure ManyToMany relations are saved
-            try:
-                form.save_m2m()
-            except Exception:
-                pass
-            return redirect('goal_detail', pk=goal.pk)
+            # Instead of saving the form instance, update directly via queryset
+            # This avoids the duplicate creation issue with MongoDB
+            update_data = {
+                'title': form.cleaned_data['title'],
+                'description': form.cleaned_data.get('description', ''),
+                'status': form.cleaned_data['status'],
+                'start_date': form.cleaned_data.get('start_date'),
+                'end_date': form.cleaned_data.get('end_date'),
+                'motivation_level': form.cleaned_data['motivation_level'],
+                'priority': form.cleaned_data['priority'],
+                'difficulty': form.cleaned_data['difficulty'],
+                'reward': form.cleaned_data.get('reward', ''),
+                'recurrence': form.cleaned_data.get('recurrence', ''),
+                'milestones': form.cleaned_data.get('milestones', []),
+            }
+            
+            # Calculate progress
+            milestones = update_data['milestones']
+            if milestones and isinstance(milestones, list):
+                total = len(milestones)
+                done = sum(1 for m in milestones if isinstance(m, dict) and m.get('done'))
+                update_data['progress_cached'] = int((done / total) * 100) if total > 0 else 0
+            
+            # Update using queryset to avoid creating duplicates
+            Goal.objects.filter(slug=slug, user=request.user).update(**update_data)
+            
+            return redirect('goal_detail', slug=slug)
         else:
             logging.getLogger(__name__).warning('Goal update form invalid: %s', form.errors.as_json())
     else:
@@ -281,21 +324,59 @@ def goal_update(request, pk):
 
 
 @login_required
-def goal_delete(request, pk):
-    goal = get_object_or_404(Goal, pk=pk, user=request.user)
+def goal_delete(request, slug):
+    # Handle duplicate slugs by taking the most recent one
+    goals = Goal.objects.filter(slug=slug, user=request.user).order_by('-created_at')
+    if not goals.exists():
+        raise Http404("Objectif non trouvé")
+    goal = goals.first()
+    
     if request.method == 'POST':
-        goal.delete()
-        return redirect('goals_list')
+        try:
+            # Direct MongoDB deletion to avoid pk/hashable issues with Djongo
+            from django.db import connection
+            from pymongo import MongoClient
+            
+            # Get MongoDB connection details from Django settings
+            db_settings = connection.settings_dict
+            client = MongoClient(db_settings['CLIENT']['host'])
+            db = client[db_settings['NAME']]
+            collection = db['journal_goal']
+            
+            # Delete by slug and user_id
+            result = collection.delete_many({'slug': slug, 'user_id': request.user.id})
+            
+            if result.deleted_count > 0:
+                return redirect('goals_list')
+            else:
+                return render(request, 'goals/confirm_delete.html', {
+                    'goal': goal,
+                    'error': "Aucun objectif n'a été supprimé. Il se peut qu'il ait déjà été supprimé."
+                })
+        except Exception as e:
+            logging.getLogger(__name__).error(f'Error deleting goal: {e}')
+            import traceback
+            traceback.print_exc()
+            return render(request, 'goals/confirm_delete.html', {
+                'goal': goal,
+                'error': f"Erreur lors de la suppression: {e}"
+            })
     return render(request, 'goals/confirm_delete.html', {'goal': goal})
 
 
 @csrf_protect
 @require_POST
 @login_required
-def toggle_milestone(request, pk):
+def toggle_milestone(request, slug):
     """Toggle milestone done state. Expects JSON body: {"index": 0}. Returns {"ok": True, "done": True, "progress": 42} or error."""
     import json
-    goal = get_object_or_404(Goal, pk=pk, user=request.user)
+    
+    # Handle duplicate slugs by taking the most recent one
+    goals = Goal.objects.filter(slug=slug, user=request.user).order_by('-created_at')
+    if not goals.exists():
+        return JsonResponse({'ok': False, 'error': 'Objectif non trouvé'}, status=404)
+    goal = goals.first()
+    
     try:
         data = json.loads(request.body.decode('utf-8'))
         idx = int(data.get('index', -1))
@@ -307,27 +388,38 @@ def toggle_milestone(request, pk):
 
     # toggle
     current = bool(goal.milestones[idx].get('done'))
-    goal.milestones[idx]['done'] = not current
+    new_done = not current
+    goal.milestones[idx]['done'] = new_done
 
     # recalculate cached progress as percentage of completed milestones
     total = len(goal.milestones)
     done_count = sum(1 for m in goal.milestones if m.get('done'))
     progress = int((done_count / total) * 100) if total > 0 else 0
-    goal.progress_cached = progress
     
     # Automatically mark goal as completed when all tasks are done
+    new_status = goal.status
     if total > 0 and done_count == total:
-        goal.status = Goal.STATUS_COMPLETED
+        new_status = Goal.STATUS_COMPLETED
     # If goal was completed but not all tasks are done anymore, set it back to ongoing
     elif goal.status == Goal.STATUS_COMPLETED and done_count < total:
-        goal.status = Goal.STATUS_ONGOING
+        new_status = Goal.STATUS_ONGOING
     
-    goal.save()
+    # Update using queryset to avoid creating duplicates
+    try:
+        Goal.objects.filter(slug=slug, user=request.user).update(
+            milestones=goal.milestones,
+            progress_cached=progress,
+            status=new_status
+        )
+    except Exception as e:
+        logging.getLogger(__name__).error(f'Error saving milestone toggle: {e}')
+        return JsonResponse({'ok': False, 'error': 'Update failed'}, status=500)
+    
     return JsonResponse({
         'ok': True, 
-        'done': goal.milestones[idx]['done'], 
+        'done': new_done, 
         'progress': progress,
-        'status': goal.status
+        'status': new_status
     })
 
 @login_required

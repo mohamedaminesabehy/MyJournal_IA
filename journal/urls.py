@@ -24,12 +24,12 @@ urlpatterns = [
     path('tag_create/', views.tag_create, name='tag_create'),
     path('event_create/', views.event_create, name='event_create'),
     path('predict/', views.predict_emotion_api, name='predict_emotion'),
-    # Goals CRUD
+    # Goals CRUD - Using slug instead of pk for MongoDB compatibility
     path('goals/', views.goals_list, name='goals_list'),
     path('goals/create/', views.goal_create, name='goal_create'),
-    path('goals/<int:pk>/', views.goal_detail, name='goal_detail'),
-    path('goals/<int:pk>/edit/', views.goal_update, name='goal_update'),
-    path('goals/<int:pk>/delete/', views.goal_delete, name='goal_delete'),
-    path('goals/<int:pk>/toggle_milestone/', views.toggle_milestone, name='toggle_milestone'),
+    path('goals/<slug:slug>/', views.goal_detail, name='goal_detail'),
+    path('goals/<slug:slug>/edit/', views.goal_update, name='goal_update'),
+    path('goals/<slug:slug>/delete/', views.goal_delete, name='goal_delete'),
+    path('goals/<slug:slug>/toggle_milestone/', views.toggle_milestone, name='toggle_milestone'),
 
 ]

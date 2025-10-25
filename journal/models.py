@@ -15,7 +15,7 @@ class UserProfile(models.Model):
 
 class Category(models.Model):
     name = models.CharField(max_length=100)
-    icon = models.CharField(max_length=50, blank=True)
+    icon = models.CharField(max_length=50, blank=True, default='📁')
     # Passage à ManyToMany: une catégorie peut appartenir à plusieurs utilisateurs,
     # et un utilisateur peut avoir plusieurs catégories
     users = models.ManyToManyField(User, related_name='categories', blank=True)
@@ -108,7 +108,7 @@ class Goal(models.Model):
     # Milestones stored as a small JSON array of objects {title: str, done: bool, due: str}
     milestones = models.JSONField(blank=True, null=True)
     # Slug to provide friendly URLs and distinguish from Note titles
-    slug = models.SlugField(max_length=220, unique=True, blank=True)
+    slug = models.SlugField(max_length=220, blank=True, db_index=True)
     # Cached progress (computed on save) to speed up list rendering
     progress_cached = models.IntegerField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -116,6 +116,8 @@ class Goal(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        # Note: Django Meta constraints may not work perfectly with MongoDB/Djongo
+        # We handle uniqueness in the save() method
 
     def __str__(self):
         return f"{self.title} ({self.get_status_display()})"
@@ -134,20 +136,32 @@ class Goal(models.Model):
 
     def save(self, *args, **kwargs):
         """Generate a slug and update cached progress on save."""
-        # generate slug from title if not set
-        if not self.slug and self.title:
-            base = slugify(self.title)[:200]
-            slug = base
-            counter = 1
-            # Ensure uniqueness
-            while type(self).objects.filter(slug=slug).exclude(pk=self.pk).exists():
-                slug = f"{base}-{counter}"
-                counter += 1
-            self.slug = slug
-
+        # Determine if this is an update (has _id attribute from MongoDB)
+        is_update = hasattr(self, '_id') and self._id is not None
+        
+        # Only generate slug if it doesn't exist (new object)
+        if not self.slug:
+            if self.title:
+                base = slugify(self.title)[:200]
+                slug = base
+                counter = 1
+                # Ensure uniqueness - check against all existing slugs
+                while type(self).objects.filter(slug=slug).exclude(pk=self.pk if self.pk else None).exists():
+                    slug = f"{base}-{counter}"
+                    counter += 1
+                self.slug = slug
+            else:
+                # If no title and no slug, generate a random one
+                import uuid
+                self.slug = str(uuid.uuid4())[:8]
+        
         # update cached progress
         pct = self.progress_pct()
         if pct is not None:
             self.progress_cached = pct
+
+        # For updates, ensure we have the pk set
+        if is_update and not self.pk:
+            self.pk = self._id
 
         super().save(*args, **kwargs)
