@@ -226,10 +226,10 @@
         <i class="fas fa-arrow-left me-2"></i>Retour aux objectifs
       </a>
       <div class="d-flex gap-2">
-        <a class="goal-action-btn secondary" href="{% url 'goal_update' goal.pk %}">
+        <a class="goal-action-btn secondary" href="{% url 'goal_update' goal.slug %}">
           <i class="fas fa-edit"></i> Modifier
         </a>
-        <a class="goal-action-btn danger" href="{% url 'goal_delete' goal.pk %}">
+        <a class="goal-action-btn danger" href="{% url 'goal_delete' goal.slug %}">
           <i class="fas fa-trash"></i> Supprimer
         </a>
       </div>
@@ -250,7 +250,7 @@ document.addEventListener('DOMContentLoaded', function(){
   for (const cb of checkboxes) {
     cb.addEventListener('change', function(e){
       const index = Number(e.target.dataset.index);
-      fetch('{% url "toggle_milestone" goal.pk %}', {
+      fetch('{% url "toggle_milestone" goal.slug %}', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
         body: JSON.stringify({ index: index })

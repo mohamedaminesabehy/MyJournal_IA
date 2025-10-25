@@ -81,8 +81,16 @@ DATABASES = {
         'NAME': 'journalDB',
         'ENFORCE_SCHEMA': False,
         'CLIENT': {
-            'host': 'mongodb+srv://journal_db_user:4PIF3Mk876wkTopF@cluster0.kgaymb3.mongodb.net/journalDB'
-        }
+            'host': 'mongodb+srv://journal_db_user:4PIF3Mk876wkTopF@cluster0.kgaymb3.mongodb.net/journalDB?retryWrites=true&w=majority',
+            'serverSelectionTimeoutMS': 30000,
+            'connectTimeoutMS': 30000,
+            'socketTimeoutMS': 30000,
+            'maxPoolSize': 50,
+            'minPoolSize': 10,
+            'maxIdleTimeMS': 45000,
+            'waitQueueTimeoutMS': 10000,
+        },
+        'CONN_MAX_AGE': None,  # Keep connections open indefinitely
     }
 }
 
@@ -121,6 +129,10 @@ USE_I18N = True
 
 USE_TZ = True
 
+# Session configuration - Use signed cookies instead of database
+# This avoids MongoDB session issues with djongo
+SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
+SESSION_COOKIE_HTTPONLY = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
