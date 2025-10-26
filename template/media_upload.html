@@ -1,0 +1,546 @@
+{% extends 'base.html' %}
+
+{% block title %}Upload Médias | Galerie IA{% endblock %}
+
+{% block extra_css %}
+<style>
+    .upload-header {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        color: white;
+    }
+    
+    .upload-tabs {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .dropzone {
+        border: 3px dashed #d1d5db;
+        border-radius: 12px;
+        padding: 3rem 2rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        background: #f9fafb;
+        cursor: pointer;
+    }
+    
+    .dropzone:hover, .dropzone.drag-over {
+        border-color: var(--primary-color);
+        background: #eef2ff;
+    }
+    
+    .dropzone i {
+        font-size: 3rem;
+        color: var(--primary-color);
+        margin-bottom: 1rem;
+    }
+    
+    .file-preview {
+        margin-top: 2rem;
+    }
+    
+    .preview-item {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border: 2px solid #e5e7eb;
+        transition: all 0.3s;
+    }
+    
+    .preview-item:hover {
+        border-color: var(--primary-color);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+    }
+    
+    .preview-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .preview-thumb {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 8px;
+        background: #f3f4f6;
+        flex-shrink: 0;
+    }
+    
+    .preview-info {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .preview-info h6 {
+        margin: 0 0 0.5rem 0;
+        color: #1f2937;
+        font-weight: 600;
+        word-break: break-all;
+    }
+    
+    .preview-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .preview-details .form-group {
+        margin-bottom: 0;
+    }
+    
+    .preview-details label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #6b7280;
+        margin-bottom: 0.25rem;
+    }
+    
+    .preview-details input,
+    .preview-details select,
+    .preview-details textarea {
+        font-size: 0.875rem;
+    }
+    
+    .file-number {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        color: white;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 0.875rem;
+    }
+    
+    .progress {
+        height: 8px;
+        margin-top: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="upload-header" data-aos="fade-up">
+        <h1><i class="fas fa-cloud-upload-alt me-2"></i>Upload de Médias</h1>
+        <p class="mb-0">Ajoutez des images, vidéos ou fichiers audio à votre galerie</p>
+    </div>
+    
+    <!-- Messages d'erreur et de succès -->
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert" data-aos="fade-down">
+            <div style="white-space: pre-line;">{{ message }}</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <div class="upload-tabs" data-aos="fade-up">
+        <ul class="nav nav-pills mb-4" id="uploadTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="single-tab" data-bs-toggle="pill" data-bs-target="#single" type="button">
+                    <i class="fas fa-file me-2"></i>Upload Simple
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="multiple-tab" data-bs-toggle="pill" data-bs-target="#multiple" type="button">
+                    <i class="fas fa-files me-2"></i>Upload Multiple
+                </button>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="uploadTabsContent">
+            <!-- Upload Simple -->
+            <div class="tab-pane fade show active" id="single" role="tabpanel">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="upload_type" value="single">
+                    
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Fichier</label>
+                            {{ single_form.file }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Titre (optionnel - l'IA peut le générer)</label>
+                            {{ single_form.title }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Catégorie</label>
+                            <select name="category" class="form-select" id="id_category">
+                                <option value="">---------</option>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}">{{ category.icon }} {{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Album</label>
+                            {{ single_form.album }}
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Description (optionnel)</label>
+                            {{ single_form.description }}
+                        </div>
+                        <div class="col-md-12">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-upload me-2"></i>Uploader
+                            </button>
+                            <a href="{% url 'gallery' %}" class="btn btn-outline-secondary btn-lg ms-2">
+                                <i class="fas fa-times me-2"></i>Annuler
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Upload Multiple -->
+            <div class="tab-pane fade" id="multiple" role="tabpanel">
+                <form method="post" enctype="multipart/form-data" id="multipleUploadForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="upload_type" value="multiple">
+                    
+                    <div class="dropzone" id="dropzone">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <h4>Glissez-déposez vos fichiers ici</h4>
+                        <p class="text-muted">ou cliquez pour sélectionner</p>
+                        <input type="file" 
+                               name="files" 
+                               id="multipleFileInput" 
+                               class="form-control d-none" 
+                               accept="image/jpeg,image/jpg,image/png" 
+                               multiple>
+                    </div>
+                    
+                    <!-- Paramètres globaux pour tous les fichiers -->
+                    <div class="mt-4 p-3 bg-light rounded" id="globalSettings" style="display: none;">
+                        <h6 class="mb-3"><i class="fas fa-cog me-2"></i>Paramètres pour tous les fichiers</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Album (optionnel)</label>
+                                <input type="text" name="album" class="form-control" placeholder="Nom de l'album">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check mt-4">
+                                    <input type="checkbox" name="auto_analyze" class="form-check-input" id="autoAnalyze" checked>
+                                    <label class="form-check-label" for="autoAnalyze">
+                                        <i class="fas fa-robot me-1"></i> Analyser automatiquement avec l'IA
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3" id="globalSettingsAlert" style="display: none;">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Important :</strong> Vous devez sélectionner une catégorie pour chaque image ci-dessous.
+                    </div>
+                    
+                    <div class="file-preview" id="filePreview"></div>
+                    
+                    <div class="mt-4" id="submitSection" style="display: none;">
+                        <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                            <i class="fas fa-upload me-2"></i>Uploader 0 fichier
+                        </button>
+                        <a href="{% url 'gallery' %}" class="btn btn-outline-secondary btn-lg ms-2">
+                            <i class="fas fa-times me-2"></i>Annuler
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Drag & Drop et preview pour upload multiple
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('multipleFileInput');
+    const filePreview = document.getElementById('filePreview');
+    const submitBtn = document.getElementById('submitBtn');
+    const submitSection = document.getElementById('submitSection');
+    const globalSettingsAlert = document.getElementById('globalSettingsAlert');
+    const globalSettings = document.getElementById('globalSettings');
+    let selectedFiles = [];
+    
+    // Catégories disponibles (passées depuis Django) - Version simplifiée
+    const categories = [
+        {% for category in categories %}
+        {
+            id: {{ category.id }},
+            name: "{{ category.name|addslashes }}",
+            icon: "{{ category.icon|default_if_none:''|addslashes }}"
+        }{% if not forloop.last %},{% endif %}
+        {% empty %}
+        // Aucune catégorie trouvée
+        {% endfor %}
+    ];
+    
+    console.log('Categories chargées:', categories.length, categories);
+    console.log('Debug - categories from context:', '{{ categories|length }}' + ' catégories');
+    
+    // Debug: afficher les catégories brutes
+    {% for category in categories %}
+    console.log('Catégorie {{ forloop.counter }}:', '{{ category.id }}', '{{ category.name|addslashes }}', '{{ category.icon|default_if_none:"vide"|addslashes }}');
+    {% endfor %}
+    
+    // Clic sur dropzone ouvre file input
+    dropzone.addEventListener('click', (e) => {
+        if (e.target !== fileInput) {
+            fileInput.click();
+        }
+    });
+    
+    // Prevent default drag behaviors
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropzone.addEventListener(eventName, preventDefaults, false);
+        document.body.addEventListener(eventName, preventDefaults, false);
+    });
+    
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    // Highlight dropzone when dragging
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropzone.addEventListener(eventName, () => dropzone.classList.add('drag-over'), false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropzone.addEventListener(eventName, () => dropzone.classList.remove('drag-over'), false);
+    });
+    
+    // Handle drop
+    dropzone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = Array.from(dt.files);
+        handleFiles(files);
+    });
+    
+    // Handle file input change
+    fileInput.addEventListener('change', (e) => {
+        const files = Array.from(e.target.files);
+        handleFiles(files);
+    });
+    
+    function handleFiles(files) {
+        // Ajouter aux fichiers existants au lieu de remplacer
+        selectedFiles = [...selectedFiles, ...files];
+        displayPreview(selectedFiles);
+        updateFileInput();
+        updateSubmitButton();
+    }
+    
+    function displayPreview(files) {
+        filePreview.innerHTML = '';
+        
+        if (files.length === 0) {
+            submitSection.style.display = 'none';
+            globalSettingsAlert.style.display = 'none';
+            globalSettings.style.display = 'none';
+            return;
+        }
+        
+        globalSettingsAlert.style.display = 'block';
+        globalSettings.style.display = 'block';
+        submitSection.style.display = 'block';
+        
+        console.log('Affichage de', files.length, 'fichiers');
+        console.log('Catégories disponibles:', categories);
+        
+        files.forEach((file, index) => {
+            const previewItem = document.createElement('div');
+            previewItem.className = 'preview-item';
+            previewItem.dataset.index = index;
+            
+            // Header avec thumbnail et info de base
+            const header = document.createElement('div');
+            header.className = 'preview-header';
+            
+            // Numéro du fichier
+            const fileNumber = document.createElement('div');
+            fileNumber.className = 'file-number';
+            fileNumber.textContent = index + 1;
+            
+            // Thumbnail
+            const isImage = file.type.startsWith('image/');
+            const isVideo = file.type.startsWith('video/');
+            const isAudio = file.type.startsWith('audio/');
+            
+            const thumb = document.createElement('div');
+            thumb.className = 'preview-thumb';
+            
+            if (isImage) {
+                const img = document.createElement('img');
+                img.className = 'w-100 h-100';
+                img.style.objectFit = 'cover';
+                img.style.borderRadius = '8px';
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+                thumb.appendChild(img);
+            } else if (isVideo) {
+                thumb.innerHTML = `<i class="fas fa-video fa-3x" style="color: #6366f1;"></i>`;
+                thumb.style.display = 'flex';
+                thumb.style.alignItems = 'center';
+                thumb.style.justifyContent = 'center';
+            } else if (isAudio) {
+                thumb.innerHTML = `<i class="fas fa-music fa-3x" style="color: #8b5cf6;"></i>`;
+                thumb.style.display = 'flex';
+                thumb.style.alignItems = 'center';
+                thumb.style.justifyContent = 'center';
+            } else {
+                thumb.innerHTML = `<i class="fas fa-file fa-3x" style="color: #6b7280;"></i>`;
+                thumb.style.display = 'flex';
+                thumb.style.alignItems = 'center';
+                thumb.style.justifyContent = 'center';
+            }
+            
+            // Info de base
+            const infoBasic = document.createElement('div');
+            infoBasic.className = 'preview-info';
+            infoBasic.innerHTML = `
+                <h6><i class="fas fa-file-image me-2"></i>${file.name}</h6>
+                <small class="text-muted">
+                    <i class="fas fa-weight me-1"></i>${formatFileSize(file.size)} 
+                    <i class="fas fa-tag ms-2 me-1"></i>${file.type || 'Type inconnu'}
+                </small>
+            `;
+            
+            // Bouton supprimer
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'btn btn-sm btn-outline-danger';
+            removeBtn.innerHTML = '<i class="fas fa-trash"></i> Supprimer';
+            removeBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                removeFile(index);
+            };
+            
+            header.appendChild(fileNumber);
+            header.appendChild(thumb);
+            header.appendChild(infoBasic);
+            header.appendChild(removeBtn);
+            
+            // Formulaire détaillé pour ce fichier
+            const detailsForm = document.createElement('div');
+            detailsForm.className = 'preview-details';
+            detailsForm.innerHTML = `
+                <div class="form-group">
+                    <label><i class="fas fa-heading me-1"></i> Titre</label>
+                    <input type="text" 
+                           name="title_${index}" 
+                           class="form-control form-control-sm" 
+                           placeholder="Laissez vide pour génération IA">
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-folder me-1"></i> Catégorie <span class="text-danger">*</span></label>
+                    <select name="category_${index}" class="form-control form-control-sm" required>
+                        <option value="">-- Sélectionnez une catégorie --</option>
+                        ${Array.isArray(categories) && categories.length > 0 ? categories.map(cat => `
+                            <option value="${cat.id}">
+                                ${cat.icon ? '🔹' : ''} ${cat.name}
+                            </option>
+                        `).join('') : '<option disabled>Aucune catégorie disponible</option>'}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-images me-1"></i> Album</label>
+                    <input type="text" 
+                           name="album_${index}" 
+                           class="form-control form-control-sm" 
+                           placeholder="Nom de l'album">
+                </div>
+                
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label><i class="fas fa-align-left me-1"></i> Description</label>
+                    <textarea name="description_${index}" 
+                              class="form-control form-control-sm" 
+                              rows="2" 
+                              placeholder="Laissez vide pour génération IA"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <div class="form-check mt-4">
+                        <input type="checkbox" 
+                               name="auto_analyze_${index}" 
+                               class="form-check-input" 
+                               id="analyze_${index}"
+                               checked>
+                        <label class="form-check-label" for="analyze_${index}">
+                            <i class="fas fa-robot me-1"></i> Analyser avec l'IA
+                        </label>
+                    </div>
+                </div>
+            `;
+            
+            previewItem.appendChild(header);
+            previewItem.appendChild(detailsForm);
+            filePreview.appendChild(previewItem);
+        });
+    }
+    
+    function removeFile(index) {
+        selectedFiles.splice(index, 1);
+        displayPreview(selectedFiles);
+        updateFileInput();
+        updateSubmitButton();
+    }
+    
+    function updateFileInput() {
+        // Mettre à jour le file input avec les fichiers sélectionnés
+        const dt = new DataTransfer();
+        selectedFiles.forEach(file => {
+            dt.items.add(file);
+        });
+        fileInput.files = dt.files;
+    }
+    
+    function updateSubmitButton() {
+        const count = selectedFiles.length;
+        
+        if (count > 0) {
+            submitBtn.innerHTML = `<i class="fas fa-upload me-2"></i>Uploader ${count} fichier${count > 1 ? 's' : ''}`;
+            submitBtn.disabled = false;
+        } else {
+            submitBtn.innerHTML = `<i class="fas fa-upload me-2"></i>Uploader 0 fichier`;
+            submitBtn.disabled = true;
+        }
+    }
+    
+    function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+        else if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + ' MB';
+        else return (bytes / 1073741824).toFixed(1) + ' GB';
+    }
+    
+    // Initialiser l'état du bouton
+    updateSubmitButton();
+</script>
+{% endblock %}

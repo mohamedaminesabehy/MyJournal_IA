@@ -1,0 +1,1082 @@
+{% extends 'base.html' %}
+
+{% block title %}Recommandations d'activités - {{ note.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Variables CSS pour un design moderne avec palette claire basée sur #6366f1 */
+    :root {
+        /* Couleur principale et variations */
+        --primary-indigo: #6366f1;
+        --primary-indigo-50: #eef2ff;
+        --primary-indigo-100: #e0e7ff;
+        --primary-indigo-200: #c7d2fe;
+        --primary-indigo-300: #a5b4fc;
+        --primary-indigo-400: #818cf8;
+        --primary-indigo-500: #6366f1;
+        --primary-indigo-600: #4f46e5;
+        --primary-indigo-700: #4338ca;
+        --primary-indigo-800: #3730a3;
+        --primary-indigo-900: #312e81;
+
+        /* Couleurs complémentaires claires */
+        --light-blue-50: #f0f9ff;
+        --light-blue-100: #e0f2fe;
+        --light-blue-200: #bae6fd;
+        --light-blue-300: #7dd3fc;
+        --light-blue-400: #38bdf8;
+        --light-blue-500: #0ea5e9;
+
+        --light-purple-50: #faf5ff;
+        --light-purple-100: #f3e8ff;
+        --light-purple-200: #e9d5ff;
+        --light-purple-300: #d8b4fe;
+        --light-purple-400: #c084fc;
+        --light-purple-500: #a855f7;
+
+        --light-emerald-50: #ecfdf5;
+        --light-emerald-100: #d1fae5;
+        --light-emerald-200: #a7f3d0;
+        --light-emerald-300: #6ee7b7;
+        --light-emerald-400: #34d399;
+        --light-emerald-500: #10b981;
+
+        /* Couleurs neutres claires */
+        --neutral-white: #ffffff;
+        --neutral-50: #fafafa;
+        --neutral-100: #f5f5f5;
+        --neutral-200: #e5e5e5;
+        --neutral-300: #d4d4d4;
+        --neutral-400: #a3a3a3;
+        --neutral-500: #737373;
+        --neutral-600: #525252;
+        --neutral-700: #404040;
+        --neutral-800: #262626;
+        --neutral-900: #171717;
+
+        /* Ombres et effets */
+        --shadow-light: 0 1px 3px 0 rgba(99, 102, 241, 0.1), 0 1px 2px 0 rgba(99, 102, 241, 0.06);
+        --shadow-medium: 0 4px 6px -1px rgba(99, 102, 241, 0.1), 0 2px 4px -1px rgba(99, 102, 241, 0.06);
+        --shadow-large: 0 10px 15px -3px rgba(99, 102, 241, 0.1), 0 4px 6px -2px rgba(99, 102, 241, 0.05);
+        --shadow-glow: 0 0 0 1px rgba(99, 102, 241, 0.05), 0 1px 3px 0 rgba(99, 102, 241, 0.1);
+
+        /* Bordures et espacements */
+        --border-radius: 12px;
+        --border-radius-lg: 16px;
+        --border-radius-xl: 20px;
+        --spacing: 1.5rem;
+
+        /* Typographie */
+        --font-family-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        --font-family-heading: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    /* Container principal moderne */
+    
+
+    /* Section Note Preview - Centrée et moderne */
+    .note-preview {
+        max-width: 800px;
+        margin: 0 auto 3rem auto;
+        padding: 2.5rem;
+        background: var(--neutral-white);
+        border: 1px solid var(--primary-indigo-100);
+        border-radius: var(--border-radius-lg);
+        box-shadow: var(--shadow-medium);
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .note-preview::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary-indigo-400), var(--light-blue-400), var(--light-purple-400));
+    }
+
+    .note-preview h2 {
+        color: var(--neutral-800);
+        font-family: var(--font-family-heading);
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        line-height: 1.2;
+        letter-spacing: -0.025em;
+    }
+
+    .note-preview h2 i {
+        color: var(--primary-indigo-500);
+        font-size: 1.75rem;
+        margin-right: 0.5rem;
+    }
+
+    .note-content-preview {
+        background: linear-gradient(135deg, var(--primary-indigo-50), var(--light-blue-50));
+        padding: 2rem;
+        border-radius: var(--border-radius);
+        margin-bottom: 2rem;
+        border: 1px solid var(--primary-indigo-100);
+        position: relative;
+    }
+
+    .note-content-preview p {
+        color: var(--neutral-700);
+        font-size: 1.1rem;
+        line-height: 1.7;
+        margin: 0;
+        font-weight: 400;
+    }
+
+    .stats-row {
+        display: flex;
+        justify-content: center;
+        gap: 2.5rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .stats-row span {
+        color: var(--neutral-600);
+        font-size: 0.95rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: var(--neutral-50);
+        border-radius: var(--border-radius);
+        border: 1px solid var(--neutral-200);
+    }
+
+    .stats-row i {
+        color: var(--primary-indigo-500);
+        font-size: 1rem;
+    }
+
+    .emotion-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem 2rem;
+        background: linear-gradient(135deg, var(--primary-indigo-100), var(--light-purple-100));
+        border: 1px solid var(--primary-indigo-200);
+        border-radius: 50px;
+        color: var(--neutral-800);
+        font-size: 1rem;
+        font-weight: 600;
+        box-shadow: var(--shadow-light);
+    }
+
+    .emotion-badge i {
+        color: var(--primary-indigo-600);
+        font-size: 1.125rem;
+    }
+
+    /* Container pour les sections côte à côte */
+    .main-content-wrapper {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2.5rem;
+        align-items: start;
+    }
+
+    /* Section Recommendations - Alignée à gauche */
+    .recommendations-section {
+        background: var(--neutral-white);
+        border: 1px solid var(--primary-indigo-100);
+        border-radius: var(--border-radius-lg);
+        padding: 2.5rem;
+        box-shadow: var(--shadow-medium);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .recommendations-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--primary-indigo-400), var(--light-emerald-400));
+    }
+
+    .recommendations-header h3 {
+        color: var(--neutral-800);
+        font-family: var(--font-family-heading);
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        letter-spacing: -0.025em;
+    }
+
+    .recommendations-header h3 i {
+        color: var(--primary-indigo-500);
+        font-size: 1.5rem;
+        margin-right: 0.75rem;
+    }
+
+    .encouragement-text {
+        color: var(--neutral-600);
+        font-size: 1.1rem;
+        line-height: 1.6;
+        margin-bottom: 2.5rem;
+        font-weight: 400;
+    }
+
+    .activities-list {
+        margin-bottom: 2.5rem;
+    }
+
+    .activity-card {
+        background: linear-gradient(135deg, var(--primary-indigo-50), var(--light-blue-50));
+        border: 1px solid var(--primary-indigo-100);
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .activity-card::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: linear-gradient(180deg, var(--primary-indigo-400), var(--light-emerald-400));
+        transform: scaleY(0);
+        transition: transform 0.3s ease;
+    }
+
+    .activity-card:hover {
+        background: linear-gradient(135deg, var(--primary-indigo-100), var(--light-blue-100));
+        border-color: var(--primary-indigo-200);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-medium);
+    }
+
+    .activity-card:hover::before {
+        transform: scaleY(1);
+    }
+
+    .activity-card .d-flex {
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .activity-icon {
+        color: var(--primary-indigo-500);
+        font-size: 1.125rem;
+        margin-top: 0.125rem;
+        flex-shrink: 0;
+    }
+
+    .activity-text {
+        color: var(--neutral-700);
+        font-size: 1rem;
+        line-height: 1.6;
+        margin: 0;
+        font-weight: 400;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    .btn-regenerate,
+    .btn-back {
+        padding: 0.875rem 2rem;
+        border-radius: var(--border-radius);
+        font-size: 1rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+        font-family: var(--font-family-primary);
+        letter-spacing: 0.025em;
+    }
+
+    .btn-regenerate {
+        background: linear-gradient(135deg, var(--primary-indigo-600), var(--primary-indigo-700));
+        color: var(--neutral-white);
+        box-shadow: var(--shadow-light);
+    }
+
+    .btn-regenerate:hover {
+        background: linear-gradient(135deg, var(--primary-indigo-700), var(--primary-indigo-800));
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-medium);
+        color: var(--neutral-white);
+        text-decoration: none;
+    }
+
+    .btn-back {
+        background: var(--neutral-white);
+        color: var(--neutral-700);
+        border: 1px solid var(--primary-indigo-200);
+    }
+
+    .btn-back:hover {
+        background: var(--primary-indigo-50);
+        color: var(--primary-indigo-700);
+        border-color: var(--primary-indigo-300);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-light);
+        text-decoration: none;
+    }
+
+    /* Section Enriched Content - Alignée à droite */
+    .enriched-section {
+        background: var(--neutral-white);
+        border: 1px solid var(--light-blue-100);
+        border-radius: var(--border-radius-lg);
+        padding: 2.5rem;
+        box-shadow: var(--shadow-medium);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .enriched-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--light-blue-400), var(--light-purple-400));
+    }
+
+    .enriched-header h3 {
+        color: var(--neutral-800);
+        font-family: var(--font-family-heading);
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        letter-spacing: -0.025em;
+    }
+
+    .enriched-header h3 i {
+        color: var(--light-blue-500);
+        font-size: 1.5rem;
+        margin-right: 0.75rem;
+    }
+
+    .enriched-explanation {
+        color: var(--neutral-600);
+        font-size: 1.1rem;
+        line-height: 1.6;
+        margin-bottom: 2.5rem;
+        font-weight: 400;
+    }
+
+    .multimedia-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        margin-bottom: 2.5rem;
+    }
+
+    .enriched-card {
+        background: linear-gradient(135deg, var(--light-blue-50), var(--light-purple-50));
+        border: 1px solid var(--light-blue-100);
+        border-radius: var(--border-radius);
+        overflow: hidden;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .enriched-card::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: linear-gradient(180deg, var(--light-blue-400), var(--light-purple-400));
+        transform: scaleY(0);
+        transition: transform 0.3s ease;
+    }
+
+    .enriched-card:hover {
+        background: linear-gradient(135deg, var(--light-blue-100), var(--light-purple-100));
+        border-color: var(--light-blue-200);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-medium);
+    }
+
+    .enriched-card:hover::before {
+        transform: scaleY(1);
+    }
+
+    .enriched-card .card-header {
+        background: var(--neutral-white);
+        border-bottom: 1px solid var(--light-blue-100);
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .enriched-card .card-header i {
+        color: var(--light-blue-500);
+        font-size: 1.25rem;
+    }
+
+    .enriched-card .card-header h5 {
+        color: var(--neutral-800);
+        font-size: 1.125rem;
+        font-weight: 600;
+        margin: 0;
+        font-family: var(--font-family-heading);
+    }
+
+    .enriched-card .card-body {
+        padding: 1.5rem;
+    }
+
+    .enriched-card .card-body p {
+        color: var(--neutral-700);
+        font-size: 1rem;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+        font-weight: 400;
+    }
+
+    .links-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .enriched-link {
+        padding: 0.75rem 1.5rem;
+        background: linear-gradient(135deg, var(--primary-indigo-600), var(--primary-indigo-700));
+        color: var(--neutral-white);
+        text-decoration: none;
+        border-radius: var(--border-radius);
+        font-size: 0.875rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        letter-spacing: 0.025em;
+    }
+
+    .enriched-link:hover {
+        background: linear-gradient(135deg, var(--primary-indigo-700), var(--primary-indigo-800));
+        color: var(--neutral-white);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-light);
+        text-decoration: none;
+    }
+
+    .local-suggestions {
+        background: linear-gradient(135deg, var(--light-emerald-50), var(--light-blue-50));
+        border: 1px solid var(--light-emerald-100);
+        border-radius: var(--border-radius);
+        padding: 2rem;
+        margin-bottom: 1.5rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .local-suggestions::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--light-emerald-400), var(--light-blue-400));
+    }
+
+    .local-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .local-header i {
+        color: var(--light-emerald-500);
+        font-size: 1.25rem;
+    }
+
+    .local-header h5 {
+        color: var(--neutral-800);
+        font-size: 1.125rem;
+        font-weight: 600;
+        margin: 0;
+        font-family: var(--font-family-heading);
+    }
+
+    .local-suggestions p {
+        color: var(--neutral-700);
+        font-size: 1rem;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+        font-weight: 400;
+    }
+
+    .keywords-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .keyword-tag {
+        padding: 0.5rem 1rem;
+        background: linear-gradient(135deg, var(--light-emerald-100), var(--light-blue-100));
+        border: 1px solid var(--light-emerald-200);
+        border-radius: 50px;
+        color: var(--neutral-700);
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .keyword-tag:hover {
+        background: linear-gradient(135deg, var(--light-emerald-200), var(--light-blue-200));
+        border-color: var(--light-emerald-300);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-light);
+    }
+
+    /* Section Additional Info - Style épuré */
+    .additional-info-section {
+        margin-top: 4rem;
+        padding-top: 2.5rem;
+        border-top: 1px solid var(--primary-indigo-100);
+    }
+
+    .additional-info-section h4 {
+        color: var(--neutral-800);
+        font-family: var(--font-family-heading);
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 2rem;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        letter-spacing: -0.025em;
+    }
+
+    .additional-info-section h4 i {
+        color: var(--primary-indigo-500);
+        font-size: 1.25rem;
+    }
+
+    .info-card {
+        background-color: aliceblue;
+        border: 1px solid var(--primary-indigo-100);
+        border-radius: var(--border-radius);
+        padding: 2rem;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .info-card::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: linear-gradient(180deg, var(--primary-indigo-400), var(--light-blue-400));
+        transform: scaleY(0);
+        transition: transform 0.3s ease;
+    }
+
+    .info-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-medium);
+        border-color: var(--primary-indigo-200);
+    }
+
+    .info-card:hover::before {
+        transform: scaleY(1);
+    }
+
+    .info-card h6 {
+        color: black;
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-family: var(--font-family-heading);
+    }
+
+    .info-card h6 i {
+        color: var(--primary-indigo-500);
+        font-size: 1.125rem;
+    }
+
+    .info-card p {
+        color: var(--neutral-600);
+        font-size: 0.95rem;
+        line-height: 1.6;
+        margin: 0;
+        font-weight: 400;
+    }
+
+    .text-center small {
+        color: var(--neutral-500);
+        font-size: 0.875rem;
+        font-weight: 400;
+    }
+
+    .text-center small i {
+        color: var(--primary-indigo-400);
+        margin-right: 0.5rem;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .recommendations-container {
+            padding: 1rem;
+        }
+
+        .note-preview {
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .main-content-wrapper {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        .recommendations-section,
+        .enriched-section {
+            padding: 1.5rem;
+        }
+
+        .stats-row {
+            flex-direction: column;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+        }
+
+        .btn-regenerate,
+        .btn-back {
+            justify-content: center;
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .note-preview {
+            padding: 1rem;
+        }
+
+        .recommendations-section,
+        .enriched-section {
+            padding: 1rem;
+        }
+
+        .note-preview h2 {
+            font-size: 1.5rem;
+        }
+
+        .recommendations-header h3,
+        .enriched-header h3 {
+            font-size: 1.25rem;
+        }
+    }
+
+    
+    .btn-back {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border: 2px solid var(--primary-indigo);
+        color: var(--primary-indigo);
+        padding: 1rem 2.5rem;
+        border-radius: 30px;
+        font-weight: 500;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-size: 1rem;
+    }
+    
+    .btn-back:hover {
+        background: var(--primary-indigo);
+        color: white;
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-soft);
+    }
+    
+    .stats-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 1.5rem;
+        font-size: 0.95rem;
+        opacity: 0.9;
+        position: relative;
+        z-index: 1;
+    }
+
+    .info-card {
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        border: none;
+        color: white;
+        box-shadow: var(--shadow-soft);
+        transition: all 0.3s ease;
+    }
+
+    .info-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-hover);
+    }
+
+    .info-card h6 {
+        color: #010101;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+    }
+
+    .info-card .small {
+        opacity: 0.95;
+        line-height: 1.5;
+    }
+    
+    @media (max-width: 768px) {
+        .recommendations-container {
+            padding: 1rem;
+        }
+        
+        .note-preview, .recommendations-section, .enriched-section {
+            padding: 2rem;
+        }
+        
+        .activity-card {
+            padding: 1.5rem;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .btn-regenerate, .btn-back {
+            width: 100%;
+            margin: 0;
+        }
+
+        .multimedia-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        .recommendations-header h3 {
+            font-size: 1.5rem;
+        }
+
+        .encouragement-text {
+            font-size: 1.1rem;
+        }
+    }
+    /* Barre de résumé compacte en haut */
+    .note-summary-bar {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    background: linear-gradient(90deg, #ffffff, var(--light-blue-50));        border: 1px solid var(--primary-indigo-100);
+        border-radius: var(--border-radius);
+        padding: 0.75rem 1rem;
+        margin-bottom: 1rem;
+        box-shadow: var(--shadow-light);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-family: var(--font-family-primary);
+        font-size: 0.975rem;
+        color: var(--neutral-700);
+    }
+    .note-summary-bar i { color: var(--primary-indigo-600); }
+    .note-summary-sep { color: var(--neutral-400); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="recommendations-container">
+    <!-- Barre de résumé de la note (une seule ligne) -->
+    <div class="note-summary-bar">
+        <i class="fas fa-sticky-note"></i>
+        <strong>{{ note.title }}</strong>
+        <span class="note-summary-sep">•</span>
+        <i class="far fa-calendar"></i>
+        <span>{{ note.created_at|date:"d/m/Y H:i" }}</span>
+        <span class="note-summary-sep">•</span>
+        <i class="fas fa-heart"></i>
+        <span>{{ note.get_emotion_display }}{% if note.emotion_confidence %} ({{ note.emotion_confidence|floatformat:0 }}%){% endif %}</span>
+        <span class="note-summary-sep">•</span>
+        <i class="fas fa-folder"></i>
+        <span>{% if note.category %}{{ note.category.name }}{% else %}Sans catégorie{% endif %}</span>
+
+    </div>
+    <!-- Note Preview Section -->
+    
+
+    <!-- Container pour les sections côte à côte -->
+    <div class="main-content-wrapper">
+        <!-- Recommendations Section -->
+        <div class="recommendations-section" data-aos="fade-up" data-aos-delay="200">
+            <div class="recommendations-header">
+                <h3><i class="fas fa-lightbulb me-2"></i>Recommandations principales</h3>
+                {% if recommendations.encouragement %}
+                    <p class="encouragement-text">{{ recommendations.encouragement }}</p>
+                {% endif %}
+            </div>
+
+            <div class="activities-list">
+                {% for activity in primary_activities %}
+                    {% if forloop.first %}
+                        <div class="activity-card" data-aos="fade-up" data-aos-delay="200">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-star activity-icon"></i>
+                                <p class="activity-text">{{ activity }}</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% empty %}
+                    <div class="activity-card">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-info-circle activity-icon"></i>
+                            <p class="activity-text">Aucune recommandation principale disponible.</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="recommendations-header" style="margin-top: 2rem;">
+                <h3><i class="fas fa-list-ol me-2"></i>Autres recommandations</h3>
+            </div>
+
+            <div class="activities-list">
+                {% for activity in other_activities %}
+                    {% if forloop.counter <= 4 %}
+                        <div class="activity-card" data-aos="fade-up" data-aos-delay="{% widthratio forloop.counter 1 200 %}">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-star activity-icon"></i>
+                                <p class="activity-text">{{ activity }}</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% empty %}
+                    <div class="activity-card">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-info-circle activity-icon"></i>
+                            <p class="activity-text">Aucune autre recommandation pour cette émotion.</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="action-buttons">
+                <a href="{% url 'regenerate_recommendations' note.id %}" class="btn btn-regenerate">
+                    <i class="fas fa-sync-alt me-2"></i>Nouvelles recommandations
+                </a>
+                <a href="{% url 'view_notes' %}" class="btn btn-back">
+                    <i class="fas fa-arrow-left me-2"></i>Retour aux notes
+                </a>
+            </div>
+        </div>
+
+        <!-- Enriched Content Section -->
+        {% if recommendations.enriched_content %}
+        <div class="enriched-section" data-aos="fade-up" data-aos-delay="300">
+            <div class="enriched-header">
+                <h3><i class="fas fa-magic me-2"></i>Contenu Enrichi</h3>
+                {% if recommendations.enriched_content.explanation %}
+                    <p class="enriched-explanation">{{ recommendations.enriched_content.explanation }}</p>
+                {% endif %}
+            </div>
+
+            {% if recommendations.enriched_content.multimedia_content %}
+            <div class="multimedia-grid">
+                <!-- Music Content -->
+                {% if recommendations.enriched_content.multimedia_content.music %}
+                <div class="enriched-card music-card" data-aos="fade-up" data-aos-delay="350">
+                    <div class="card-header">
+                        <i class="fas fa-music"></i>
+                        <h5>{{ recommendations.enriched_content.multimedia_content.music.title }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>{{ recommendations.enriched_content.multimedia_content.music.description }}</p>
+                        {% if recommendations.enriched_content.multimedia_content.music.links %}
+                            <div class="links-container">
+                                {% for link in recommendations.enriched_content.multimedia_content.music.links %}
+                                    <a href="{{ link }}" target="_blank" class="enriched-link">
+                                        <i class="fas fa-external-link-alt me-1"></i>Écouter
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Video Content -->
+                {% if recommendations.enriched_content.multimedia_content.videos %}
+                <div class="enriched-card video-card" data-aos="fade-up" data-aos-delay="400">
+                    <div class="card-header">
+                        <i class="fas fa-video"></i>
+                        <h5>{{ recommendations.enriched_content.multimedia_content.videos.title }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>{{ recommendations.enriched_content.multimedia_content.videos.description }}</p>
+                        {% if recommendations.enriched_content.multimedia_content.videos.links %}
+                            <div class="links-container">
+                                {% for link in recommendations.enriched_content.multimedia_content.videos.links %}
+                                    <a href="{{ link }}" target="_blank" class="enriched-link">
+                                        <i class="fas fa-play me-1"></i>Regarder
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+            </div>
+            {% endif %}
+
+            <!-- Resources Content -->
+            {% if recommendations.enriched_content.multimedia_content.resources %}
+            <div class="enriched-card resources-card" data-aos="fade-up" data-aos-delay="450">
+                <div class="card-header">
+                    <i class="fas fa-book"></i>
+                    <h5>{{ recommendations.enriched_content.multimedia_content.resources.title }}</h5>
+                </div>
+                <div class="card-body">
+                    <p>{{ recommendations.enriched_content.multimedia_content.resources.description }}</p>
+                    {% if recommendations.enriched_content.multimedia_content.resources.links %}
+                        <div class="links-container">
+                            {% for link in recommendations.enriched_content.multimedia_content.resources.links %}
+                                <a href="{{ link }}" target="_blank" class="enriched-link">
+                                    <i class="fas fa-external-link-alt me-1"></i>Découvrir
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Local Suggestions -->
+        {% if recommendations.enriched_content.local_suggestions %}
+        <div class="local-suggestions" data-aos="fade-up" data-aos-delay="500">
+            <div class="local-header">
+                <i class="fas fa-map-marker-alt me-2"></i>
+                <h5>{{ recommendations.enriched_content.local_suggestions.title }}</h5>
+            </div>
+            <p>{{ recommendations.enriched_content.local_suggestions.description }}</p>
+            {% if recommendations.enriched_content.local_suggestions.keywords %}
+                <div class="keywords-container">
+                    {% for keyword in recommendations.enriched_content.local_suggestions.keywords %}
+                        <span class="keyword-tag">{{ keyword }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Additional Info Section -->
+    <div class="additional-info-section" data-aos="fade-up" data-aos-delay="400">
+        <h4><i class="fas fa-info-circle me-2"></i>À propos de ces recommandations</h4>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="info-card p-3 mb-3">
+                    <h6><i class="fas fa-brain me-2"></i>Intelligence Artificielle</h6>
+                    <p class="mb-0 small">Ces suggestions sont générées par notre IA en analysant l'émotion exprimée dans votre note.</p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="info-card p-3 mb-3">
+                    <h6><i class="fas fa-heart me-2"></i>Personnalisées</h6>
+                    <p class="mb-0 small">Chaque recommandation est adaptée à votre état émotionnel du moment.</p>
+                </div>
+            </div>
+        </div>
+        <div class="text-center mt-3">
+            <small class="text-muted">
+                <i class="fas fa-clock me-1"></i>
+                Recommandations générées le {{ note.created_at|date:"d/m/Y à H:i" }}
+            </small>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Animation d'entrée pour les cartes d'activités
+    document.addEventListener('DOMContentLoaded', function() {
+        // Appliquer la couleur de fond dynamique pour l'emotion-badge
+        const emotionBadge = document.querySelector('.emotion-badge[data-bg-color]');
+        if (emotionBadge) {
+            const bgColor = emotionBadge.getAttribute('data-bg-color');
+            emotionBadge.style.backgroundColor = bgColor;
+        }
+        
+        const activityCards = document.querySelectorAll('.activity-card');
+        
+        activityCards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            
+            setTimeout(() => {
+                card.style.transition = 'all 0.5s ease';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, index * 150);
+        });
+        
+        // Effet de hover amélioré
+        activityCards.forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-5px) scale(1.02)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+    });
+</script>
+{% endblock %}

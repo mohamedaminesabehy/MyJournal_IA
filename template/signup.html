@@ -1,0 +1,389 @@
+{% extends 'base.html' %}
+{% block title %}Inscription | Journal Personnel Intelligent{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-container signup-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="auth-logo">
+                    <i class="fas fa-user-plus fa-3x"></i>
+                </div>
+                <h2>Créer un compte</h2>
+                <p class="auth-subtitle">Rejoignez notre communauté de journalistes</p>
+            </div>
+            
+            <div class="auth-body">
+                <form method="post" action="{% url 'signup' %}">
+                    {% csrf_token %}
+                    
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <p><i class="fas fa-exclamation-circle me-2"></i>Il y a des erreurs dans le formulaire:</p>
+                        {{ form.errors }}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="form-group">
+                        <label for="id_username"><i class="fas fa-user me-2"></i>Nom d'utilisateur</label>
+                        <input class="form-control" id="id_username" name="username" type="text" placeholder="Choisissez un nom d'utilisateur" required />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="id_email"><i class="fas fa-envelope me-2"></i>Adresse e-mail</label>
+                        <input class="form-control" id="id_email" name="email" type="email" placeholder="Entrez votre adresse e-mail" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_first_name"><i class="fas fa-user-tag me-2"></i>Prénom</label>
+                        <input class="form-control" id="id_first_name" name="first_name" type="text" placeholder="Entrez votre prénom" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_last_name"><i class="fas fa-user-tag me-2"></i>Nom de famille</label>
+                        <input class="form-control" id="id_last_name" name="last_name" type="text" placeholder="Entrez votre nom de famille" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_date_of_birth"><i class="fas fa-calendar-alt me-2"></i>Date de naissance</label>
+                        <input class="form-control" id="id_date_of_birth" name="date_of_birth" type="date" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_location"><i class="fas fa-map-marker-alt me-2"></i>Localisation</label>
+                        <input class="form-control" id="id_location" name="location" type="text" placeholder="Entrez votre localisation" />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="id_password1"><i class="fas fa-lock me-2"></i>Mot de passe</label>
+                        <div class="password-input-group">
+                            <input class="form-control" id="id_password1" name="password1" type="password" placeholder="Créez un mot de passe" required />
+                            <span class="password-toggle" onclick="togglePassword('id_password1')">
+                                <i class="fas fa-eye"></i>
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="id_password2"><i class="fas fa-lock me-2"></i>Confirmer le mot de passe</label>
+                        <div class="password-input-group">
+                            <input class="form-control" id="id_password2" name="password2" type="password" placeholder="Confirmez votre mot de passe" required />
+                            <span class="password-toggle" onclick="togglePassword('id_password2')">
+                                <i class="fas fa-eye"></i>
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="password-requirements">
+                        <h6><i class="fas fa-shield-alt me-2"></i>Exigences de sécurité</h6>
+                        <ul>
+                            <li class="requirement" id="length">Au moins 8 caractères</li>
+                            <li class="requirement" id="not-common">Ne pas être trop commun</li>
+                            <li class="requirement" id="not-numeric">Ne pas être entièrement numérique</li>
+                            <li class="requirement" id="not-similar">Ne pas être similaire à votre nom d'utilisateur</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" id="terms-conditions" type="checkbox" required />
+                        <label class="form-check-label" for="terms-conditions">
+                            J'accepte les <a href="#" class="terms-link">conditions d'utilisation</a> et la <a href="#" class="terms-link">politique de confidentialité</a>
+                        </label>
+                    </div>
+                    
+                    <button class="btn btn-primary btn-auth" type="submit">
+                        <i class="fas fa-user-plus me-2"></i>Créer mon compte
+                    </button>
+                    
+                    <div class="auth-separator">
+                        <span>ou inscrivez-vous avec</span>
+                    </div>
+                    
+                    <div class="social-auth">
+                        <button type="button" class="btn btn-outline-primary social-btn">
+                            <i class="fab fa-google"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-primary social-btn">
+                            <i class="fab fa-facebook-f"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-primary social-btn">
+                            <i class="fab fa-twitter"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="auth-footer">
+                <p>Déjà un compte? <a href="{% url 'signin' %}">Se connecter</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .auth-wrapper {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        padding: 2rem 1rem;
+    }
+    
+    .auth-container {
+        width: 100%;
+        max-width: 500px;
+    }
+    
+    .auth-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .auth-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    }
+    
+    .auth-header {
+        padding: 2.5rem 2rem 1.5rem;
+        text-align: center;
+        background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+        color: white;
+        border-radius: 20px 20px 0 0;
+    }
+    
+    .auth-logo {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 1.5rem;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .auth-subtitle {
+        opacity: 0.8;
+        margin-top: 0.5rem;
+    }
+    
+    .auth-body {
+        padding: 2rem;
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #4b5563;
+    }
+    
+    .form-control {
+        height: 50px;
+        border-radius: 10px;
+        border: 1px solid #e5e7eb;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+    
+    .password-input-group {
+        position: relative;
+    }
+    
+    .password-toggle {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        color: #6b7280;
+    }
+    
+    .password-requirements {
+        background-color: #f9fafb;
+        padding: 1.25rem;
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+        border-left: 4px solid var(--primary-color);
+    }
+    
+    .password-requirements h6 {
+        color: #4b5563;
+        margin-bottom: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .password-requirements ul {
+        list-style: none;
+        padding-left: 0.5rem;
+        margin-bottom: 0;
+    }
+    
+    .password-requirements li {
+        position: relative;
+        padding-left: 1.5rem;
+        margin-bottom: 0.5rem;
+        color: #6b7280;
+        font-size: 0.875rem;
+    }
+    
+    .password-requirements li::before {
+        content: "\f111";
+        font-family: "Font Awesome 5 Free";
+        position: absolute;
+        left: 0;
+        color: #9ca3af;
+    }
+    
+    .password-requirements li.valid {
+        color: var(--success-color);
+    }
+    
+    .password-requirements li.valid::before {
+        content: "\f058";
+        color: var(--success-color);
+    }
+    
+    .form-check {
+        margin-bottom: 1.5rem;
+    }
+    
+    .terms-link {
+        color: var(--primary-color);
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .btn-auth {
+        width: 100%;
+        height: 50px;
+        border-radius: 10px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+        border: none;
+        box-shadow: 0 4px 6px rgba(99, 102, 241, 0.25);
+        transition: all 0.3s ease;
+    }
+    
+    .btn-auth:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 10px rgba(99, 102, 241, 0.3);
+    }
+    
+    .auth-separator {
+        display: flex;
+        align-items: center;
+        text-align: center;
+        margin: 1.5rem 0;
+        color: #6b7280;
+    }
+    
+    .auth-separator::before,
+    .auth-separator::after {
+        content: '';
+        flex: 1;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .auth-separator span {
+        padding: 0 1rem;
+    }
+    
+    .social-auth {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+    }
+    
+    .social-btn {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+    
+    .social-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .auth-footer {
+        text-align: center;
+        padding: 1.5rem 2rem;
+        border-top: 1px solid #e5e7eb;
+    }
+    
+    .auth-footer a {
+        color: var(--primary-color);
+        font-weight: 600;
+        text-decoration: none;
+    }
+</style>
+
+<script>
+    function togglePassword(inputId) {
+        const passwordInput = document.getElementById(inputId);
+        const icon = document.querySelector(`#${inputId} + .password-toggle i`);
+        
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
+    
+    // Validation en temps réel des exigences de mot de passe
+    document.addEventListener('DOMContentLoaded', function() {
+        const password = document.getElementById('id_password1');
+        const username = document.getElementById('id_username');
+        
+        password.addEventListener('input', function() {
+            // Vérification de la longueur
+            if (this.value.length >= 8) {
+                document.getElementById('length').classList.add('valid');
+            } else {
+                document.getElementById('length').classList.remove('valid');
+            }
+            
+            // Vérification si entièrement numérique
+            if (!/^\d+$/.test(this.value)) {
+                document.getElementById('not-numeric').classList.add('valid');
+            } else {
+                document.getElementById('not-numeric').classList.remove('valid');
+            }
+            
+            // Vérification de similarité avec le nom d'utilisateur
+            if (username.value && this.value.indexOf(username.value) === -1) {
+                document.getElementById('not-similar').classList.add('valid');
+            } else {
+                document.getElementById('not-similar').classList.remove('valid');
+            }
+        });
+    });
+</script>
+{% endblock %}

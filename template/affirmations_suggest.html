@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .aff-container{ max-width: 980px; margin: 0 auto; padding: 0 24px; }
+  .toolbar{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
+  .toolbar input,.toolbar select{ height:36px; padding:6px 10px; border-radius:8px; border:1px solid #cfd6e4; }
+  .btn{ height:36px; padding:6px 10px; border-radius:10px; cursor:pointer; border:1px solid #cfd6e4; background:#fff; }
+  .btn-primary{ background:#4f46e5; border-color:#4f46e5; color:#fff; }
+  .muted{ color:#6b7280; }
+
+  .grid{ display:grid; gap:12px; grid-template-columns: 1fr; }
+  .item{ border:1px solid #e7e9ee; border-radius:12px; padding:12px; background:#fff; display:flex; gap:10px; }
+  .text{ flex:1; font-weight:600; }
+  .actions{ display:flex; gap:8px; align-items:center; }
+</style>
+
+<div class="aff-container">
+  <h2>Suggestions d’affirmations</h2>
+
+  <!-- Contrôles -->
+  <form id="regenForm" class="toolbar">
+    <select name="tone" id="tone">
+      <option value="calm" {% if tone == 'calm' %}selected{% endif %}>Calme</option>
+      <option value="motivational" {% if tone == 'motivational' %}selected{% endif %}>Motivation</option>
+      <option value="self_compassion" {% if tone == 'self_compassion' %}selected{% endif %}>Bienveillance envers soi</option>
+      <option value="focus" {% if tone == 'focus' %}selected{% endif %}>Concentration</option>
+      <option value="confidence" {% if tone == 'confidence' %}selected{% endif %}>Confiance</option>
+    </select>
+
+    <input type="text" name="topic" id="topic" value="{{ topic }}" placeholder="Thème (facultatif)">
+    <select name="style" id="style">
+      <option value="concise" {% if style == 'concise' %}selected{% endif %}>Concis</option>
+      <option value="gentle"  {% if style == 'gentle'  %}selected{% endif %}>Doux</option>
+      <option value="bold"    {% if style == 'bold'    %}selected{% endif %}>Audacieux</option>
+    </select>
+    <select name="n" id="n">
+      <option value="5" {% if n|add:0 == 5 %}selected{% endif %}>5</option>
+      <option value="6" {% if n|add:0 == 6 %}selected{% endif %}>6</option>
+      <option value="8" {% if n|add:0 == 8 %}selected{% endif %}>8</option>
+    </select>
+
+    <!-- curseurs de créativité et diversité -->
+    <label class="muted">Créativité :
+      <input type="range" min="0" max="1" step="0.05" name="creativity" id="creativity" value="{{ creativity|default:0.4 }}">
+    </label>
+    <label class="muted">Diversité :
+      <input type="range" min="0" max="1" step="0.05" name="diversity" id="diversity" value="{{ diversity|default:0.6 }}">
+    </label>
+
+    <button class="btn" type="button" id="btnRegen">Régénérer</button>
+    <a href="{% url 'affirmation_list' %}" class="btn">Retour</a>
+  </form>
+
+  <!-- Sauvegarder les affirmations sélectionnées -->
+  <form id="saveForm" method="post" action="{% url 'affirmation_suggest' %}">
+    {% csrf_token %}
+    <input type="hidden" name="tone" id="saveTone" value="{{ tone }}">
+    <input type="hidden" name="topic" id="saveTopic" value="{{ topic }}">
+
+    <div id="list" class="grid">
+      {% for s in suggestions %}
+        <div class="item">
+          <input type="checkbox" name="chosen" value="{{ s }}" checked>
+          <div class="text">{{ s }}</div>
+          <div class="actions">
+            <button class="btn" type="button" data-reroll>Relancer</button>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div style="display:flex; gap:10px; margin-top:14px;">
+      <button type="submit" class="btn btn-primary">Enregistrer la sélection</button>
+      <a href="{% url 'affirmation_list' %}" class="btn">Annuler</a>
+    </div>
+  </form>
+</div>
+
+<script>
+  const list = document.getElementById('list');
+  const regenForm = document.getElementById('regenForm');
+  const saveTone = document.getElementById('saveTone');
+  const saveTopic = document.getElementById('saveTopic');
+
+  function params() {
+    const fd = new FormData(regenForm);
+    const q = new URLSearchParams(fd);
+    return q.toString();
+  }
+
+  document.getElementById('btnRegen').addEventListener('click', async () => {
+    const url = "{% url 'affirmation_suggest_api' %}?" + params();
+    const resp = await fetch(url, { credentials: "same-origin" });
+    const data = await resp.json();
+    // mise à jour des champs cachés
+    saveTone.value = document.getElementById('tone').value;
+    saveTopic.value = document.getElementById('topic').value;
+
+    list.innerHTML = data.items.map(s => `
+      <div class="item">
+        <input type="checkbox" name="chosen" value="${s.replace(/"/g,'&quot;')}" checked>
+        <div class="text">${s}</div>
+        <div class="actions">
+          <button class="btn" type="button" data-reroll>Relancer</button>
+        </div>
+      </div>
+    `).join('');
+  });
+
+  // Relancer une ligne spécifique
+  list.addEventListener('click', async (e) => {
+    if (!e.target.matches('[data-reroll]')) return;
+    const tone = document.getElementById('tone').value;
+    const topic = document.getElementById('topic').value;
+    const style = document.getElementById('style').value;
+    const creativity = document.getElementById('creativity').value;
+    const diversity = document.getElementById('diversity').value;
+
+    const url = "{% url 'affirmation_paraphrase_one' %}" + `?tone=${encodeURIComponent(tone)}&topic=${encodeURIComponent(topic)}&style=${encodeURIComponent(style)}&creativity=${creativity}&diversity=${diversity}`;
+    const resp = await fetch(url, { credentials: "same-origin" });
+    const data = await resp.json();
+
+    const item = e.target.closest('.item');
+    const textDiv = item.querySelector('.text');
+    const checkbox = item.querySelector('input[type="checkbox"]');
+    textDiv.textContent = data.text || textDiv.textContent;
+    checkbox.value = textDiv.textContent;
+  });
+</script>
+{% endblock %}

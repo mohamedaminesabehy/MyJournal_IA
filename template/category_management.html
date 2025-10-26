@@ -1,0 +1,831 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestion des Catégories{% endblock %}
+
+{% block extra_css %}
+<style>
+    .category-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f5f7ff 100%);
+        border: 1px solid #e0e7ff; /* Indigo-200 */
+        border-radius: 16px;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
+        padding: 22px;
+        text-align: center;
+        transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.2s ease;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+    .category-card::after {
+        content: "";
+        position: absolute;
+        bottom: -30px;
+        right: -30px;
+        width: 120px;
+        height: 120px;
+        background: radial-gradient( rgba(79,70,229,0.15), transparent 60%);
+        border-radius: 50%;
+        transition: all 0.3s ease;
+    }
+    .category-card:hover::after {
+        bottom: -20px;
+        right: -20px;
+    }
+    .category-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 16px 30px rgba(0, 0, 0, 0.08);
+        border-color: #e0e7ff; /* Indigo-200 */
+    }
+    .category-card i {
+        font-size: 3rem;
+        color: #4f46e5; /* Indigo-600 */
+        margin-bottom: 10px;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.06));
+    }
+    .category-card h5 {
+        font-weight: 700;
+        color: #343a40;
+        margin-bottom: 8px;
+    }
+    .category-actions {
+        margin-top: 15px;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+    }
+    .category-actions .btn {
+        font-size: 0.85rem;
+        padding: 6px 12px;
+        border-radius: 10px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .category-actions .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+    }
+    .add-category-btn-container {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 20px;
+    }
+
+    /* Popup/Modal styling */
+    .popup-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        visibility: hidden;
+        opacity: 0;
+        transition: visibility 0s, opacity 0.3s;
+        backdrop-filter: blur(2px);
+    }
+    .popup-overlay.active {
+        visibility: visible;
+        opacity: 1;
+    }
+    .popup-content {
+        background-color: #fff;
+        padding: 26px;
+        border-radius: 14px;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
+        width: 92%;
+        max-width: 560px;
+        transform: translateY(-24px);
+        transition: transform 0.3s;
+        position: relative;
+        border: 1px solid #e0e7ff; /* Indigo-200 */
+    }
+    .popup-overlay.active .popup-content {
+        transform: translateY(0);
+    }
+    .popup-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 18px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #eee;
+    }
+    .popup-header h4 {
+        margin: 0;
+        font-size: 1.35rem;
+        color: #2c3e50;
+        font-weight: 700;
+    }
+    .popup-close-btn {
+        background: none;
+        border: none;
+        font-size: 1.6rem;
+        color: #aaa;
+        cursor: pointer;
+        transition: color 0.2s ease, transform 0.2s ease;
+    }
+    .popup-close-btn:hover {
+        color: #777;
+        transform: rotate(90deg);
+    }
+    .popup-body p {
+        font-size: 1rem;
+        color: #495057;
+        line-height: 1.6;
+    }
+    .popup-footer {
+        padding-top: 15px;
+        border-top: 1px solid #eee;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    /* Icon list */
+    #iconList {
+        max-height: 240px;
+        overflow-y: auto;
+        border: 1px solid #eee;
+        padding: 10px;
+        border-radius: 10px;
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.03);
+        background: #fafbfc;
+    }
+    .icon-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 10px 6px;
+        cursor: pointer;
+        border-radius: 10px;
+        transition: background-color 0.2s, transform 0.2s;
+    }
+    .icon-item:hover,
+    .icon-item.selected {
+        background-color: #eef2ff; /* Indigo-100 */
+        transform: translateY(-2px);
+    }
+    .icon-item i {
+        font-size: 1.5rem;
+        margin-bottom: 6px;
+        color: #4f46e5; /* Indigo-600 */
+    }
+    .icon-item span {
+        font-size: 0.75rem;
+        text-align: center;
+        word-break: break-all;
+        color: #6c757d;
+    }
+
+    /* Add category button */
+    #addCategoryBtn {
+        border-radius: 12px;
+        padding: 10px 16px;
+        box-shadow: 0 6px 16px rgba(79,70,229,0.25);
+    }
+    #addCategoryBtn:hover {
+        transform: translateY(-2px);
+    }
+
+    /* Custom alert */
+    #customAlertModal .popup-content {
+        max-width: 520px;
+    }
+    #customAlertConfirmBtn {
+        border-radius: 10px;
+    }
+    #customAlertCancelBtn {
+        border-radius: 10px;
+    }
+
+    /* Indigo button overrides */
+    .btn.btn-primary {
+        background-color: #4f46e5;
+        border-color: #4f46e5;
+    }
+    .btn.btn-primary:hover,
+    .btn.btn-primary:focus {
+        background-color: #4338ca; /* Indigo-700 */
+        border-color: #4338ca;
+    }
+    .btn.btn-outline-primary {
+        color: #4f46e5;
+        border-color: #4f46e5;
+    }
+    .btn.btn-outline-primary:hover,
+    .btn.btn-outline-primary:focus {
+        background-color: #4f46e5;
+        color: #ffffff;
+        border-color: #4f46e5;
+    }
+
+    /* Cadres personnalisés pour les boutons Modifier et Supprimer */
+    .category-actions .btn.edit-category-btn {
+        border-color: #ffffff; /* Indigo-500 */
+        color: #ffffff;
+        border-width: 2px;
+        box-shadow: 0 0 0 2px #ffffff, 0 2px 6px rgba(0,0,0,0.06); /* Contour blanc + ombre */
+    }
+    .category-actions .btn.edit-category-btn:hover,
+    .category-actions .btn.edit-category-btn:focus {
+        background-color: #6366f1;
+        color: #ffffff;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 2px #ffffff, 0 6px 12px rgba(0,0,0,0.08);
+    }
+    .category-actions .btn.delete-category-btn {
+        border-color: #ffffff; /* Red-500 */
+        color: #ffffff;
+        border-width: 2px;
+        box-shadow: 0 0 0 2px #ffffff, 0 2px 6px rgba(0,0,0,0.06); /* Contour blanc + ombre */
+    }
+    .category-actions .btn.delete-category-btn:hover,
+    .category-actions .btn.delete-category-btn:focus {
+        background-color: #ef4444;
+        color: #ffffff;
+        border-color: #ef4444;
+        box-shadow: 0 0 0 2px #ffffff, 0 6px 12px rgba(0,0,0,0.08);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Gestion des Catégories</h2>
+        <button id="addCategoryBtn" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i> Ajouter Catégorie
+        </button>
+    </div>
+
+    <div class="row" id="categoriesContainer">
+        {% for category in categories %}
+        <div class="col-md-4 mb-4">
+            <div class="category-card" data-id="{{ category.id }}" data-name="{{ category.name }}" data-icon="{{ category.icon }}">
+                <i class="{{ category.icon }}"></i>
+                {% if category.id %}
+                <a href="{% url 'notes_by_category' category.id %}" class="category-card-link">
+                    <h5>{{ category.name }}</h5>
+                </a>
+                {% else %}
+                <h5>{{ category.name }}</h5>
+                {% endif %}
+                <div class="category-actions">
+                        <button class="btn btn-sm btn-outline-primary edit-category-btn" data-id="{{ category.id }}" data-name="{{ category.name }}" data-icon="{{ category.icon }}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger delete-category-btn" data-id="{{ category.id }}">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            <!-- removed stray closing </a> that could break DOM structure -->
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <p>Aucune catégorie ajoutée pour le moment.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Add Category Popup -->
+    <div class="popup-overlay" id="addCategoryPopup">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h4>Ajouter une nouvelle catégorie</h4>
+                <button class="popup-close-btn" id="closeAddPopupBtn">&times;</button>
+            </div>
+            <form method="post" action="{% url 'category_management' %}" id="addCategoryForm">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="categoryName" class="form-label">Nom de la catégorie</label>
+                    <input type="text" class="form-control" id="categoryName" name="categoryName" placeholder="Ex: Voyages, Technologie" required>
+                </div>
+                <div class="mb-3">
+                    <label for="categoryIcon" class="form-label">Icône de la catégorie (Font Awesome)</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="selectedIconDisplay" placeholder="Sélectionnez une icône" readonly>
+                        <button class="btn btn-outline-secondary" type="button" id="openIconPickerBtn">
+                            <i class="fas fa-icons"></i>
+                        </button>
+                    </div>
+                    <input type="hidden" id="categoryIcon" name="categoryIcon">
+                    <small class="form-text text-muted">Trouvez des icônes sur <a href="https://fontawesome.com/icons" target="_blank">Font Awesome</a></small>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Ajouter</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Category Popup -->
+    <div class="popup-overlay" id="editCategoryPopup">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h4>Modifier la catégorie</h4>
+                <button class="popup-close-btn" id="closeEditPopupBtn">&times;</button>
+            </div>
+            <form method="post" action="" id="editCategoryForm">
+                {% csrf_token %}
+                <input type="hidden" id="editCategoryId" name="categoryId">
+                <div class="mb-3">
+                    <label for="editCategoryName" class="form-label">Nom de la catégorie</label>
+                    <input type="text" class="form-control" id="editCategoryName" name="categoryName" required>
+                </div>
+                <div class="mb-3">
+                    <label for="editCategoryIcon" class="form-label">Icône de la catégorie (Font Awesome)</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="editSelectedIconDisplay" placeholder="Sélectionnez une icône" readonly>
+                        <button class="btn btn-outline-secondary" type="button" id="openEditIconPickerBtn">
+                            <i class="fas fa-icons"></i>
+                        </button>
+                    </div>
+                    <input type="hidden" id="editCategoryIcon" name="categoryIcon">
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Enregistrer les modifications</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Icon Picker Modal -->
+    <div class="popup-overlay" id="iconPickerModal">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h4>Sélectionner une icône</h4>
+                <button class="popup-close-btn" id="closeIconPickerBtn">&times;</button>
+            </div>
+            <input type="text" class="form-control mb-3" id="iconSearchInput" placeholder="Rechercher une icône...">
+            <div class="icon-list row row-cols-6 g-2" id="iconList">
+                <!-- Icons will be loaded here -->
+            </div>
+            <button class="btn btn-primary w-100 mt-3" id="selectIconButton" style="display: none;">Sélectionner</button>
+        </div>
+    </div>
+
+    <!-- Custom Alert/Confirm Modal -->
+    <div class="popup-overlay" id="customAlertModal">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h4 id="customAlertTitle"></h4>
+                <button class="popup-close-btn" id="closeCustomAlertBtn">&times;</button>
+            </div>
+            <div class="popup-body">
+                <p id="customAlertMessage"></p>
+            </div>
+            <div class="popup-footer text-end">
+                <button class="btn btn-secondary" id="customAlertCancelBtn" style="display: none;">Annuler</button>
+                <button class="btn btn-primary" id="customAlertConfirmBtn">OK</button>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const addCategoryBtn = document.getElementById('addCategoryBtn');
+        const addCategoryPopup = document.getElementById('addCategoryPopup');
+        const closeAddPopupBtn = document.getElementById('closeAddPopupBtn');
+        const addCategoryForm = document.getElementById('addCategoryForm');
+        const categoriesContainer = document.getElementById('categoriesContainer');
+
+        // Edit Category Popup elements
+        const editCategoryPopup = document.getElementById('editCategoryPopup');
+        const closeEditPopupBtn = document.getElementById('closeEditPopupBtn');
+        const editCategoryForm = document.getElementById('editCategoryForm');
+        const editCategoryIdInput = document.getElementById('editCategoryId');
+        const editCategoryNameInput = document.getElementById('editCategoryName');
+        const editSelectedIconDisplay = document.getElementById('editSelectedIconDisplay');
+        const editCategoryIconInput = document.getElementById('editCategoryIcon');
+        const openEditIconPickerBtn = document.getElementById('openEditIconPickerBtn');
+
+        // Icon Picker elements
+        const iconPickerModal = document.getElementById('iconPickerModal');
+        const openIconPickerBtn = document.getElementById('openIconPickerBtn');
+        const closeIconPickerBtn = document.getElementById('closeIconPickerBtn');
+        const iconSearchInput = document.getElementById('iconSearchInput');
+        const iconList = document.getElementById('iconList');
+        const selectedIconDisplay = document.getElementById('selectedIconDisplay');
+        const categoryIconInput = document.getElementById('categoryIcon');
+        const selectIconButton = document.getElementById('selectIconButton');
+
+        let selectedIcon = '';
+        let currentIconTarget = null; // To track which input (add or edit) triggered the icon picker
+
+        // Custom Alert/Confirm Modal elements
+        const customAlertModal = document.getElementById('customAlertModal');
+        const customAlertTitle = document.getElementById('customAlertTitle');
+        const customAlertMessage = document.getElementById('customAlertMessage');
+        const customAlertConfirmBtn = document.getElementById('customAlertConfirmBtn');
+        const customAlertCancelBtn = document.getElementById('customAlertCancelBtn');
+        const closeCustomAlertBtn = document.getElementById('closeCustomAlertBtn');
+
+        let customAlertCallback = null; // To store the callback function for confirmation
+
+        function showCustomAlert(title, message, type = 'alert', callback = null) {
+            customAlertTitle.textContent = title;
+            customAlertMessage.textContent = message;
+            customAlertCallback = callback;
+
+            if (type === 'confirm') {
+                customAlertCancelBtn.style.display = 'inline-block';
+                customAlertConfirmBtn.textContent = 'Confirmer';
+                customAlertConfirmBtn.className = 'btn btn-danger';
+            } else {
+                customAlertCancelBtn.style.display = 'none';
+                customAlertConfirmBtn.textContent = 'OK';
+                customAlertConfirmBtn.className = 'btn btn-primary';
+            }
+
+            customAlertModal.classList.add('active');
+        }
+
+        closeCustomAlertBtn.addEventListener('click', function() {
+            customAlertModal.classList.remove('active');
+            if (customAlertCallback && typeof customAlertCallback === 'function') {
+                customAlertCallback(false); // Indicate cancellation
+            }
+        });
+
+        customAlertModal.addEventListener('click', function(e) {
+            if (e.target === customAlertModal) {
+                customAlertModal.classList.remove('active');
+                if (customAlertCallback && typeof customAlertCallback === 'function') {
+                    customAlertCallback(false); // Indicate cancellation
+                }
+            }
+        });
+
+        customAlertConfirmBtn.addEventListener('click', function() {
+            customAlertModal.classList.remove('active');
+            if (customAlertCallback && typeof customAlertCallback === 'function') {
+                customAlertCallback(true); // Indicate confirmation
+            }
+        });
+
+        customAlertCancelBtn.addEventListener('click', function() {
+            customAlertModal.classList.remove('active');
+            if (customAlertCallback && typeof customAlertCallback === 'function') {
+                customAlertCallback(false); // Indicate cancellation
+            }
+        });
+
+        // Font Awesome Icons (a subset for demonstration)
+        const fontAwesomeIcons = [
+            'fas fa-star', 'fas fa-heart', 'fas fa-bell', 'fas fa-home', 'fas fa-cog',
+            'fas fa-user', 'fas fa-envelope', 'fas fa-camera', 'fas fa-image', 'fas fa-file',
+            'fas fa-folder', 'fas fa-tag', 'fas fa-bookmark', 'fas fa-calendar', 'fas fa-map-marker-alt',
+            'fas fa-globe', 'fas fa-chart-bar', 'fas fa-shopping-cart', 'fas fa-gift', 'fas fa-plane',
+            'fas fa-car', 'fas fa-bicycle', 'fas fa-bus', 'fas fa-train', 'fas fa-ship',
+            'fas fa-moon', 'fas fa-sun', 'fas fa-cloud', 'fas fa-snowflake', 'fas fa-fire',
+            'fas fa-lightbulb', 'fas fa-wrench', 'fas fa-hammer', 'fas fa-screwdriver', 'fas fa-paint-brush',
+            'fas fa-music', 'fas fa-film', 'fas fa-book', 'fas fa-graduation-cap', 'fas fa-briefcase',
+            'fas fa-money-bill-alt', 'fas fa-credit-card', 'fas fa-wallet', 'fas fa-piggy-bank', 'fas fa-dollar-sign',
+            'fas fa-utensils', 'fas fa-coffee', 'fas fa-pizza-slice', 'fas fa-hamburger', 'fas fa-ice-cream',
+            'fas fa-tree', 'fas fa-mountain', 'fas fa-water', 'fas fa-fish', 'fas fa-paw',
+            'fas fa-gamepad', 'fas fa-chess', 'fas fa-puzzle-piece', 'fas fa-dice', 'fas fa-robot',
+            'fas fa-flask', 'fas fa-microscope', 'fas fa-atom', 'fas fa-dna', 'fas fa-brain',
+            'fas fa-laptop', 'fas fa-desktop', 'fas fa-tablet-alt', 'fas fa-mobile-alt', 'fas fa-keyboard',
+            'fas fa-mouse', 'fas fa-headphones', 'fas fa-microphone', 'fas fa-print', 'fas fa-fax',
+            'fas fa-code', 'fas fa-terminal', 'fas fa-bug', 'fas fa-database', 'fas fa-server',
+            'fas fa-shield-alt', 'fas fa-lock', 'fas fa-key', 'fas fa-fingerprint', 'fas fa-user-secret',
+            'fas fa-heartbeat', 'fas fa-medkit', 'fas fa-hospital', 'fas fa-syringe', 'fas fa-pills',
+            'fas fa-baby', 'fas fa-child', 'fas fa-male', 'fas fa-female', 'fas fa-users',
+            'fas fa-comments', 'fas fa-quote-left', 'fas fa-paper-plane', 'fas fa-share-alt', 'fas fa-thumbs-up',
+            'fas fa-thumbs-down', 'fas fa-smile', 'fas fa-frown', 'fas fa-meh', 'fas fa-grin',
+            'fas fa-surprise', 'fas fa-tired', 'fas fa-angry', 'fas fa-sad-tear', 'fas fa-dizzy',
+            'fas fa-poo', 'fas fa-ghost', 'fas fa-dragon', 'fas fa-spider', 'fas fa-skull',
+            'fas fa-umbrella', 'fas fa-gem', 'fas fa-crown', 'fas fa-ring', 'fas fa-trophy',
+            'fas fa-award', 'fas fa-medal', 'fas fa-ribbon', 'fas fa-certificate', 'fas fa-ticket-alt',
+            'fas fa-barcode', 'fas fa-qrcode', 'fas fa-compass', 'fas fa-location-arrow', 'fas fa-directions',
+            'fas fa-road', 'fas fa-bus-alt', 'fas fa-subway', 'fas fa-taxi', 'fas fa-truck',
+            'fas fa-warehouse', 'fas fa-factory', 'fas fa-building', 'fas fa-city', 'fas fa-landmark',
+            'fas fa-gavel', 'fas fa-balance-scale', 'fas fa-scale-balanced', 'fas fa-handshake', 'fas fa-sitemap',
+            'fas fa-network-wired', 'fas fa-wifi', 'fas fa-bluetooth-b', 'fas fa-satellite', 'fas fa-satellite-dish',
+            'fas fa-hdd', 'fas fa-memory', 'fas fa-microchip', 'fas fa-sd-card', 'fas fa-sim-card',
+            'fas fa-battery-full', 'fas fa-battery-half', 'fas fa-battery-quarter', 'fas fa-battery-empty', 'fas fa-plug',
+            'fas fa-power-off', 'fas fa-toggle-on', 'fas fa-toggle-off', 'fas fa-sliders-h', 'fas fa-cogs',
+            'fas fa-tools', 'fas fa-screwdriver-wrench', 'fas fa-ruler', 'fas fa-pencil-alt', 'fas fa-eraser',
+            'fas fa-highlighter', 'fas fa-paint-roller', 'fas fa-palette', 'fas fa-brush', 'fas fa-spray-can',
+            'fas fa-cut', 'fas fa-copy', 'fas fa-paste', 'fas fa-undo', 'fas fa-redo',
+            'fas fa-sync-alt', 'fas fa-history', 'fas fa-save', 'fas fa-upload', 'fas fa-download',
+            'fas fa-share', 'fas fa-reply', 'fas fa-forward', 'fas fa-backward', 'fas fa-play',
+            'fas fa-pause', 'fas fa-stop', 'fas fa-volume-up', 'fas fa-volume-down', 'fas fa-volume-mute',
+            'fas fa-expand', 'fas fa-compress', 'fas fa-search', 'fas fa-plus', 'fas fa-minus',
+            'fas fa-times', 'fas fa-check', 'fas fa-info-circle', 'fas fa-exclamation-triangle', 'fas fa-question-circle',
+            'fas fa-ban', 'fas fa-trash', 'fas fa-edit', 'fas fa-print', 'fas fa-link',
+            'fas fa-unlink', 'fas fa-paperclip', 'fas fa-thumbtack', 'fas fa-pushpin', 'fas fa-map-pin',
+            'fas fa-location-dot', 'fas fa-house-chimney', 'fas fa-building-columns', 'fas fa-school', 'fas fa-hospital-user',
+            'fas fa-hotel', 'fas fa-store', 'fas fa-warehouse', 'fas fa-industry', 'fas fa-tractor',
+            'fas fa-seedling', 'fas fa-leaf', 'fas fa-globe-americas', 'fas fa-globe-asia', 'fas fa-globe-europe',
+            'fas fa-globe-africa', 'fas fa-globe-oceania', 'fas fa-mountain-sun', 'fas fa-water-ladder', 'fas fa-umbrella-beach',
+            'fas fa-person-swimming', 'fas fa-person-walking', 'fas fa-person-running', 'fas fa-person-biking', 'fas fa-person-hiking',
+            'fas fa-person-skiing', 'fas fa-person-snowboarding', 'fas fa-person-skating', 'fas fa-person-digging', 'fas fa-person-falling',
+            'fas fa-person-falling-burst', 'fas fa-person-booth', 'fas fa-person-dress', 'fas fa-person-dress-burst', 'fas fa-person-pregnant',
+            'fas fa-person-breastfeeding', 'fas fa-person-cane', 'fas fa-person-dots-from-line', 'fas fa-person-harassing', 'fas fa-person-military-to-person',
+            'fas fa-person-rifle', 'fas fa-person-shelter', 'fas fa-person-through-window', 'fas fa-person-walking-arrow-loop-left', 'fas fa-person-walking-arrow-right',
+            'fas fa-person-walking-dashed-line-arrow-right', 'fas fa-person-walking-luggage', 'fas fa-person-walking-with-cane', 'fas fa-person-wheelchair', 'fas fa-person-running-fast',
+            'fas fa-person-running-lean', 'fas fa-person-running-steps', 'fas fa-person-running-with-gait', 'fas fa-person-running-with-sprint', 'fas fa-person-running-with-stride',
+            'fas fa-person-running-with-stretch', 'fas fa-person-running-with-swing', 'fas fa-person-running-with-twist', 'fas fa-person-running-with-turn', 'fas fa-person-running-with-walk',
+            'fas fa-person-running-with-jog', 'fas fa-person-running-with-run', 'fas fa-person-running-with-dash', 'fas fa-person-running-with-sprint-fast', 'fas fa-person-running-with-sprint-lean',
+            'fas fa-person-running-with-sprint-steps', 'fas fa-person-running-with-sprint-with-gait', 'fas fa-person-running-with-sprint-with-sprint', 'fas fa-person-running-with-sprint-with-stride', 'fas fa-person-running-with-sprint-with-stretch',
+            'fas fa-person-running-with-sprint-with-swing', 'fas fa-person-running-with-sprint-with-twist', 'fas fa-person-running-with-sprint-with-turn', 'fas fa-person-running-with-sprint-with-walk', 'fas fa-person-running-with-sprint-with-jog',
+            'fas fa-person-running-with-sprint-with-run', 'fas fa-person-running-with-sprint-with-dash', 'fas fa-person-running-with-sprint-with-sprint-fast', 'fas fa-person-running-with-sprint-with-sprint-lean', 'fas fa-person-running-with-sprint-with-sprint-steps',
+            'fas fa-person-running-with-sprint-with-sprint-with-gait', 'fas fa-person-running-with-sprint-with-sprint-with-sprint', 'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-stride', 'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-stretch', 'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-swing',
+            'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-twist', 'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-turn', 'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-walk', 'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-jog', 'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-run',
+            'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-dash', 'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-sprint-fast', 'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-sprint-lean', 'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-sprint-steps', 'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-sprint-with-gait',
+            'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-sprint-with-sprint', 'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-sprint-with-stride', 'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-sprint-with-stretch', 'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-sprint-with-swing', 'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-sprint-with-twist',
+            'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-sprint-with-turn', 'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-sprint-with-walk', 'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-sprint-with-jog', 'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-sprint-with-run', 'fas fa-person-running-with-sprint-with-sprint-with-sprint-with-sprint-with-dash'
+        ];
+
+        function loadIcons(query = '') {
+            iconList.innerHTML = '';
+            const filteredIcons = fontAwesomeIcons.filter(icon => icon.includes(query.toLowerCase()));
+            filteredIcons.forEach(iconClass => {
+                const iconName = iconClass.split(' ')[1].replace('fa-', '');
+                const iconItem = document.createElement('div');
+                iconItem.classList.add('col', 'icon-item');
+                iconItem.innerHTML = `<i class="${iconClass}"></i><span>${iconName}</span>`;
+                iconItem.addEventListener('click', () => {
+                    // Remove selected from previously selected icon
+                    const currentSelected = iconList.querySelector('.icon-item.selected');
+                    if (currentSelected) {
+                        currentSelected.classList.remove('selected');
+                    }
+                    iconItem.classList.add('selected');
+                    selectedIcon = iconClass;
+                    selectIconButton.style.display = 'block';
+                });
+                iconList.appendChild(iconItem);
+            });
+        }
+
+        // Event Listeners for Add Category Popup
+        addCategoryBtn.addEventListener('click', function() {
+            addCategoryPopup.classList.add('active');
+        });
+
+        closeAddPopupBtn.addEventListener('click', function() {
+            addCategoryPopup.classList.remove('active');
+        });
+
+        addCategoryPopup.addEventListener('click', function(e) {
+            if (e.target === addCategoryPopup) {
+                addCategoryPopup.classList.remove('active');
+            }
+        });
+
+        // Event Listeners for Edit Category Popup
+        categoriesContainer.addEventListener('click', function(e) {
+            const editBtn = e.target.closest('.edit-category-btn');
+            if (editBtn) {
+                const categoryId = editBtn.dataset.id;
+                const categoryName = editBtn.dataset.name;
+                const categoryIcon = editBtn.dataset.icon;
+
+                editCategoryIdInput.value = categoryId;
+                editCategoryNameInput.value = categoryName;
+                editSelectedIconDisplay.value = categoryIcon;
+                editCategoryIconInput.value = categoryIcon;
+                editCategoryForm.action = `/category/edit/${categoryId}/`; // Assuming a URL structure for editing
+
+                editCategoryPopup.classList.add('active');
+            }
+        });
+
+        closeEditPopupBtn.addEventListener('click', function() {
+            editCategoryPopup.classList.remove('active');
+        });
+
+        editCategoryPopup.addEventListener('click', function(e) {
+            if (e.target === editCategoryPopup) {
+                editCategoryPopup.classList.remove('active');
+            }
+        });
+
+        // Event Listeners for Icon Picker Modal
+        openIconPickerBtn.addEventListener('click', function() {
+            currentIconTarget = {
+                display: selectedIconDisplay,
+                input: categoryIconInput
+            };
+            iconPickerModal.classList.add('active');
+            loadIcons(); // Load all icons when opening the picker
+            selectedIcon = ''; // Reset selected icon
+            selectIconButton.style.display = 'none'; // Hide select button initially
+            iconSearchInput.value = ''; // Clear search input
+        });
+
+        openEditIconPickerBtn.addEventListener('click', function() {
+            currentIconTarget = {
+                display: editSelectedIconDisplay,
+                input: editCategoryIconInput
+            };
+            iconPickerModal.classList.add('active');
+            loadIcons(); // Load all icons when opening the picker
+            selectedIcon = ''; // Reset selected icon
+            selectIconButton.style.display = 'none'; // Hide select button initially
+            iconSearchInput.value = ''; // Clear search input
+        });
+
+        closeIconPickerBtn.addEventListener('click', function() {
+            iconPickerModal.classList.remove('active');
+        });
+
+        iconPickerModal.addEventListener('click', function(e) {
+            if (e.target === iconPickerModal) {
+                iconPickerModal.classList.remove('active');
+            }
+        });
+
+        iconSearchInput.addEventListener('input', function() {
+            loadIcons(this.value);
+        });
+
+        selectIconButton.addEventListener('click', function() {
+            if (selectedIcon && currentIconTarget) {
+                currentIconTarget.display.value = selectedIcon;
+                currentIconTarget.input.value = selectedIcon;
+                iconPickerModal.classList.remove('active');
+            }
+        });
+
+        addCategoryForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const name = (formData.get('categoryName') || '').trim();
+            if (!name) {
+                showCustomAlert('Erreur', 'Le nom de la catégorie est requis.', 'alert');
+                return;
+            }
+            formData.set('categoryName', name);
+
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+                    'Accept': 'application/json'
+                },
+                credentials: 'same-origin'
+            })
+            .then(async (response) => {
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(text || 'Requête échouée.');
+                }
+                try {
+                    return await response.json();
+                } catch (e) {
+                    const text = await response.text();
+                    throw new Error(text || 'Réponse non JSON du serveur.');
+                }
+            })
+            .then(data => {
+                if (data.success) {
+                    const newCategoryHtml = `
+                        <div class="col-md-4 mb-4">
+                            <div class="category-card" data-id="${data.category.id}" data-name="${data.category.name}" data-icon="${data.category.icon}">
+                                <i class="${data.category.icon}"></i>
+                                <a href="/notes/category/${data.category.id}/" class="category-card-link">
+                                    <h5>${data.category.name}</h5>
+                                </a>
+                                <div class="category-actions">
+                                    <button class="btn btn-sm btn-outline-primary edit-category-btn" data-id="${data.category.id}" data-name="${data.category.name}" data-icon="${data.category.icon}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger delete-category-btn" data-id="${data.category.id}">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    categoriesContainer.insertAdjacentHTML('beforeend', newCategoryHtml);
+                    addCategoryPopup.classList.remove('active');
+                    addCategoryForm.reset();
+                    selectedIconDisplay.value = '';
+                    categoryIconInput.value = '';
+                    const noCategoryMessage = categoriesContainer.querySelector('.col-12 p');
+                    if (noCategoryMessage && categoriesContainer.children.length > 1) {
+                        noCategoryMessage.parentElement.remove();
+                    }
+                    showCustomAlert('Succès', 'Catégorie ajoutée avec succès!', 'alert');
+                } else {
+                    const errMsg = data.error || 'Erreur lors de l\'ajout de la catégorie.';
+                    showCustomAlert('Erreur', errMsg, 'alert');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showCustomAlert('Erreur', error.message || 'Une erreur est survenue.', 'alert');
+            });
+        });
+
+        editCategoryForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const categoryId = formData.get('categoryId');
+            const name = (formData.get('categoryName') || '').trim();
+            if (!name) {
+                showCustomAlert('Erreur', 'Le nom de la catégorie est requis.', 'alert');
+                return;
+            }
+            formData.set('categoryName', name);
+
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+                    'Accept': 'application/json'
+                },
+                credentials: 'same-origin'
+            })
+            .then(async (response) => {
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(text || 'Requête échouée.');
+                }
+                try {
+                    return await response.json();
+                } catch (e) {
+                    const text = await response.text();
+                    throw new Error(text || 'Réponse non JSON du serveur.');
+                }
+            })
+            .then(data => {
+                if (data.success) {
+                    const categoryCard = categoriesContainer.querySelector(`.category-card[data-id="${categoryId}"]`);
+                    if (categoryCard) {
+                        categoryCard.querySelector('i').className = data.category.icon;
+                        categoryCard.querySelector('h5').textContent = data.category.name;
+                        categoryCard.dataset.name = data.category.name;
+                        categoryCard.dataset.icon = data.category.icon;
+                        const editBtn = categoryCard.querySelector('.edit-category-btn');
+                        if (editBtn) {
+                            editBtn.dataset.name = data.category.name;
+                            editBtn.dataset.icon = data.category.icon;
+                        }
+                    }
+                    editCategoryPopup.classList.remove('active');
+                    showCustomAlert('Succès', 'Catégorie modifiée avec succès!', 'alert');
+                } else {
+                    const errMsg = data.error || 'Erreur lors de la modification de la catégorie.';
+                    showCustomAlert('Erreur', errMsg, 'alert');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showCustomAlert('Erreur', error.message || 'Une erreur est survenue lors de la modification.', 'alert');
+            });
+        });
+
+        // Delete Category Logic
+        categoriesContainer.addEventListener('click', function(e) {
+            const deleteBtn = e.target.closest('.delete-category-btn');
+            if (deleteBtn) {
+                const categoryId = deleteBtn.dataset.id;
+                showCustomAlert(
+                    'Confirmation de suppression',
+                    'Êtes-vous sûr de vouloir supprimer cette catégorie? Cette action est irréversible.',
+                    'confirm',
+                    function(confirmed) {
+                        if (confirmed) {
+                            fetch(`/category/delete/${categoryId}/`, {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                                }
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    deleteBtn.closest('.category-card').remove();
+                                    showCustomAlert('Succès', 'Catégorie supprimée avec succès!', 'alert');
+                                    // If no categories left, display a message
+                                    if (categoriesContainer.children.length === 0) {
+                                        categoriesContainer.innerHTML = '<div class="col-12"><p class="text-muted">Aucune catégorie ajoutée pour le moment.</p></div>';
+                                    }
+                                } else {
+                                    showCustomAlert('Erreur', 'Erreur lors de la suppression de la catégorie: ' + data.error, 'alert');
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                showCustomAlert('Erreur', 'Une erreur est survenue lors de la suppression.', 'alert');
+                            });
+                        }
+                    }
+                );
+            }
+        });
+    });
+</script>
+
+
+{% endblock %}
