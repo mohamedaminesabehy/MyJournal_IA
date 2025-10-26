@@ -192,6 +192,79 @@
     </div>
     {% endif %}
 
+    <!-- IA Prédiction & Motivation -->
+    {% if motivation %}
+    <div class="goal-info-section" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; box-shadow: 0 8px 20px rgba(102, 126, 234, 0.35); position: relative; overflow: hidden; padding: 1.25rem;">
+      <!-- Decorative elements -->
+      <div style="position: absolute; top: -30px; right: -30px; width: 100px; height: 100px; background: rgba(255,255,255,0.08); border-radius: 50%; filter: blur(30px);"></div>
+      <div style="position: absolute; bottom: -20px; left: -20px; width: 70px; height: 70px; background: rgba(255,255,255,0.06); border-radius: 50%; filter: blur(25px);"></div>
+      
+      <!-- Content Grid: 2 columns on larger screens -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; position: relative;">
+        
+        <!-- Prédiction de durée -->
+        <div style="background: rgba(255,255,255,0.18); border-radius: 12px; padding: 1rem; backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.25); box-shadow: 0 3px 10px rgba(0,0,0,0.08);">
+          <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.75rem;">
+            <div style="background: linear-gradient(135deg, #fbbf24, #f59e0b); width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(251, 191, 36, 0.35);">
+              <i class="fas fa-clock" style="color: white; font-size: 1.1rem;"></i>
+            </div>
+            <strong style="font-size: 0.95rem; letter-spacing: 0.2px;">Prédiction IA</strong>
+          </div>
+          <div style="font-size: 1.6rem; font-weight: 800; margin-bottom: 0.5rem; text-shadow: 0 2px 6px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 0.4rem;">
+            <i class="fas fa-calendar-alt" style="font-size: 1.2rem; color: #fbbf24;"></i>
+            <span>{{ duration_min }}-{{ duration_max }}j</span>
+          </div>
+          {% if motivation.estimated_days_left > 0 %}
+          <div style="background: rgba(255,255,255,0.15); border-radius: 8px; padding: 0.5rem 0.75rem; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.15); display: flex; align-items: center; gap: 0.4rem;">
+            <i class="fas fa-hourglass-half" style="color: #fbbf24; font-size: 0.9rem;"></i>
+            <span style="font-weight: 600;">{{ motivation.estimated_days_left }}j restant{{ motivation.estimated_days_left|pluralize }}</span>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Message de motivation -->
+        <div style="background: rgba(255,255,255,0.18); border-radius: 12px; padding: 1rem; backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.25); box-shadow: 0 3px 10px rgba(0,0,0,0.08);">
+          <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.75rem;">
+            <div style="background: linear-gradient(135deg, #ef4444, #dc2626); width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(239, 68, 68, 0.35); animation: pulse 2s ease-in-out infinite;">
+              <i class="fas fa-fire" style="color: white; font-size: 1.1rem;"></i>
+            </div>
+            <strong style="font-size: 0.95rem; letter-spacing: 0.2px;">Motivation</strong>
+          </div>
+          <div style="background: rgba(255,255,255,0.12); border-left: 3px solid #fbbf24; border-radius: 6px; padding: 0.7rem 0.9rem; font-size: 0.95rem; line-height: 1.5; margin-bottom: 0.75rem; font-weight: 500; text-shadow: 0 1px 2px rgba(0,0,0,0.08);">
+            {{ motivation.message }}
+          </div>
+          <div style="background: rgba(255,255,255,0.12); border-radius: 6px; padding: 0.6rem 0.8rem; font-size: 0.85rem; display: flex; align-items: start; gap: 0.5rem; border: 1px solid rgba(255,255,255,0.15);">
+            <i class="fas fa-lightbulb" style="color: #fbbf24; font-size: 1rem; margin-top: 0.1rem;"></i>
+            <span style="line-height: 1.5;">{{ motivation.tip }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Statistiques rapides -->
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-top: 1rem;">
+        <div style="background: rgba(255,255,255,0.18); border-radius: 10px; padding: 0.7rem 0.5rem; text-align: center; backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.25); transition: transform 0.2s ease;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='translateY(0)'">
+          <div style="font-size: 1.5rem; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.15);">{{ motivation.progress }}%</div>
+          <div style="font-size: 0.7rem; opacity: 0.95; font-weight: 600; margin-top: 0.15rem; letter-spacing: 0.3px;">PROGRESSION</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.18); border-radius: 10px; padding: 0.7rem 0.5rem; text-align: center; backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.25); transition: transform 0.2s ease;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='translateY(0)'">
+          <div style="font-size: 1.5rem; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.15);">{{ motivation.completed_tasks }}</div>
+          <div style="font-size: 0.7rem; opacity: 0.95; font-weight: 600; margin-top: 0.15rem; letter-spacing: 0.3px;">TERMINÉES</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.18); border-radius: 10px; padding: 0.7rem 0.5rem; text-align: center; backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.25); transition: transform 0.2s ease;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='translateY(0)'">
+          <div style="font-size: 1.5rem; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.15);">{{ motivation.remaining_tasks }}</div>
+          <div style="font-size: 0.7rem; opacity: 0.95; font-weight: 600; margin-top: 0.15rem; letter-spacing: 0.3px;">RESTANTES</div>
+        </div>
+      </div>
+    </div>
+
+    <style>
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+      }
+    </style>
+    {% endif %}
+
     {% if goal.start_date or goal.end_date %}
       <div class="goal-info-section">
         <div class="goal-info-label">Période</div>
@@ -254,7 +327,18 @@ document.addEventListener('DOMContentLoaded', function(){
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
         body: JSON.stringify({ index: index })
-      }).then(resp => resp.json()).then(data => {
+      }).then(resp => {
+        // If server returned non-2xx, try to read text for diagnostics
+        if (!resp.ok) {
+          return resp.text().then(text => { throw { status: resp.status, text: text }; });
+        }
+        // If content-type is not JSON, read text and throw for better message
+        const ct = resp.headers.get('Content-Type') || '';
+        if (!ct.includes('application/json')) {
+          return resp.text().then(text => { throw { status: resp.status, text: text }; });
+        }
+        return resp.json();
+      }).then(data => {
         if(!data.ok){
           alert('Erreur: ' + (data.error || 'Impossible de basculer le jalon'));
           e.target.checked = !e.target.checked;
@@ -287,7 +371,15 @@ document.addEventListener('DOMContentLoaded', function(){
           }
         }
       }).catch(err => {
-        alert('Erreur réseau');
+        // If we threw a Response-like object, show status and text
+        if (err && err.status) {
+          const short = err.text ? (err.text.length > 300 ? err.text.slice(0,300) + '...' : err.text) : '';
+          alert('Erreur réseau: ' + err.status + '\n' + short);
+        } else if (err && err.message) {
+          alert('Erreur: ' + err.message);
+        } else {
+          alert('Erreur réseau');
+        }
         e.target.checked = !e.target.checked;
       });
     });

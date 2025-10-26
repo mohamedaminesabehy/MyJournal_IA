@@ -324,6 +324,23 @@
           <div class="goal-progress" style="--progress: {{ goal.progress_cached|default:0 }};"><div class="bar"></div></div>
         </div>
         
+        {% if goal.ai_motivation %}
+        <div style="margin: 0.75rem 0; padding: 0.75rem; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-radius: 8px; border-left: 3px solid #6366f1;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem;">
+            <i class="fas fa-robot" style="color: #6366f1; font-size: 0.9rem;"></i>
+            <span style="font-size: 0.75rem; font-weight: 600; color: #6366f1; text-transform: uppercase;">IA Motivation</span>
+          </div>
+          <div style="font-size: 0.85rem; color: #475569; line-height: 1.4;">
+            {{ goal.ai_motivation.message|truncatechars:120 }}
+          </div>
+          {% if goal.ai_motivation.estimated_days_left > 0 %}
+          <div style="margin-top: 0.4rem; font-size: 0.75rem; color: #64748b;">
+            ⏱️ ~{{ goal.ai_motivation.estimated_days_left }} jour{{ goal.ai_motivation.estimated_days_left|pluralize }} restant{{ goal.ai_motivation.estimated_days_left|pluralize }}
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+        
         <div class="goal-motivation">
           <i class="fas fa-heart"></i>
           Motivation: <strong>{{ goal.motivation_level }}/10</strong>
