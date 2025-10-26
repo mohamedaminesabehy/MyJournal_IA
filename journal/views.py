@@ -11,7 +11,7 @@ from django.views.decorators.http import require_http_methods
 from .forms import CustomUserCreationForm, NoteForm
 from .forms import GoalForm
 from .models import UserProfile, Category, Note, Goal
-from .utils import lr_model, clean_text, predict_emotion
+from .utils import lr_model, clean_text, predict_emotion, predict_goal_duration, generate_motivation_message
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_protect
 
@@ -226,33 +226,122 @@ def view_notes(request):
 
 @login_required
 def goals_list(request):
-    # Get all goals for current user
-    goals = Goal.objects.filter(user=request.user).order_by('-created_at')
+    # Use direct MongoDB access to avoid JSON parsing issues with djongo
+    from pymongo import MongoClient
+    from django.conf import settings
     
-    # Update progress for all goals to ensure progress_cached is set
-    for goal in goals:
-        # Ensure progress_cached is calculated
-        if goal.progress_cached is None:
-            pct = goal.progress_pct()
-            goal.progress_cached = pct if pct is not None else 0
+    client = MongoClient(settings.DATABASES['default']['CLIENT']['host'])
+    db = client[settings.DATABASES['default']['NAME']]
+    collection = db['journal_goal']
+    
+    # Get all goals for current user
+    goals_data = list(collection.find({'user_id': request.user.id}).sort('created_at', -1))
+    
+    # Convert to Goal objects
+    goals = []
+    for goal_data in goals_data:
+        # Parse milestones if it's a JSON string
+        milestones = goal_data.get('milestones', [])
+        if isinstance(milestones, str):
+            import json
             try:
-                goal.save()
-            except Exception as e:
-                # Log error but continue
-                import logging
-                logging.getLogger(__name__).error(f'Error saving goal: {e}')
+                milestones = json.loads(milestones)
+            except:
+                milestones = []
+        if not isinstance(milestones, list):
+            milestones = []
+        
+        goal = Goal(
+            id=goal_data.get('_id'),
+            user=request.user,
+            title=goal_data.get('title', ''),
+            description=goal_data.get('description', ''),
+            start_date=goal_data.get('start_date'),
+            end_date=goal_data.get('end_date'),
+            status=goal_data.get('status', Goal.STATUS_ONGOING),
+            motivation_level=goal_data.get('motivation_level', 5),
+            priority=goal_data.get('priority', Goal.PRIORITY_MEDIUM),
+            difficulty=goal_data.get('difficulty', 3),
+            reward=goal_data.get('reward', ''),
+            recurrence=goal_data.get('recurrence', ''),
+            milestones=milestones,
+            slug=goal_data.get('slug', ''),
+            progress_cached=goal_data.get('progress_cached', 0),
+        )
+        
+        # Add AI motivation to each goal
+        try:
+            goal.ai_motivation = generate_motivation_message(goal, request.user)
+            print(f"DEBUG: AI motivation generated for {goal.title}: {goal.ai_motivation['message'][:50]}")
+        except Exception as e:
+            print(f"DEBUG ERROR: Failed to generate AI motivation for {goal.title}: {e}")
+            import traceback
+            traceback.print_exc()
+            goal.ai_motivation = None
+        
+        goals.append(goal)
     
     return render(request, 'goals/list.html', {'goals': goals})
 
 
 @login_required
 def goal_detail(request, slug):
-    # Handle duplicate slugs by taking the most recent one
-    goals = Goal.objects.filter(slug=slug, user=request.user).order_by('-created_at')
-    if not goals.exists():
+    # Use direct MongoDB access to avoid JSON parsing issues with djongo
+    from pymongo import MongoClient
+    from django.conf import settings
+    
+    client = MongoClient(settings.DATABASES['default']['CLIENT']['host'])
+    db = client[settings.DATABASES['default']['NAME']]
+    collection = db['journal_goal']
+    
+    # Find goal by slug and user_id
+    goal_data = collection.find_one({'slug': slug, 'user_id': request.user.id})
+    if not goal_data:
         raise Http404("Objectif non trouvé")
-    goal = goals.first()
-    return render(request, 'goals/detail.html', {'goal': goal})
+    
+    # Parse milestones if it's a JSON string
+    milestones = goal_data.get('milestones', [])
+    if isinstance(milestones, str):
+        import json
+        try:
+            milestones = json.loads(milestones)
+        except:
+            milestones = []
+    if not isinstance(milestones, list):
+        milestones = []
+    
+    # Create a Goal instance manually with the data
+    goal = Goal(
+        id=goal_data.get('_id'),
+        user=request.user,
+        title=goal_data.get('title', ''),
+        description=goal_data.get('description', ''),
+        start_date=goal_data.get('start_date'),
+        end_date=goal_data.get('end_date'),
+        status=goal_data.get('status', Goal.STATUS_ONGOING),
+        motivation_level=goal_data.get('motivation_level', 5),
+        priority=goal_data.get('priority', Goal.PRIORITY_MEDIUM),
+        difficulty=goal_data.get('difficulty', 3),
+        reward=goal_data.get('reward', ''),
+        recurrence=goal_data.get('recurrence', ''),
+        milestones=milestones,
+        slug=goal_data.get('slug', ''),
+        progress_cached=goal_data.get('progress_cached', 0),
+    )
+    
+    # Generate AI predictions
+    duration_min, duration_max, complexity = predict_goal_duration(goal)
+    motivation_data = generate_motivation_message(goal, request.user)
+    
+    context = {
+        'goal': goal,
+        'duration_min': duration_min,
+        'duration_max': duration_max,
+        'complexity': complexity,
+        'motivation': motivation_data
+    }
+    
+    return render(request, 'goals/detail.html', context)
 
 
 @login_required
@@ -280,42 +369,85 @@ def goal_create(request):
 
 @login_required
 def goal_update(request, slug):
-    # Handle duplicate slugs by taking the most recent one
-    goals = Goal.objects.filter(slug=slug, user=request.user).order_by('-created_at')
-    if not goals.exists():
+    # Use direct MongoDB access to avoid JSON parsing issues
+    from pymongo import MongoClient
+    from django.conf import settings
+    
+    client = MongoClient(settings.DATABASES['default']['CLIENT']['host'])
+    db = client[settings.DATABASES['default']['NAME']]
+    collection = db['journal_goal']
+    
+    # Find goal by slug and user_id
+    goal_data = collection.find_one({'slug': slug, 'user_id': request.user.id})
+    if not goal_data:
         raise Http404("Objectif non trouvé")
-    goal = goals.first()
+    
+    # Parse milestones if stored as JSON string
+    milestones = goal_data.get('milestones', [])
+    if isinstance(milestones, str):
+        try:
+            import json
+            milestones = json.loads(milestones)
+        except:
+            milestones = []
+    if not isinstance(milestones, list):
+        milestones = []
+    
+    # Create a Goal instance for the form
+    goal = Goal(
+        id=goal_data.get('_id'),
+        user=request.user,
+        title=goal_data.get('title', ''),
+        description=goal_data.get('description', ''),
+        start_date=goal_data.get('start_date'),
+        end_date=goal_data.get('end_date'),
+        status=goal_data.get('status', Goal.STATUS_ONGOING),
+        motivation_level=goal_data.get('motivation_level', 5),
+        priority=goal_data.get('priority', Goal.PRIORITY_MEDIUM),
+        difficulty=goal_data.get('difficulty', 3),
+        reward=goal_data.get('reward', ''),
+        recurrence=goal_data.get('recurrence', ''),
+        milestones=milestones,
+        slug=goal_data.get('slug', ''),
+        progress_cached=goal_data.get('progress_cached', 0),
+    )
     
     if request.method == 'POST':
-        form = GoalForm(request.POST, instance=goal, user=request.user)
+        form = GoalForm(request.POST, user=request.user)
         if form.is_valid():
-            # Instead of saving the form instance, update directly via queryset
-            # This avoids the duplicate creation issue with MongoDB
-            update_data = {
-                'title': form.cleaned_data['title'],
-                'description': form.cleaned_data.get('description', ''),
-                'status': form.cleaned_data['status'],
-                'start_date': form.cleaned_data.get('start_date'),
-                'end_date': form.cleaned_data.get('end_date'),
-                'motivation_level': form.cleaned_data['motivation_level'],
-                'priority': form.cleaned_data['priority'],
-                'difficulty': form.cleaned_data['difficulty'],
-                'reward': form.cleaned_data.get('reward', ''),
-                'recurrence': form.cleaned_data.get('recurrence', ''),
-                'milestones': form.cleaned_data.get('milestones', []),
-            }
-            
-            # Calculate progress
-            milestones = update_data['milestones']
-            if milestones and isinstance(milestones, list):
+            # Calculate progress from milestones
+            milestones = form.cleaned_data.get('milestones', [])
+            if isinstance(milestones, list) and len(milestones) > 0:
                 total = len(milestones)
-                done = sum(1 for m in milestones if isinstance(m, dict) and m.get('done'))
-                update_data['progress_cached'] = int((done / total) * 100) if total > 0 else 0
+                done_count = sum(1 for m in milestones if isinstance(m, dict) and m.get('done'))
+                progress = int((done_count / total) * 100)
+            else:
+                progress = 0
             
-            # Update using queryset to avoid creating duplicates
-            Goal.objects.filter(slug=slug, user=request.user).update(**update_data)
+            # Find by slug and user_id and update
+            result = collection.update_one(
+                {'slug': slug, 'user_id': request.user.id},
+                {'$set': {
+                    'title': form.cleaned_data['title'],
+                    'description': form.cleaned_data.get('description', ''),
+                    'status': form.cleaned_data['status'],
+                    'start_date': form.cleaned_data.get('start_date'),
+                    'end_date': form.cleaned_data.get('end_date'),
+                    'priority': form.cleaned_data.get('priority', Goal.PRIORITY_MEDIUM),
+                    'difficulty': form.cleaned_data.get('difficulty', 3),
+                    'reward': form.cleaned_data.get('reward', ''),
+                    'recurrence': form.cleaned_data.get('recurrence', ''),
+                    'motivation_level': form.cleaned_data.get('motivation_level', 5),
+                    'milestones': milestones,
+                    'category_id': form.cleaned_data.get('category').id if form.cleaned_data.get('category') else None,
+                    'progress_cached': progress
+                }}
+            )
             
-            return redirect('goal_detail', slug=slug)
+            if result.modified_count > 0:
+                return redirect('goal_detail', slug=slug)
+            else:
+                logging.getLogger(__name__).warning('No document updated for slug: %s', slug)
         else:
             logging.getLogger(__name__).warning('Goal update form invalid: %s', form.errors.as_json())
     else:
@@ -325,57 +457,59 @@ def goal_update(request, slug):
 
 @login_required
 def goal_delete(request, slug):
-    # Handle duplicate slugs by taking the most recent one
-    goals = Goal.objects.filter(slug=slug, user=request.user).order_by('-created_at')
-    if not goals.exists():
+    # Use direct MongoDB access to avoid JSON parsing issues
+    from pymongo import MongoClient
+    from django.conf import settings
+    
+    client = MongoClient(settings.DATABASES['default']['CLIENT']['host'])
+    db = client[settings.DATABASES['default']['NAME']]
+    collection = db['journal_goal']
+    
+    # Find goal by slug and user_id
+    goal_data = collection.find_one({'slug': slug, 'user_id': request.user.id})
+    if not goal_data:
         raise Http404("Objectif non trouvé")
-    goal = goals.first()
+    
+    # Create a Goal instance for the template
+    goal = Goal(
+        id=goal_data.get('_id'),
+        user=request.user,
+        title=goal_data.get('title', ''),
+        description=goal_data.get('description', ''),
+        slug=goal_data.get('slug', ''),
+    )
     
     if request.method == 'POST':
-        try:
-            # Direct MongoDB deletion to avoid pk/hashable issues with Djongo
-            from django.db import connection
-            from pymongo import MongoClient
-            
-            # Get MongoDB connection details from Django settings
-            db_settings = connection.settings_dict
-            client = MongoClient(db_settings['CLIENT']['host'])
-            db = client[db_settings['NAME']]
-            collection = db['journal_goal']
-            
-            # Delete by slug and user_id
-            result = collection.delete_many({'slug': slug, 'user_id': request.user.id})
-            
-            if result.deleted_count > 0:
-                return redirect('goals_list')
-            else:
-                return render(request, 'goals/confirm_delete.html', {
-                    'goal': goal,
-                    'error': "Aucun objectif n'a été supprimé. Il se peut qu'il ait déjà été supprimé."
-                })
-        except Exception as e:
-            logging.getLogger(__name__).error(f'Error deleting goal: {e}')
-            import traceback
-            traceback.print_exc()
-            return render(request, 'goals/confirm_delete.html', {
-                'goal': goal,
-                'error': f"Erreur lors de la suppression: {e}"
-            })
+        # Delete by slug and user_id
+        result = collection.delete_one({'slug': slug, 'user_id': request.user.id})
+        
+        if result.deleted_count > 0:
+            return redirect('goals_list')
+        else:
+            logging.getLogger(__name__).warning('No document deleted for slug: %s', slug)
     return render(request, 'goals/confirm_delete.html', {'goal': goal})
 
 
 @csrf_protect
-@require_POST
 @login_required
+@require_POST
 def toggle_milestone(request, slug):
-    """Toggle milestone done state. Expects JSON body: {"index": 0}. Returns {"ok": True, "done": True, "progress": 42} or error."""
+    """Toggle milestone done state. Expects JSON body: {"index": 0}. Returns {"ok": True, "done": True, "progress": 42} or error.
+    This view now requires POST and an authenticated user. It always returns JsonResponse on handled errors so the frontend can parse responses safely.
+    """
     import json
+    from pymongo import MongoClient
+    from django.conf import settings
     
-    # Handle duplicate slugs by taking the most recent one
-    goals = Goal.objects.filter(slug=slug, user=request.user).order_by('-created_at')
-    if not goals.exists():
+    # Use direct MongoDB access to avoid JSON parsing issues
+    client = MongoClient(settings.DATABASES['default']['CLIENT']['host'])
+    db = client[settings.DATABASES['default']['NAME']]
+    collection = db['journal_goal']
+    
+    # Find goal by slug and user_id
+    goal_data = collection.find_one({'slug': slug, 'user_id': request.user.id})
+    if not goal_data:
         return JsonResponse({'ok': False, 'error': 'Objectif non trouvé'}, status=404)
-    goal = goals.first()
     
     try:
         data = json.loads(request.body.decode('utf-8'))
@@ -383,44 +517,79 @@ def toggle_milestone(request, slug):
     except Exception:
         return JsonResponse({'ok': False, 'error': 'Invalid payload'}, status=400)
 
-    if idx < 0 or not isinstance(goal.milestones, list) or idx >= len(goal.milestones):
+    # Parse milestones if stored as JSON string
+    milestones = goal_data.get('milestones', [])
+    if isinstance(milestones, str):
+        try:
+            milestones = json.loads(milestones)
+        except:
+            milestones = []
+    if not isinstance(milestones, list):
+        milestones = []
+    
+    if idx < 0 or idx >= len(milestones):
         return JsonResponse({'ok': False, 'error': 'Invalid index'}, status=400)
 
     # toggle
-    current = bool(goal.milestones[idx].get('done'))
+    current = bool(milestones[idx].get('done'))
     new_done = not current
-    goal.milestones[idx]['done'] = new_done
 
     # recalculate cached progress as percentage of completed milestones
-    total = len(goal.milestones)
-    done_count = sum(1 for m in goal.milestones if m.get('done'))
+    total = len(milestones)
+    # Count done after this toggle
+    done_count = sum(1 for i, m in enumerate(milestones) if (i == idx and new_done) or (i != idx and m.get('done')))
     progress = int((done_count / total) * 100) if total > 0 else 0
     
     # Automatically mark goal as completed when all tasks are done
-    new_status = goal.status
+    current_status = goal_data.get('status', Goal.STATUS_ONGOING)
+    new_status = current_status
     if total > 0 and done_count == total:
         new_status = Goal.STATUS_COMPLETED
     # If goal was completed but not all tasks are done anymore, set it back to ongoing
-    elif goal.status == Goal.STATUS_COMPLETED and done_count < total:
+    elif current_status == Goal.STATUS_COMPLETED and done_count < total:
         new_status = Goal.STATUS_ONGOING
     
-    # Update using queryset to avoid creating duplicates
-    try:
-        Goal.objects.filter(slug=slug, user=request.user).update(
-            milestones=goal.milestones,
-            progress_cached=progress,
-            status=new_status
-        )
-    except Exception as e:
-        logging.getLogger(__name__).error(f'Error saving milestone toggle: {e}')
-        return JsonResponse({'ok': False, 'error': 'Update failed'}, status=500)
+    # Direct MongoDB update using pymongo
+    from pymongo import MongoClient
+    from django.conf import settings
     
-    return JsonResponse({
-        'ok': True, 
-        'done': new_done, 
-        'progress': progress,
-        'status': new_status
-    })
+    client = MongoClient(settings.DATABASES['default']['CLIENT']['host'])
+    db = client[settings.DATABASES['default']['NAME']]
+    collection = db['journal_goal']
+    
+    # Update milestone in-memory then write back the full milestones array to avoid
+    # dotted-path write errors when the DB stores milestones as a string.
+    try:
+        # ensure each milestone is a dict
+        for i, m in enumerate(milestones):
+            if not isinstance(m, dict):
+                milestones[i] = {'title': str(m), 'done': False}
+
+        milestones[idx]['done'] = bool(new_done)
+
+        # write the full milestones array back to the document
+        result = collection.update_one(
+            {'slug': slug, 'user_id': request.user.id},
+            {'$set': {
+                'milestones': milestones,
+                'progress_cached': progress,
+                'status': new_status
+            }}
+        )
+
+        if result.modified_count == 0:
+            logging.getLogger(__name__).warning('No document updated in toggle_milestone for slug: %s', slug)
+            return JsonResponse({'ok': False, 'error': 'Update failed'}, status=500)
+
+        return JsonResponse({
+            'ok': True,
+            'done': new_done,
+            'progress': progress,
+            'status': new_status
+        })
+    except Exception as e:
+        logging.getLogger(__name__).exception('Error updating milestone for slug %s: %s', slug, e)
+        return JsonResponse({'ok': False, 'error': str(e)}, status=500)
 
 @login_required
 def notes_by_category(request, category_id):

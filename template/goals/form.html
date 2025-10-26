@@ -260,7 +260,6 @@ document.addEventListener('DOMContentLoaded', function(){
       li.className = 'list-group-item d-flex justify-content-between align-items-center';
       li.innerHTML = `<div><strong>${escapeHtml(it.title)}</strong>${it.due ? ' <small class="text-muted">('+it.due+')</small>' : ''}</div>` +
         `<div>` +
-          `<button type="button" class="btn btn-sm btn-outline-secondary ms-1 ms-edit" data-idx="${idx}">✎</button>` +
           `<button type="button" class="btn btn-sm btn-danger ms-1 ms-remove" data-idx="${idx}">🗑</button>` +
         `</div>`;
       listEl.appendChild(li);
@@ -271,16 +270,30 @@ document.addEventListener('DOMContentLoaded', function(){
   let items = [];
   try{
     const pre = document.getElementById('ms-data');
-    if(pre){ items = JSON.parse(pre.textContent || pre.innerText || '[]'); }
-    else { const hid = document.getElementById('id_milestones'); if(hid && hid.value){ items = JSON.parse(hid.value); } }
-  }catch(e){ console.warn('Could not parse initial milestones JSON:', e); items = []; }
+    if(pre){ 
+      const textContent = pre.textContent || pre.innerText || '[]';
+      items = JSON.parse(textContent); 
+    } else { 
+      const hid = document.getElementById('id_milestones'); 
+      if(hid && hid.value){ 
+        items = JSON.parse(hid.value); 
+      } 
+    }
+    // Ensure items is always an array
+    if(!Array.isArray(items)){ items = []; }
+  }catch(e){ 
+    console.warn('Could not parse initial milestones JSON:', e); 
+    items = []; 
+  }
 
   renderList(items);
 
   function handleAdd(){
     const title = titleInput && titleInput.value && titleInput.value.trim();
     const due = dueInput && dueInput.value || null;
-    if(!title){ return; }
+    if(!title){ 
+      return; 
+    }
     items.push({title: title, due: due, done: false});
     renderList(items);
     if(titleInput){ titleInput.value = ''; titleInput.focus(); }
@@ -300,12 +313,16 @@ document.addEventListener('DOMContentLoaded', function(){
   listEl.addEventListener('click', function(e){
     const rem = e.target.closest && e.target.closest('.ms-remove');
     if(rem){ const idx = Number(rem.dataset.idx); if(!Number.isNaN(idx)) { items.splice(idx,1); renderList(items); } return; }
-    const ed = e.target.closest && e.target.closest('.ms-edit');
-    if(ed){ const idx = Number(ed.dataset.idx); if(!Number.isNaN(idx)){ const it = items[idx]; if(titleInput) titleInput.value = it.title; if(dueInput) dueInput.value = it.due || ''; items.splice(idx,1); renderList(items); if(titleInput) titleInput.focus(); } return; }
   });
 
   const form = document.querySelector('form');
-  if(form){ form.addEventListener('submit', function(){ hidden.value = JSON.stringify(items); }); }
+  if(form){ 
+    form.addEventListener('submit', function(e){ 
+      // Always update hidden field before submit
+      if(hidden) hidden.value = JSON.stringify(items); 
+      console.log('Submitting milestones:', items);
+    }); 
+  }
 });
 </script>
 
@@ -329,7 +346,6 @@ function addMilestoneInline(e){
     li.className = 'list-group-item d-flex justify-content-between align-items-center';
     li.innerHTML = `<div><strong>${title.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</strong>${due ? ' <small class="text-muted">('+due+')</small>' : ''}</div>` +
       `<div>` +
-        `<button type="button" class="btn btn-sm btn-outline-secondary ms-1 ms-edit">✎</button>` +
         `<button type="button" class="btn btn-sm btn-danger ms-1 ms-remove">🗑</button>` +
       `</div>`;
     listEl.appendChild(li);
