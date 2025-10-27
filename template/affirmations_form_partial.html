@@ -1,0 +1,99 @@
+<form id="aff-edit-form" method="post" action="{{ request.path }}">
+  {% csrf_token %}
+
+  {% if form.non_field_errors %}
+    <div style="background:#fff4f4;border:1px solid #ffd1d1;color:#b42323;padding:8px 10px;border-radius:8px;margin-bottom:10px;">
+      {{ form.non_field_errors }}
+    </div>
+  {% endif %}
+
+  <div class="form-group">
+    <label for="{{ form.text.id_for_label }}">Texte</label>
+    {{ form.text }}
+    {% if form.text.errors %}
+      <div class="field-error">{{ form.text.errors|striptags }}</div>
+    {% endif %}
+  </div>
+
+  <div class="form-row">
+    <div class="form-group">
+      <label for="{{ form.tone.id_for_label }}">Ton</label>
+      {{ form.tone }}
+      {% if form.tone.errors %}
+        <div class="field-error">{{ form.tone.errors|striptags }}</div>
+      {% endif %}
+    </div>
+
+    <div class="form-group">
+      <label for="{{ form.topic.id_for_label }}">Thème</label>
+      {{ form.topic }}
+      {% if form.topic.errors %}
+        <div class="field-error">{{ form.topic.errors|striptags }}</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div style="display:flex; gap:10px; margin-top:14px;">
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <button type="button" class="btn btn-outline-secondary" data-close-modal>Annuler</button>
+  </div>
+</form>
+
+<style>
+  /* Apparence du formulaire dans la fenêtre modale */
+  #aff-edit-form .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  @media (max-width: 560px) {
+    #aff-edit-form .form-row { grid-template-columns: 1fr; }
+  }
+  #aff-edit-form .form-group { margin-bottom: 10px; }
+  #aff-edit-form label {
+    font-weight: 600; margin-bottom: 6px; display: inline-block;
+  }
+  #aff-edit-form input[type="text"],
+  #aff-edit-form textarea,
+  #aff-edit-form select {
+    width: 100%;
+    border: 1px solid #dcdfe4;
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-size: 14px;
+    outline: none;
+    background: #fff;
+  }
+  #aff-edit-form textarea { min-height: 88px; resize: vertical; }
+  #aff-edit-form .field-error {
+    color: #b42323; font-size: 12px; margin-top: 4px;
+  }
+  #aff-edit-form .btn {
+    padding: 8px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  #aff-edit-form .btn-primary {
+    background: #4f46e5; border: 1px solid #4f46e5; color: #fff;
+  }
+  #aff-edit-form .btn-primary:hover { filter: brightness(0.95); }
+  #aff-edit-form .btn-outline-secondary {
+    background: #fff; border: 1px solid #cfd6e4; color:#374151;
+  }
+</style>
+
+<script>
+  // Focus automatique et fermeture avec Échap
+  (function () {
+    const form = document.getElementById('aff-edit-form');
+    const first = form ? form.querySelector('textarea, input, select') : null;
+    if (first) first.focus();
+
+    document.addEventListener('keydown', function onEsc(e) {
+      if (e.key === 'Escape') {
+        const closeBtn = document.querySelector('[data-close-modal]');
+        if (closeBtn) closeBtn.click();
+      }
+    }, { once: true });
+  })();
+</script>
