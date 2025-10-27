@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Supprimer {{ media.title|default:"le média" }} - Galerie{% endblock %}
+
+{% block extra_css %}
+<style>
+    .delete-container {
+        padding: 50px 0;
+        min-height: 60vh;
+        display: flex;
+        align-items: center;
+    }
+    
+    .delete-card {
+        background: white;
+        border-radius: 15px;
+        padding: 40px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .warning-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #f56565 0%, #c53030 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(245, 101, 101, 0.7);
+        }
+        50% {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 10px rgba(245, 101, 101, 0);
+        }
+    }
+    
+    .warning-icon i {
+        font-size: 2.5rem;
+        color: white;
+    }
+    
+    .media-preview-small {
+        width: 100%;
+        max-height: 200px;
+        object-fit: cover;
+        border-radius: 10px;
+        margin: 20px 0;
+    }
+    
+    .info-list {
+        background: #f7fafc;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+    
+    .info-list li {
+        padding: 8px 0;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .info-list li:last-child {
+        border-bottom: none;
+    }
+    
+    .btn-delete {
+        background: linear-gradient(135deg, #f56565 0%, #c53030 100%);
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 25px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .btn-delete:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(245, 101, 101, 0.4);
+    }
+    
+    .btn-cancel {
+        background: #e2e8f0;
+        color: #2d3748;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 25px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .btn-cancel:hover {
+        background: #cbd5e0;
+    }
+    
+    .warning-text {
+        color: #c53030;
+        font-weight: 600;
+        padding: 15px;
+        background: #fff5f5;
+        border-left: 4px solid #f56565;
+        border-radius: 8px;
+        margin: 20px 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="delete-container">
+    <div class="container">
+        <div class="delete-card" data-aos="zoom-in">
+            <!-- Warning Icon -->
+            <div class="warning-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+
+            <!-- Title -->
+            <h2 class="text-center mb-3">Confirmer la suppression</h2>
+            <p class="text-center text-muted mb-4">
+                Êtes-vous sûr de vouloir supprimer ce média ?
+            </p>
+
+            <!-- Media Preview -->
+            <div class="text-center">
+                {% if media.media_type == 'image' %}
+                    <img src="{{ media.file.url }}" alt="{{ media.title }}" class="media-preview-small">
+                {% elif media.media_type == 'video' %}
+                    <video class="media-preview-small">
+                        <source src="{{ media.file.url }}">
+                    </video>
+                {% else %}
+                    <div class="media-preview-small d-flex align-items-center justify-content-center bg-light">
+                        <i class="fas fa-music fa-4x text-muted"></i>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Media Info -->
+            <div class="info-list">
+                <ul class="list-unstyled mb-0">
+                    <li>
+                        <strong>Titre:</strong> 
+                        <span class="text-muted">{{ media.title|default:"Sans titre" }}</span>
+                    </li>
+                    {% if media.description %}
+                    <li>
+                        <strong>Description:</strong> 
+                        <span class="text-muted">{{ media.description|truncatewords:15 }}</span>
+                    </li>
+                    {% endif %}
+                    <li>
+                        <strong>Type:</strong> 
+                        <span class="text-muted">
+                            {% if media.media_type == 'image' %}
+                                <i class="fas fa-image"></i> Image
+                            {% elif media.media_type == 'video' %}
+                                <i class="fas fa-video"></i> Vidéo
+                            {% else %}
+                                <i class="fas fa-music"></i> Audio
+                            {% endif %}
+                        </span>
+                    </li>
+                    <li>
+                        <strong>Taille:</strong> 
+                        <span class="text-muted">{{ media.file_size_display }}</span>
+                    </li>
+                    <li>
+                        <strong>Uploadé le:</strong> 
+                        <span class="text-muted">{{ media.uploaded_at|date:"d F Y à H:i" }}</span>
+                    </li>
+                    {% if media.category %}
+                    <li>
+                        <strong>Catégorie:</strong> 
+                        <span class="text-muted">{{ media.category.name }}</span>
+                    </li>
+                    {% endif %}
+                    {% if media.album %}
+                    <li>
+                        <strong>Album:</strong> 
+                        <span class="text-muted">{{ media.album }}</span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+
+            <!-- Warning Message -->
+            <div class="warning-text">
+                <i class="fas fa-exclamation-circle"></i>
+                Cette action est irréversible ! Le fichier sera définitivement supprimé du serveur.
+            </div>
+
+            <!-- Form -->
+            <form method="post">
+                {% csrf_token %}
+                <div class="d-flex gap-3 justify-content-center mt-4">
+                    <button type="submit" class="btn btn-delete">
+                        <i class="fas fa-trash"></i> Oui, supprimer définitivement
+                    </button>
+                    <a href="{% url 'media_detail' media.id %}" class="btn btn-cancel">
+                        <i class="fas fa-arrow-left"></i> Non, annuler
+                    </a>
+                </div>
+            </form>
+
+            <!-- Additional Info -->
+            <p class="text-center text-muted mt-4 mb-0 small">
+                <i class="fas fa-info-circle"></i>
+                {% if media.is_analyzed %}
+                Les résultats de l'analyse IA seront également supprimés.
+                {% else %}
+                Ce média n'a pas encore été analysé par l'IA.
+                {% endif %}
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Initialize AOS
+AOS.init({
+    duration: 800,
+    once: true
+});
+
+// Confirmation supplémentaire via JavaScript
+document.querySelector('form').addEventListener('submit', function(e) {
+    const confirmed = confirm('⚠️ DERNIÈRE CONFIRMATION\n\nÊtes-vous absolument certain de vouloir supprimer ce média ?\n\nCette action ne peut pas être annulée.');
+    if (!confirmed) {
+        e.preventDefault();
+    }
+});
+</script>
+{% endblock %}

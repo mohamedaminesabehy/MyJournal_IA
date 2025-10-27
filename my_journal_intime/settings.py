@@ -81,6 +81,7 @@ DATABASES = {
         'NAME': 'journalDB',
         'ENFORCE_SCHEMA': False,
         'CLIENT': {
+<<<<<<< HEAD
             'host': 'mongodb+srv://journal_db_user:4PIF3Mk876wkTopF@cluster0.kgaymb3.mongodb.net/journalDB?retryWrites=true&w=majority',
             'serverSelectionTimeoutMS': 30000,
             'connectTimeoutMS': 30000,
@@ -91,6 +92,10 @@ DATABASES = {
             'waitQueueTimeoutMS': 10000,
         },
         'CONN_MAX_AGE': None,  # Keep connections open indefinitely
+=======
+            'host': 'mongodb+srv://journal_db_user:4PIF3Mk876wkTopF@cluster0.kgaymb3.mongodb.net/journalDB'
+        }
+>>>>>>> origin/yassineJawadi
     }
 }
 
@@ -129,10 +134,13 @@ USE_I18N = True
 
 USE_TZ = True
 
+<<<<<<< HEAD
 # Session configuration - Use signed cookies instead of database
 # This avoids MongoDB session issues with djongo
 SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
 SESSION_COOKIE_HTTPONLY = True
+=======
+>>>>>>> origin/yassineJawadi
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
@@ -143,6 +151,17 @@ STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
 
+<<<<<<< HEAD
+=======
+# Media files (User uploads)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# Limite de taille pour les uploads (50MB)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50MB
+
+>>>>>>> origin/yassineJawadi
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 

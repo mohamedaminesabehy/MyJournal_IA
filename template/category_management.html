@@ -267,9 +267,19 @@
         <div class="col-md-4 mb-4">
             <div class="category-card" data-id="{{ category.id }}" data-name="{{ category.name }}" data-icon="{{ category.icon }}">
                 <i class="{{ category.icon }}"></i>
+<<<<<<< HEAD
                 <a href="{% url 'notes_by_category' category.id %}" class="category-card-link">
                     <h5>{{ category.name }}</h5>
                 </a>
+=======
+                {% if category.id %}
+                <a href="{% url 'notes_by_category' category.id %}" class="category-card-link">
+                    <h5>{{ category.name }}</h5>
+                </a>
+                {% else %}
+                <h5>{{ category.name }}</h5>
+                {% endif %}
+>>>>>>> origin/yassineJawadi
                 <div class="category-actions">
                         <button class="btn btn-sm btn-outline-primary edit-category-btn" data-id="{{ category.id }}" data-name="{{ category.name }}" data-icon="{{ category.icon }}">
                             <i class="fas fa-edit"></i>
@@ -687,7 +697,13 @@
                         <div class="col-md-4 mb-4">
                             <div class="category-card" data-id="${data.category.id}" data-name="${data.category.name}" data-icon="${data.category.icon}">
                                 <i class="${data.category.icon}"></i>
+<<<<<<< HEAD
                                 <h5>${data.category.name}</h5>
+=======
+                                <a href="/notes/category/${data.category.id}/" class="category-card-link">
+                                    <h5>${data.category.name}</h5>
+                                </a>
+>>>>>>> origin/yassineJawadi
                                 <div class="category-actions">
                                     <button class="btn btn-sm btn-outline-primary edit-category-btn" data-id="${data.category.id}" data-name="${data.category.name}" data-icon="${data.category.icon}">
                                         <i class="fas fa-edit"></i>

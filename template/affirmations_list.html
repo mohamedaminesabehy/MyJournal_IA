@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+  /* ====== Layout ====== */
+  .aff-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 32px;
+  }
+  .aff-header { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-bottom:14px; }
+
+  .aff-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-top: 25px;
+    justify-items: stretch;
+  }
+  @media (max-width: 1200px) { .aff-cards { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 900px)  { .aff-cards { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 600px)  { .aff-cards { grid-template-columns: 1fr; } }
+
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    padding: 16px;
+    width: 100%;
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+
+  .muted { color:#777; font-size:.9rem; }
+  .pill { background:#e9ecef; border-radius: 20px; padding: 2px 10px; font-size: .85em; }
+
+  .actions a, .actions form button { font-size:.85rem; margin-right:8px; }
+  .kpi { display:flex; gap:18px; margin:6px 0 14px; flex-wrap:wrap; }
+  .kpi .box { background:#f8fafc; border:1px solid #eef2f7; padding:8px 10px; border-radius:10px; }
+
+  .toolbar input, .toolbar select { height:36px; }
+  .toolbar .btn { height:36px; line-height:1; padding: 6px 10px; }
+  @media (max-width:640px) { .aff-header{flex-direction:column;align-items:flex-start} }
+
+  /* ====== Modal (upgraded) ====== */
+  @keyframes modalIn {
+    from { transform: translateY(10px) scale(.98); opacity: 0; }
+    to   { transform: translateY(0) scale(1);    opacity: 1; }
+  }
+  .modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.45);
+    backdrop-filter: blur(2px);
+    display: none; align-items: center; justify-content: center;
+    z-index: 1050;
+    padding: 16px;                /* safe gap on small screens */
+  }
+  .modal-panel {
+    background: #fff;
+    border-radius: 14px;
+    width: min(720px, 96vw);      /* a bit wider than before */
+    box-shadow: 0 24px 48px rgba(0,0,0,.22);
+    display: flex; flex-direction: column;
+    max-height: 92vh;             /* constrain height */
+    animation: modalIn .16s ease-out;
+    overflow: hidden;
+  }
+  .modal-header {
+    position: sticky; top: 0; z-index: 1;
+    display:flex; align-items:center; justify-content:space-between;
+    gap: 8px;
+    padding: 14px 16px;
+    border-bottom: 1px solid #eef0f3;
+    background: #fff;             /* for sticky */
+  }
+  .modal-header h5 { font-size: 1.05rem; font-weight: 700; margin: 0; }
+  .modal-body {
+    padding: 16px;
+    overflow: auto;               /* allow internal scroll */
+  }
+  .btn-close {
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    width: 28px; height: 28px;
+    display: inline-grid; place-items: center;
+    border-radius: 8px; cursor: pointer; line-height: 1;
+  }
+  .btn-close:hover { background: #eef0f3; }
+
+  /* Make form elements comfy inside modal even if partial lacks styles */
+  #aff-edit-form textarea,
+  #aff-edit-form input[type="text"],
+  #aff-edit-form select {
+    width: 100%;
+    border: 1px solid #dcdfe4;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 14px;
+    background: #fff;
+  }
+  #aff-edit-form textarea { min-height: 120px; resize: vertical; }
+  #aff-edit-form .form-group { margin-bottom: 12px; }
+  #aff-edit-form label { font-weight: 600; margin-bottom: 6px; display: inline-block; }
+  #aff-edit-form .btn { padding: 9px 14px; border-radius: 10px; }
+</style>
+
+<div class="aff-container">
+  <h2 class="mb-2">Mes affirmations</h2>
+
+  <div class="kpi">
+    <div class="box">Total : <strong>{{ total }}</strong></div>
+    {% for label, count in tone_kpis %}
+      <div class="box">{{ label }} : <strong>{{ count }}</strong></div>
+    {% endfor %}
+  </div>
+
+  <form id="filterForm" method="get" class="toolbar" style="margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+    <input type="text" name="q" placeholder="Rechercher texte/sujet" value="{{ q }}"
+           style="flex: 1; padding: 6px 10px; border-radius: 8px; border: 1px solid #ccc;" />
+
+    <select name="tone" id="toneSelect" style="padding: 6px 10px; border-radius: 8px; border: 1px solid #ccc;">
+      <option value="">Tous les tons</option>
+      {% for value, label in tone_labels.choices %}
+        <option value="{{ value }}" {% if value == tone %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+
+    <input type="text" name="topic" placeholder="Sujet (optionnel)" value="{{ topic }}"
+           style="padding: 6px 10px; border-radius: 8px; border: 1px solid #ccc; flex: 1;" />
+
+    <a href="{% url 'affirmation_new' %}" id="btnNewAff" class="btn btn-outline-primary">+ Nouvelle</a>
+    <a href="{% url 'affirmation_suggest' %}" class="btn btn-success">🤖 Suggestions (IA)</a>
+  </form>
+
+  {% if items %}
+    <div class="aff-cards">
+      {% for it in items %}
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;">
+            <div>
+              <div style="font-weight:700; margin-bottom:6px;">{{ it.text }}</div>
+              <div class="muted">
+                <span class="pill">{{ it.get_tone_display }}</span>
+                {% if it.topic %} <span class="pill" style="margin-left:6px;">{{ it.topic }}</span>{% endif %}
+                <span style="margin-left:8px;">• {{ it.created_at|date:"Y-m-d H:i" }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="actions" style="margin-top:10px;">
+            <a href="{% url 'affirmation_edit' it.pk %}" data-edit="1">Modifier</a>
+            <form action="{% url 'affirmation_delete' it.pk %}" method="post" style="display:inline;">
+              {% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Supprimer</button>
+            </form>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="muted">Aucune affirmation ne correspond à vos filtres.</p>
+  {% endif %}
+</div>
+
+<!-- Modal -->
+<div id="affModal" class="modal-backdrop" aria-modal="true" role="dialog">
+  <div class="modal-panel">
+    <div class="modal-header">
+      <h5 id="affModalTitle">Modifier l’affirmation</h5>
+      <button type="button" class="btn-close" data-close-modal aria-label="Fermer">×</button>
+    </div>
+    <div id="affModalBody" class="modal-body">
+      <!-- le formulaire sera injecté ici -->
+    </div>
+  </div>
+</div>
+
+<script>
+  /* Auto-submit des filtres */
+  const filterForm = document.getElementById("filterForm");
+  if (filterForm) {
+    const inputs = filterForm.querySelectorAll("input, select");
+    inputs.forEach(el => {
+      el.addEventListener("input", () => filterForm.submit());
+      el.addEventListener("change", () => filterForm.submit());
+    });
+  }
+
+  /* Modal helpers */
+  const modal = document.getElementById("affModal");
+  const modalBody = document.getElementById("affModalBody");
+  const modalTitle = document.getElementById("affModalTitle");
+
+  function openModal() { modal.style.display = "flex"; }
+  function closeModal() { modal.style.display = "none"; modalBody.innerHTML = ""; }
+
+  // Fermer via croix, bouton Annuler (dans le partial) ou clic sur l’arrière-plan
+  document.addEventListener("click", (e) => {
+    if (e.target.matches("[data-close-modal]") || e.target === modal) {
+      closeModal();
+    }
+  });
+
+  // Fermer avec Échap
+  document.addEventListener("keydown", (e) => {
+    if (modal.style.display === "flex" && e.key === "Escape") closeModal();
+  });
+
+  /* CSRF pour POST AJAX */
+  function getCookie(name) {
+    const v = (`; ${document.cookie}`).split(`; ${name}=`);
+    if (v.length === 2) return v.pop().split(';').shift();
+  }
+  const csrftoken = getCookie('csrftoken');
+
+  /* Ouvrir EDIT en modal */
+  document.addEventListener("click", async (e) => {
+    const a = e.target.closest('a[data-edit]');
+    if (!a) return;
+    e.preventDefault();
+    modalTitle.textContent = "Modifier l’affirmation";
+    const url = a.getAttribute("href") + (a.href.includes('?') ? '&' : '?') + 'modal=1';
+    const resp = await fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" }});
+    const html = await resp.text();
+    modalBody.innerHTML = html;
+    openModal();
+
+    // Soumission (edit)
+    const form = modalBody.querySelector("#aff-edit-form");
+    if (form) {
+      form.addEventListener("submit", async (ev) => {
+        ev.preventDefault();
+        const fd = new FormData(form);
+        fd.append("modal", "1");
+        const postUrl = form.action + (form.action.includes('?') ? '&' : '?') + 'modal=1';
+        const r = await fetch(postUrl, {
+          method: "POST",
+          body: fd,
+          headers: { "X-Requested-With": "XMLHttpRequest", "X-CSRFToken": csrftoken },
+        });
+        const text = await r.text();
+        try {
+          const data = JSON.parse(text);
+          if (data.ok) {
+            closeModal();
+            window.location.reload();
+            return;
+          }
+        } catch (_) {
+          modalBody.innerHTML = text;  // réaffiche avec erreurs
+        }
+      });
+    }
+  });
+
+  /* Ouvrir NOUVELLE en modal */
+  document.getElementById("btnNewAff")?.addEventListener("click", async (e) => {
+    e.preventDefault();
+    modalTitle.textContent = "Nouvelle affirmation";
+    const url = "{% url 'affirmation_new' %}?modal=1";
+    const resp = await fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" }});
+    const html = await resp.text();
+    modalBody.innerHTML = html;
+    openModal();
+
+    // Soumission (new)
+    const form = modalBody.querySelector("#aff-edit-form");
+    if (form) {
+      form.addEventListener("submit", async (ev) => {
+        ev.preventDefault();
+        const fd = new FormData(form);
+        fd.append("modal", "1");
+        const r = await fetch(form.action + (form.action.includes('?') ? '&' : '?') + 'modal=1', {
+          method: "POST",
+          body: fd,
+          headers: { "X-Requested-With": "XMLHttpRequest", "X-CSRFToken": csrftoken },
+        });
+        const text = await r.text();
+        try {
+          const data = JSON.parse(text);
+          if (data.ok) {
+            closeModal();
+            window.location.reload();
+            return;
+          }
+        } catch (_) {
+          modalBody.innerHTML = text;  // erreurs de validation
+        }
+      });
+    }
+  });
+</script>
+{% endblock %}
