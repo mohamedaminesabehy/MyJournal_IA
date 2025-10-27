@@ -214,17 +214,11 @@
                         <i class="fas fa-stream me-2"></i>Toutes les notes
                     </a>
                     {% for cat in categories %}
-<<<<<<< HEAD
-                    <a href="{% url 'notes_by_category' cat.id %}" class="list-group-item list-group-item-action {% if category and category.id == cat.id %}active{% endif %}">
-                        <i class="{{ cat.icon }} me-2"></i>{{ cat.name }}
-                    </a>
-=======
                         {% if cat.id %}
                         <a href="{% url 'notes_by_category' cat.id %}" class="list-group-item list-group-item-action {% if category and category.id == cat.id %}active{% endif %}">
                             <i class="{{ cat.icon }} me-2"></i>{{ cat.name }}
                         </a>
                         {% endif %}
->>>>>>> origin/yassineJawadi
                     {% endfor %}
                 </div>
 
@@ -242,11 +236,7 @@
                 <h2 class="mb-0">
                     <a href="{% url 'category_management' %}" class="text-decoration-none text-muted">Catégories</a>
                     <i class="fas fa-chevron-right mx-2 text-muted"></i>
-<<<<<<< HEAD
-                    {% if category %}
-=======
                     {% if category and category.id %}
->>>>>>> origin/yassineJawadi
                         <a href="{% url 'notes_by_category' category.id %}" class="text-decoration-none text-dark">{{ category.name }}</a>
                     {% else %}
                         <span class="text-dark">Toutes les notes</span>
@@ -265,12 +255,9 @@
                             <div class="note-card-header">
                                 <span>Note du {{ note.created_at|date:"d F Y" }}</span>
                                 <div>
-<<<<<<< HEAD
-=======
                                     <a href="{% url 'generate_recommendations' note.id %}" class="btn btn-sm btn-success me-2" title="Obtenir des recommandations d'activités">
                                         <i class="fas fa-lightbulb"></i> Recommandations
                                     </a>
->>>>>>> origin/yassineJawadi
                                     <button class="btn btn-sm btn-light me-2" data-bs-toggle="modal" data-bs-target="#editModal{{ note.id }}"><i class="fas fa-edit"></i></button>
                                     <button class="btn btn-sm btn-light me-2"><i class="fas fa-archive"></i></button>
                                     <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ note.id }}"><i class="fas fa-trash"></i></button>

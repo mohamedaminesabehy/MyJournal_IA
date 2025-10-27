@@ -1,15 +1,3 @@
-<<<<<<< HEAD
-Django>=4.2.0
-scikit-learn 
-pandas 
-numpy
-joblib
-Pillow
-python-decouple
-dnspython
-pymongo
-djongo
-=======
 # --- Django & extensions ---
 Django==3.2.25
 asgiref==3.7.2
@@ -49,4 +37,3 @@ python-dotenv==1.0.0
 requests==2.31.0
 pytz==2023.3.post1
 certifi==2024.8.30
->>>>>>> origin/yassineJawadi

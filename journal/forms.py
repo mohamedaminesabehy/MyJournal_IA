@@ -1,18 +1,18 @@
 from django import forms
-<<<<<<< HEAD
-from django.contrib.auth.forms import UserCreationForm
-from .models import Note, Category
-from django.contrib.auth.models import User
-from .models import Goal
-=======
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.core.exceptions import ValidationError
-from .models import Media, MediaTag, SmartAlbum
-import mimetypes
-from django.contrib.auth.forms import UserCreationForm
-from .models import Note, Category
 from django.contrib.auth.models import User
->>>>>>> origin/yassineJawadi
+import mimetypes
+
+from .models import (
+    Note,
+    Category,
+    Goal,
+    Media,
+    MediaTag,
+    SmartAlbum,
+    Affirmation,
+)
 
 class CustomUserCreationForm(UserCreationForm):
     email = forms.EmailField(required=True)
@@ -24,12 +24,26 @@ class CustomUserCreationForm(UserCreationForm):
     class Meta(UserCreationForm.Meta):
         fields = UserCreationForm.Meta.fields + ('email', 'first_name', 'last_name', 'date_of_birth', 'location',)
 
-<<<<<<< HEAD
+
 class NoteForm(forms.ModelForm):
+    """Formulaire pour créer/éditer une Note.
+
+    Comportement compatible avec les deux variantes:
+    - Utilise un ModelChoiceField pour `category` et filtre par utilisateur si fourni.
+    - Sauvegarde tolérante: accepte soit une instance Category, soit un id/string venant d'un choix.
+    """
+
+    category = forms.ModelChoiceField(queryset=Category.objects.none(), required=False, widget=forms.Select(attrs={'class': 'form-control'}))
+
     class Meta:
         model = Note
         fields = ['title', 'content', 'location', 'category']
-=======
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control form-control-lg', 'placeholder': 'Donnez un titre à votre note...', 'required': 'required'}),
+            'content': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Écrivez votre note ici...', 'rows': 10}),
+            'location': forms.TextInput(attrs={'class': 'form-control mb-3', 'placeholder': 'Entrez un lieu ou utilisez votre position actuelle'}),
+            'category': forms.Select(attrs={'class': 'form-control'}),
+        }
 
 # ==================== GALERIE INTELLIGENTE ====================
 
@@ -254,93 +268,6 @@ class MultipleMediaUploadForm(forms.Form):
                 )
 
 
-class MediaEditForm(forms.ModelForm):
-    """Formulaire pour éditer les informations d'un média"""
-    
-    class Meta:
-        model = Media
-        fields = ['file', 'title', 'description', 'category', 'album', 'is_favorite']
-        widgets = {
-            'file': forms.FileInput(attrs={
-                'class': 'form-control',
-                'accept': 'image/jpeg,image/jpg,image/png'
-            }),
-            'title': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Titre du média'
-            }),
-            'description': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 4,
-                'placeholder': 'Description'
-            }),
-            'category': forms.Select(attrs={
-                'class': 'form-control'
-            }),
-            'album': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Nom de l\'album'
-            }),
-            'is_favorite': forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
-            })
-        }
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Le fichier est optionnel en édition (on garde l'ancien si non fourni)
-        self.fields['file'].required = False
-    
-    def clean_file(self):
-        file = self.cleaned_data.get('file')
-        
-        # Si aucun nouveau fichier, retourner None (on garde l'ancien)
-        if not file:
-            return None
-        
-        # Sinon, valider le nouveau fichier
-        # Vérifier la taille du fichier (50MB max)
-        if file.size > 52428800:  # 50MB
-            raise forms.ValidationError('❌ Le fichier ne doit pas dépasser 50MB.')
-        
-        # Vérifier l'extension (seulement JPG et PNG)
-        filename = file.name.lower()
-        ext = filename.split('.')[-1] if '.' in filename else ''
-        allowed_extensions = ['jpg', 'jpeg', 'png']
-        
-        # Bloquer EXPLICITEMENT les extensions non autorisées (incluant JFIF)
-        blocked_extensions = ['jfif', 'gif', 'webp', 'bmp', 'tiff', 'svg', 'mp4', 'avi', 'mov', 'mp3', 'wav']
-        
-        if ext in blocked_extensions:
-            raise forms.ValidationError(
-                f'❌ Extension ".{ext.upper()}" non autorisée!\n\n'
-                f'📋 Seules ces extensions sont acceptées: JPG, JPEG, PNG\n'
-                f'Votre fichier: {file.name}'
-            )
-        
-        if ext not in allowed_extensions:
-            raise forms.ValidationError(
-                f'❌ Extension ".{ext.upper()}" non reconnue!\n\n'
-                f'📋 Extensions acceptées: JPG, JPEG, PNG uniquement.\n'
-                f'Votre fichier: {file.name}'
-            )
-        
-        # Vérifier le type MIME pour plus de sécurité
-        allowed_mime_types = ['image/jpeg', 'image/jpg', 'image/png']
-        
-        # Vérifier aussi le content_type si disponible
-        if hasattr(file, 'content_type'):
-            actual_mime = file.content_type.lower()
-            if actual_mime not in allowed_mime_types:
-                raise forms.ValidationError(
-                    f'❌ Type de fichier non autorisé!\n\n'
-                    f'📋 Formats acceptés: Images JPG et PNG uniquement.\n'
-                    f'Type détecté: {actual_mime}\n'
-                    f'Votre fichier: {file.name}'
-                )
-        
-        return file
-
 
 class MediaTagForm(forms.ModelForm):
     """Formulaire pour ajouter des tags manuellement"""
@@ -456,22 +383,18 @@ class NoteForm(forms.ModelForm):
     class Meta:
         model = Note
         fields = ['title', 'content', 'location']
->>>>>>> origin/yassineJawadi
+
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control form-control-lg', 'placeholder': 'Donnez un titre à votre note...', 'required': 'required'}),
             'content': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Écrivez votre note ici...', 'rows': 10}),
             'location': forms.TextInput(attrs={'class': 'form-control mb-3', 'placeholder': 'Entrez un lieu ou utilisez votre position actuelle'}),
-<<<<<<< HEAD
             'category': forms.Select(attrs={'class': 'form-control'}),
-=======
->>>>>>> origin/yassineJawadi
         }
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super(NoteForm, self).__init__(*args, **kwargs)
         if user:
-<<<<<<< HEAD
             # Adapter à ManyToMany: seules les catégories associées à l'utilisateur
             # doivent être sélectionnables
             self.fields['category'].queryset = Category.objects.filter(users=user)
@@ -555,31 +478,10 @@ class GoalForm(forms.ModelForm):
                 raise forms.ValidationError('Chaque jalon doit être un objet avec au moins une clé "title".')
 
         return parsed
-=======
-            # Charger les catégories sans validation de ForeignKey
-            try:
-                categories = [(cat.id, cat.name) for cat in Category.objects.filter(user=user)]
-                categories.insert(0, ('', 'Aucune catégorie (optionnel)'))
-                self.fields['category'].choices = categories
-            except:
-                self.fields['category'].choices = [('', 'Aucune catégorie (optionnel)')]
-    
-    def save(self, commit=True):
-        instance = super(NoteForm, self).save(commit=False)
-        # Gérer manuellement la catégorie
-        category_id = self.cleaned_data.get('category')
-        if category_id:
-            try:
-                instance.category = Category.objects.get(id=category_id)
-            except:
-                instance.category = None
-        else:
-            instance.category = None
         
-        if commit:
-            instance.save()
-        return instance
-            
+        
+        
+        
             
 class MediaUploadForm(forms.ModelForm):
     """Formulaire pour uploader un seul média"""
@@ -903,7 +805,6 @@ class MediaTagForm(forms.ModelForm):
             })
         }
 
-
 class SmartAlbumForm(forms.ModelForm):
     """Formulaire pour créer un album intelligent"""
     
@@ -924,7 +825,6 @@ class SmartAlbumForm(forms.ModelForm):
                 'class': 'form-control'
             })
         }
-
 
 class GalleryFilterForm(forms.Form):
     """Formulaire pour filtrer la galerie"""
@@ -996,4 +896,3 @@ class AffirmationForm(forms.ModelForm):
         widgets = {
             "text": forms.Textarea(attrs={"rows":2, "placeholder":"I am calm and focused..."}),
         }
->>>>>>> origin/yassineJawadi
