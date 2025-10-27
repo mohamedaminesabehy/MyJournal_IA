@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% block title %}Supprimer l'objectif{% endblock %}
+
+{% block extra_css %}
+<style>
+  .delete-wrapper {
+    background: linear-gradient(to bottom, #f8fafc 0%, #f1f5f9 100%);
+    min-height: 100vh;
+    padding: 2.5rem 0;
+  }
+  .delete-card {
+    background: white;
+    border-radius: 16px;
+    padding: 2.5rem;
+    box-shadow: 0 4px 20px rgba(239, 68, 68, 0.15);
+    border-left: 5px solid #ef4444;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  .delete-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #991b1b;
+    margin-bottom: 1.5rem;
+  }
+  .delete-message {
+    font-size: 1.1rem;
+    color: #475569;
+    line-height: 1.7;
+    margin-bottom: 2rem;
+  }
+  .delete-goal-name {
+    background: #fee2e2;
+    color: #991b1b;
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    font-weight: 600;
+    margin: 1rem 0;
+    display: block;
+  }
+  .btn-danger-custom {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    border: none;
+    border-radius: 10px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    color: white;
+    transition: all 0.2s ease;
+  }
+  .btn-danger-custom:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+  }
+  .btn-cancel {
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    display: inline-block;
+  }
+  .btn-cancel:hover {
+    background: #e0e7ff;
+    color: #6366f1;
+    border-color: #6366f1;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="delete-wrapper">
+  <div class="container">
+    <div class="delete-card">
+      <h1 class="delete-title">
+        <i class="fas fa-exclamation-triangle me-2"></i>Supprimer l'objectif
+      </h1>
+      
+      {% if error %}
+        <div class="alert alert-danger border-0 rounded-3 mb-4">
+          <strong><i class="fas fa-times-circle me-2"></i>Erreur:</strong> {{ error }}
+        </div>
+      {% endif %}
+      
+      <div class="delete-message">
+        Voulez-vous vraiment supprimer cet objectif ?
+        <span class="delete-goal-name">"{{ goal.title }}"</span>
+        Cette action est <strong>irréversible</strong> et supprimera toutes les informations associées à cet objectif, y compris les jalons et la progression.
+      </div>
+      
+      <form method="post">
+        {% csrf_token %}
+        <div class="d-flex justify-content-end gap-3 mt-4">
+          <a class="btn-cancel" href="{% url 'goals_list' %}">
+            <i class="fas fa-times me-2"></i>Annuler
+          </a>
+          <button class="btn btn-danger-custom" type="submit">
+            <i class="fas fa-trash me-2"></i>Supprimer définitivement
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

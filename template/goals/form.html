@@ -1,0 +1,358 @@
+{% extends 'base.html' %}
+
+{% block extra_css %}
+<style>
+  .goal-form-wrapper {
+    background: linear-gradient(to bottom, #f8fafc 0%, #f1f5f9 100%);
+    min-height: 100vh;
+    padding: 2.5rem 0;
+  }
+  .goal-form-card {
+    background: white;
+    border-radius: 16px;
+    padding: 2.5rem;
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.08);
+    border-left: 5px solid #6366f1;
+  }
+  .goal-form-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 2rem;
+  }
+  .form-label {
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 0.5rem;
+  }
+  .form-control, .form-select {
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    transition: all 0.2s ease;
+  }
+  .form-control:focus, .form-select:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  }
+  .form-text {
+    color: #64748b;
+    font-size: 0.875rem;
+  }
+  .milestone-input-group {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .list-group-item {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px !important;
+    margin-bottom: 0.5rem;
+    padding: 0.75rem 1rem;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border: none;
+    border-radius: 10px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+  }
+  .goal-back-btn {
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+  }
+  .goal-back-btn:hover {
+    background: #e0e7ff;
+    color: #6366f1;
+    border-color: #6366f1;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="goal-form-wrapper">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-10">
+        <div class="mb-4">
+          <a class="goal-back-btn" href="{% url 'goals_list' %}">
+            <i class="fas fa-arrow-left"></i>Retour aux objectifs
+          </a>
+        </div>
+        
+        <div class="goal-form-card">
+          <h2 class="goal-form-title">{% if creating %}Créer un objectif{% else %}Modifier l'objectif{% endif %}</h2>
+          <form method="post">
+            {% csrf_token %}
+            
+            {% if form.errors %}
+              <div class="alert alert-danger border-0 rounded-3 mb-4">
+                <strong><i class="fas fa-exclamation-triangle me-2"></i>Erreurs dans le formulaire:</strong>
+                <ul class="mb-0 mt-2">
+                  {% for field, errors in form.errors.items %}
+                    {% for err in errors %}
+                      <li>{% if field == '__all__' %}{{ err }}{% else %}<strong>{{ field }}:</strong> {{ err }}{% endif %}</li>
+                    {% endfor %}
+                  {% endfor %}
+                </ul>
+              </div>
+            {% endif %}
+
+            <div class="mb-4">
+              {{ form.title.label_tag }}
+              {{ form.title }}
+            </div>
+
+            <div class="mb-4">
+              {{ form.description.label_tag }}
+              {{ form.description }}
+              <div class="form-text">Astuce: décrivez pourquoi cet objectif est important pour vous.</div>
+            </div>
+
+            <div class="row mb-4">
+              <div class="col-md-6">
+                {{ form.priority.label_tag }}
+                {{ form.priority }}
+              </div>
+              <div class="col-md-6">
+                {{ form.difficulty.label_tag }}
+                {{ form.difficulty }}
+                <div class="form-text">(1 facile — 5 difficile)</div>
+              </div>
+            </div>
+
+            <div class="row mb-4">
+              <div class="col-md-6">
+                {{ form.reward.label_tag }}
+                {{ form.reward }}
+              </div>
+              <div class="col-md-6">
+                {{ form.recurrence.label_tag }}
+                {{ form.recurrence }}
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <label for="ms-title" class="form-label">Liste de tâches</label>
+              <div class="milestone-input-group">
+                <div class="row g-2 mb-3">
+                  <div class="col-md-6">
+                    <input type="text" id="ms-title" class="form-control" placeholder="Nouvelle tâche (titre)">
+                  </div>
+                  <div class="col-md-3">
+                    <input type="date" id="ms-due" class="form-control">
+                  </div>
+                  <div class="col-md-3">
+                    <button type="button" id="ms-add" class="btn btn-primary w-100">Ajouter</button>
+                  </div>
+                </div>
+                <ul id="ms-list" class="list-group"></ul>
+                <input type="hidden" id="id_milestones" name="milestones" value="">
+                {% if form.instance and form.instance.milestones %}
+                  {{ form.instance.milestones|json_script:"ms-data" }}
+                {% endif %}
+                <div class="form-text mt-2">Ajoute des tâches, tu pourras les cocher ensuite dans la fiche.</div>
+              </div>
+            </div>
+
+            <div class="row mb-4">
+              <div class="col-md-6">
+                {{ form.start_date.label_tag }}
+                {{ form.start_date }}
+              </div>
+              <div class="col-md-6">
+                {{ form.end_date.label_tag }}
+                {{ form.end_date }}
+              </div>
+            </div>
+
+            <div class="row mb-4">
+              <div class="col-md-6">
+                {{ form.status.label_tag }}
+                {{ form.status }}
+              </div>
+              <div class="col-md-6">
+                {{ form.motivation_level.label_tag }}
+                {{ form.motivation_level }}
+                <div class="small text-muted mt-1">Valeur: <span id="motivation_val">{{ form.instance.motivation_level|default:5 }}</span>/10</div>
+              </div>
+            </div>
+
+            {% if form.instance and form.instance.progress_cached is not None %}
+            <div class="mb-4">
+              <label for="goal-progress" class="form-label">Progression</label>
+              <div style="background: #f1f5f9; border-radius: 12px; padding: 1.5rem;">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span style="font-size: 0.9rem; color: #64748b; font-weight: 600;">Tâches terminées</span>
+                  <span style="font-size: 1.5rem; color: #6366f1; font-weight: 700;">{{ form.instance.progress_cached }}%</span>
+                </div>
+                <div style="height: 16px; border-radius: 10px; background: #e5e7eb; overflow: hidden; position: relative;">
+                  <div style="height: 100%; background: linear-gradient(90deg, #6366f1, #8b5cf6); width: {{ form.instance.progress_cached }}%; transition: width 0.6s ease; border-radius: 10px; box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);"></div>
+                </div>
+                <div class="mt-2 text-center" style="font-size: 0.85rem; color: #64748b;">
+                  {% if form.instance.milestones %}
+                    {{ form.instance.milestones|length }} tâche{{ form.instance.milestones|length|pluralize }} au total
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            {% endif %}
+
+            <div class="d-flex justify-content-end gap-3 mt-4 pt-4" style="border-top: 2px solid #e5e7eb;">
+              <a class="goal-back-btn" href="{% url 'goals_list' %}">Annuler</a>
+              <button class="btn btn-primary" type="submit">
+                <i class="fas fa-save me-2"></i>Enregistrer
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Sync motivation range value display
+  document.addEventListener('DOMContentLoaded', function(){
+    var range = document.querySelector('input[type="range"][name="motivation_level"]') || document.querySelector('input[type="range"][name$="motivation_level"]');
+    var out = document.getElementById('motivation_val');
+    if(range && out){
+      out.textContent = range.value || '{{ form.instance.motivation_level|default:5 }}';
+      range.addEventListener('input', function(e){ out.textContent = e.target.value; });
+    }
+  });
+</script>
+
+<script>
+// Milestones UI handling
+document.addEventListener('DOMContentLoaded', function(){
+  const addBtn = document.getElementById('ms-add');
+  const titleInput = document.getElementById('ms-title');
+  const dueInput = document.getElementById('ms-due');
+  const listEl = document.getElementById('ms-list');
+  const hidden = document.getElementById('id_milestones');
+
+  function escapeHtml(text){
+    return String(text).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'' : '&#39;'}[c]; });
+  }
+
+  function renderList(items){
+    listEl.innerHTML = '';
+    for(let idx = 0; idx < items.length; idx++){
+      const it = items[idx];
+      const li = document.createElement('li');
+      li.className = 'list-group-item d-flex justify-content-between align-items-center';
+      li.innerHTML = `<div><strong>${escapeHtml(it.title)}</strong>${it.due ? ' <small class="text-muted">('+it.due+')</small>' : ''}</div>` +
+        `<div>` +
+          `<button type="button" class="btn btn-sm btn-danger ms-1 ms-remove" data-idx="${idx}">🗑</button>` +
+        `</div>`;
+      listEl.appendChild(li);
+    }
+    try{ hidden.value = JSON.stringify(items); }catch(e){ console.warn('Could not stringify items:', e); }
+  }
+
+  let items = [];
+  try{
+    const pre = document.getElementById('ms-data');
+    if(pre){ 
+      const textContent = pre.textContent || pre.innerText || '[]';
+      items = JSON.parse(textContent); 
+    } else { 
+      const hid = document.getElementById('id_milestones'); 
+      if(hid && hid.value){ 
+        items = JSON.parse(hid.value); 
+      } 
+    }
+    // Ensure items is always an array
+    if(!Array.isArray(items)){ items = []; }
+  }catch(e){ 
+    console.warn('Could not parse initial milestones JSON:', e); 
+    items = []; 
+  }
+
+  renderList(items);
+
+  function handleAdd(){
+    const title = titleInput && titleInput.value && titleInput.value.trim();
+    const due = dueInput && dueInput.value || null;
+    if(!title){ 
+      return; 
+    }
+    items.push({title: title, due: due, done: false});
+    renderList(items);
+    if(titleInput){ titleInput.value = ''; titleInput.focus(); }
+    if(dueInput) dueInput.value = '';
+  }
+
+  if(addBtn){
+    addBtn.addEventListener('click', function(e){ e.preventDefault(); handleAdd(); });
+  }
+
+  // Delegated click handler as fallback
+  document.addEventListener('click', function(e){
+    const t = e.target && (e.target.id === 'ms-add' || (e.target.closest && e.target.closest('#ms-add')));
+    if(t){ e.preventDefault(); handleAdd(); }
+  });
+
+  listEl.addEventListener('click', function(e){
+    const rem = e.target.closest && e.target.closest('.ms-remove');
+    if(rem){ const idx = Number(rem.dataset.idx); if(!Number.isNaN(idx)) { items.splice(idx,1); renderList(items); } return; }
+  });
+
+  const form = document.querySelector('form');
+  if(form){ 
+    form.addEventListener('submit', function(e){ 
+      // Always update hidden field before submit
+      if(hidden) hidden.value = JSON.stringify(items); 
+      console.log('Submitting milestones:', items);
+    }); 
+  }
+});
+</script>
+
+<script>
+function addMilestoneInline(e){
+  try{
+    if(e && e.preventDefault) e.preventDefault();
+    const titleInput = document.getElementById('ms-title');
+    const dueInput = document.getElementById('ms-due');
+    const listEl = document.getElementById('ms-list');
+    const hidden = document.getElementById('id_milestones');
+    if(!titleInput || !listEl || !hidden) return;
+    const title = (titleInput.value || '').trim();
+    const due = dueInput && dueInput.value ? dueInput.value : null;
+    if(!title) return;
+    let items = [];
+    try{ items = hidden.value ? JSON.parse(hidden.value) : []; }catch(err){ items = []; }
+    items.push({title: title, due: due, done: false});
+    hidden.value = JSON.stringify(items);
+    const li = document.createElement('li');
+    li.className = 'list-group-item d-flex justify-content-between align-items-center';
+    li.innerHTML = `<div><strong>${title.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</strong>${due ? ' <small class="text-muted">('+due+')</small>' : ''}</div>` +
+      `<div>` +
+        `<button type="button" class="btn btn-sm btn-danger ms-1 ms-remove">🗑</button>` +
+      `</div>`;
+    listEl.appendChild(li);
+    titleInput.value = '';
+    if(dueInput) dueInput.value = '';
+    titleInput.focus();
+  }catch(err){ console.error('addMilestoneInline error', err); }
+}
+</script>
+{% endblock %}

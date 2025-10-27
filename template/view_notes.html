@@ -1,0 +1,409 @@
+{% extends 'base.html' %}
+
+{% block title %}Mes Notes | Journal Personnel Intelligent{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background-color: #f8f9fa;
+    }
+    .note-card {
+        background-color: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+    .note-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    }
+    .note-card-header {
+        background: linear-gradient(90deg, #4338ca 0%, #b8b8b8 100%);
+        color: white;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .note-card-body {
+        padding: 1.5rem;
+    }
+    .note-card-footer {
+        background-color: #f1f3f5;
+        padding: 0.75rem 1.5rem;
+        border-top: 1px solid #e9ecef;
+        font-size: 0.85rem;
+        color: #6c757d;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .note-title {
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: #343a40;
+        margin-bottom: 0.75rem;
+    }
+    .note-content {
+        color: #495057;
+        line-height: 1.6;
+        margin-bottom: 1rem;
+    }
+    .note-tags .badge {
+        margin-right: 0.5rem;
+        background-color: #eef2ff; /* Indigo-100 */
+        color: #4f46e5; /* Indigo-600 */
+        font-weight: 500;
+    }
+    /* Indigo-themed Sidebar refinements */
+    .sidebar {
+        background-color: white;
+        border-radius: 18px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        padding: 1.5rem;
+        position: sticky;
+        top: 20px;
+        border: 1px solid #eef2f6;
+    }
+    .sidebar h5 {
+        color: #343a40;
+        margin-bottom: 1.25rem;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+        position: relative;
+    }
+    .sidebar h5::after {
+        content: "";
+        display: block;
+        width: 40px;
+        height: 3px;
+        background: linear-gradient(90deg, #4f46e5 0%, #818cf8 100%);
+        border-radius: 2px;
+        margin-top: 8px;
+    }
+    .sidebar .list-group-item {
+        border: 1px solid #eef2f6;
+        border-radius: 12px;
+        padding: 0.65rem 0.9rem;
+        color: #495057;
+        margin-bottom: 0.5rem;
+        transition: all 0.15s ease-in-out;
+        display: flex;
+        align-items: center;
+    }
+    .sidebar .list-group-item i {
+        color: #6c757d;
+    }
+    .sidebar .list-group-item:hover {
+        background-color: #f5f7ff; /* Indigo-50 */
+        border-color: #e0e7ff; /* Indigo-200 */
+    }
+    .sidebar .list-group-item.active {
+        background: linear-gradient(90deg, #4f46e5 0%, #6366f1 100%);
+        color: white;
+        box-shadow: 0 6px 14px rgba(79, 70, 229, 0.25);
+        border-color: transparent;
+    }
+    .sidebar .list-group-item.active i {
+        color: #ffffff;
+    }
+    .search-bar {
+        margin-bottom: 1.5rem;
+    }
+    .search-bar .input-group-text {
+        border-color: #e9ecef;
+        border-right: 0;
+    }
+    .search-bar .form-control {
+        border-color: #e9ecef;
+        border-left: 0;
+        box-shadow: none;
+    }
+    .search-bar .form-control:focus {
+        border-color: #a5b4fc; /* Indigo-300 */
+        box-shadow: 0 0 0 0.2rem rgba(79, 70, 229, 0.15);
+    }
+    .btn-add-note {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        box-shadow: 0 8px 15px rgba(79, 70, 229, 0.3);
+        z-index: 1000;
+        background-color: #4f46e5;
+        color: white;
+        transition: background-color 0.3s ease;
+    }
+    .btn-add-note:hover {
+        background-color: #4338ca; /* Indigo-700 */
+    }
+
+    /* Override Bootstrap primary buttons locally to indigo theme */
+    .btn.btn-primary {
+        background-color: #4f46e5;
+        border-color: #4f46e5;
+    }
+    .btn.btn-primary:hover,
+    .btn.btn-primary:focus {
+        background-color: #4338ca;
+        border-color: #4338ca;
+    }
+    .btn.btn-outline-primary {
+        color: #4f46e5;
+        border-color: #4f46e5;
+    }
+    .btn.btn-outline-primary:hover,
+    .btn.btn-outline-primary:focus {
+        background-color: #4f46e5;
+        color: #ffffff;
+        border-color: #4f46e5;
+    }
+    
+    /* Emotion display styles */
+    .emotion-display {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.25rem 0.75rem;
+        background-color: rgba(79, 70, 229, 0.1);
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: #4f46e5;
+    }
+    
+    .emotion-icon {
+        font-size: 1em;
+    }
+    
+    .confidence-score {
+        font-size: 0.7rem;
+        opacity: 0.7;
+        margin-left: 0.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <!-- Sidebar for Navigation and Search -->
+        <div class="col-md-4 col-lg-3">
+            <div class="sidebar mb-4">
+                <div class="search-bar">
+                    <div class="input-group input-group-lg rounded-pill shadow-sm">
+                        <span class="input-group-text bg-white border-end-0">
+                            <i class="fas fa-search text-muted"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0" placeholder="Rechercher des notes..." aria-label="Rechercher">
+                    </div>
+                </div>
+                
+                <h5 class="mb-3">Catégories</h5>
+                <div class="list-group">
+                    <a href="{% url 'view_notes' %}" class="list-group-item list-group-item-action {% if not category %}active{% endif %}">
+                        <i class="fas fa-stream me-2"></i>Toutes les notes
+                    </a>
+                    {% for cat in categories %}
+<<<<<<< HEAD
+                    <a href="{% url 'notes_by_category' cat.id %}" class="list-group-item list-group-item-action {% if category and category.id == cat.id %}active{% endif %}">
+                        <i class="{{ cat.icon }} me-2"></i>{{ cat.name }}
+                    </a>
+=======
+                        {% if cat.id %}
+                        <a href="{% url 'notes_by_category' cat.id %}" class="list-group-item list-group-item-action {% if category and category.id == cat.id %}active{% endif %}">
+                            <i class="{{ cat.icon }} me-2"></i>{{ cat.name }}
+                        </a>
+                        {% endif %}
+>>>>>>> origin/yassineJawadi
+                    {% endfor %}
+                </div>
+
+                <h5 class="mt-4 mb-3">Archives</h5>
+                <div class="list-group">
+                    <a href="#" class="list-group-item list-group-item-action"><i class="fas fa-calendar-alt me-2"></i>2023</a>
+                    <a href="#" class="list-group-item list-group-item-action"><i class="fas fa-calendar-alt me-2"></i>2022</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Area for Notes -->
+        <div class="col-md-8 col-lg-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">
+                    <a href="{% url 'category_management' %}" class="text-decoration-none text-muted">Catégories</a>
+                    <i class="fas fa-chevron-right mx-2 text-muted"></i>
+<<<<<<< HEAD
+                    {% if category %}
+=======
+                    {% if category and category.id %}
+>>>>>>> origin/yassineJawadi
+                        <a href="{% url 'notes_by_category' category.id %}" class="text-decoration-none text-dark">{{ category.name }}</a>
+                    {% else %}
+                        <span class="text-dark">Toutes les notes</span>
+                    {% endif %}
+                </h2>
+                <a href="{% url 'create_note' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i> Nouvelle note
+                </a>
+            </div>
+
+            <!-- Notes List -->
+            <div id="notesList">
+                {% if notes %}
+                    {% for note in notes %}
+                        <div class="note-card">
+                            <div class="note-card-header">
+                                <span>Note du {{ note.created_at|date:"d F Y" }}</span>
+                                <div>
+<<<<<<< HEAD
+=======
+                                    <a href="{% url 'generate_recommendations' note.id %}" class="btn btn-sm btn-success me-2" title="Obtenir des recommandations d'activités">
+                                        <i class="fas fa-lightbulb"></i> Recommandations
+                                    </a>
+>>>>>>> origin/yassineJawadi
+                                    <button class="btn btn-sm btn-light me-2" data-bs-toggle="modal" data-bs-target="#editModal{{ note.id }}"><i class="fas fa-edit"></i></button>
+                                    <button class="btn btn-sm btn-light me-2"><i class="fas fa-archive"></i></button>
+                                    <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ note.id }}"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </div>
+                            <div class="note-card-body">
+                                <h3 class="note-title">{{ note.title }}</h3>
+                                <div class="note-content">
+                                    <p>{{ note.content|truncatechars:200 }}</p>
+                                </div>
+                                <div class="note-tags">
+                                    {% for tag in note.tags.all %}
+                                        <span class="badge rounded-pill">#{{ tag.name }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="note-card-footer">
+                                <div class="emotion-display">
+                                    {% if note.emotion %}
+                                        <i class="{{ note.get_emotion_icon }} emotion-icon"></i>
+                                        <span>{{ note.get_emotion_display }}</span>
+                                        {% if note.emotion_confidence %}
+                                            <small class="confidence-score">({{ note.emotion_confidence|floatformat:0 }}%)</small>
+                                        {% endif %}
+                                    {% else %}
+                                        <i class="fas fa-meh text-muted emotion-icon"></i>
+                                        <span>Neutre</span>
+                                    {% endif %}
+                                </div>
+                                <span>Dernière modification: {{ note.updated_at|date:"d/m/Y H:i" }}</span>
+                            </div>
+                        </div>
+                        <!-- Edit Modal -->
+                        <div class="modal fade" id="editModal{{ note.id }}" tabindex="-1" aria-labelledby="editModalLabel{{ note.id }}" aria-hidden="true">
+                          <div class="modal-dialog">
+                            <div class="modal-content">
+                              <div class="modal-header">
+                                <h5 class="modal-title" id="editModalLabel{{ note.id }}">Modifier la note</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                              </div>
+                              <form method="post" action="{% url 'edit_note' note.id %}">
+                                {% csrf_token %}
+                                {% if category %}<input type="hidden" name="category_id" value="{{ category.id }}">{% endif %}
+                                <div class="modal-body">
+                                  <div class="mb-3">
+                                    <label class="form-label">Titre</label>
+                                    <input type="text" name="title" class="form-control" value="{{ note.title }}" required>
+                                  </div>
+                                  <div class="mb-3">
+                                    <label class="form-label">Contenu</label>
+                                    <textarea name="content" class="form-control" rows="6" required>{{ note.content }}</textarea>
+                                  </div>
+                                </div>
+                                <div class="modal-footer">
+                                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                  <button type="submit" class="btn btn-primary">Enregistrer</button>
+                                </div>
+                              </form>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Delete Modal -->
+                        <div class="modal fade" id="deleteModal{{ note.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ note.id }}" aria-hidden="true">
+                          <div class="modal-dialog">
+                            <div class="modal-content">
+                              <div class="modal-header">
+                                <h5 class="modal-title" id="deleteModalLabel{{ note.id }}">Supprimer la note</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                              </div>
+                              <form method="post" action="{% url 'delete_note' note.id %}">
+                                {% csrf_token %}
+                                {% if category %}<input type="hidden" name="category_id" value="{{ category.id }}">{% endif %}
+                                <div class="modal-body">
+                                  <p>Êtes-vous sûr de vouloir supprimer la note "{{ note.title }}" ? Cette action est irréversible.</p>
+                                </div>
+                                <div class="modal-footer">
+                                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                  <button type="submit" class="btn btn-danger">Supprimer</button>
+                                </div>
+                              </form>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-info" role="alert">
+                        Aucune note trouvée pour cette catégorie.
+                    </div>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<a href="{% url 'create_note' %}" class="btn btn-add-note">
+    <i class="fas fa-plus"></i>
+</a>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Fade-in animation
+        const noteCards = document.querySelectorAll('.note-card');
+        noteCards.forEach((card, index) => {
+            card.style.opacity = 0;
+            card.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                card.style.transition = 'opacity 0.5s ease-out, transform 0.5s ease-out';
+                card.style.opacity = 1;
+                card.style.transform = 'translateY(0)';
+            }, index * 100);
+        });
+
+        // Functional search filtering
+        const searchInput = document.querySelector('.search-bar input');
+        const notesList = document.getElementById('notesList');
+        if (searchInput && notesList) {
+            searchInput.addEventListener('input', function(e) {
+                const term = e.target.value.toLowerCase();
+                notesList.querySelectorAll('.note-card').forEach(card => {
+                    const title = card.querySelector('.note-title')?.textContent.toLowerCase() || '';
+                    const content = card.querySelector('.note-content')?.textContent.toLowerCase() || '';
+                    const matches = title.includes(term) || content.includes(term);
+                    card.style.display = matches ? '' : 'none';
+                });
+            });
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,389 @@
+{% extends 'base.html' %}
+{% block title %}{{ goal.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .goal-detail-wrapper {
+    background: linear-gradient(to bottom, #f8fafc 0%, #f1f5f9 100%);
+    min-height: 100vh;
+    padding: 2.5rem 0;
+  }
+  .goal-detail-card {
+    background: white;
+    border-radius: 16px;
+    padding: 2.5rem;
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.08);
+    border-left: 5px solid #6366f1;
+  }
+  .goal-detail-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 1rem;
+  }
+  .goal-status-badge {
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.4rem 0.9rem;
+    border-radius: 12px;
+  }
+  .goal-status-badge.ongoing { background: #dbeafe; color: #1e40af; }
+  .goal-status-badge.completed { background: #d1fae5; color: #065f46; }
+  .goal-status-badge.abandoned { background: #e5e7eb; color: #475569; }
+  .goal-priority-badge {
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 12px;
+    margin-left: 0.5rem;
+  }
+  .goal-priority-badge.low { background: #d1fae5; color: #065f46; }
+  .goal-priority-badge.medium { background: #fef3c7; color: #92400e; }
+  .goal-priority-badge.high { background: #fee2e2; color: #991b1b; }
+  .goal-info-section {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+  }
+  .goal-info-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+  }
+  .goal-motivation-bar {
+    height: 12px;
+    border-radius: 10px;
+    background: #e5e7eb;
+    overflow: hidden;
+  }
+  .goal-motivation-bar .bar {
+    height: 100%;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    border-radius: 10px;
+  }
+  .goal-tasks-list {
+    list-style: none;
+    padding: 0;
+  }
+  .goal-tasks-list li {
+    padding: 0.75rem 1rem;
+    background: white;
+    border-radius: 10px;
+    margin-bottom: 0.5rem;
+    border: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .goal-tasks-list input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #6366f1;
+  }
+  .goal-tasks-list label {
+    flex: 1;
+    cursor: pointer;
+    margin: 0;
+  }
+  .goal-action-btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .goal-action-btn.secondary {
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+  }
+  .goal-action-btn.secondary:hover {
+    background: #e0e7ff;
+    color: #6366f1;
+    border-color: #6366f1;
+  }
+  .goal-action-btn.danger {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+  }
+  .goal-action-btn.danger:hover {
+    background: #fca5a5;
+    color: white;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="goal-detail-wrapper">
+<div class="container">
+  <div class="goal-detail-card">
+    <h1 class="goal-detail-title">{{ goal.title }}</h1>
+    <div class="d-flex align-items-center gap-2 flex-wrap mb-4">
+      {% if goal.status == 'ongoing' %}
+        <span class="goal-status-badge ongoing">En cours</span>
+      {% elif goal.status == 'completed' %}
+        <span class="goal-status-badge completed">Terminé</span>
+      {% else %}
+        <span class="goal-status-badge abandoned">Abandonné</span>
+      {% endif %}
+      {% if goal.priority == 1 %}
+        <span class="goal-priority-badge low">Priorité Faible</span>
+      {% elif goal.priority == 2 %}
+        <span class="goal-priority-badge medium">Priorité Moyenne</span>
+      {% else %}
+        <span class="goal-priority-badge high">Priorité Haute</span>
+      {% endif %}
+      <small class="text-muted ms-2">Créé le {{ goal.created_at|date:'d M Y' }}</small>
+    </div>
+
+    {% if goal.description %}
+      <p style="font-size: 1.05rem; color: #475569; line-height: 1.7; margin: 1.5rem 0;">{{ goal.description|linebreaks }}</p>
+    {% endif %}
+
+    <div class="goal-info-section">
+      <div class="goal-info-label">Motivation</div>
+      <div class="d-flex align-items-center gap-3">
+        <div class="goal-motivation-bar flex-grow-1">
+          <div class="bar" style="width: {{ goal.motivation_level|default:0 }}0%;"></div>
+        </div>
+        <div class="fw-bold" style="color: #6366f1;">{{ goal.motivation_level }}/10</div>
+      </div>
+    </div>
+
+    {% if goal.milestones %}
+    <div class="goal-info-section">
+      <div class="goal-info-label mb-2">Progression</div>
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span style="font-size: 0.9rem; color: #64748b; font-weight: 600;">
+          Tâches terminées
+        </span>
+        <span style="font-size: 2rem; color: #6366f1; font-weight: 700;">
+          {{ goal.progress_cached|default:0 }}%
+        </span>
+      </div>
+      <div style="height: 20px; border-radius: 12px; background: #e5e7eb; overflow: hidden; position: relative; box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);">
+        <div style="height: 100%; background: linear-gradient(90deg, #6366f1, #8b5cf6); width: {{ goal.progress_cached|default:0 }}%; transition: width 0.6s ease; border-radius: 12px; box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4); display: flex; align-items: center; justify-content: end; padding-right: 8px;">
+          {% if goal.progress_cached > 15 %}
+            <span style="color: white; font-size: 0.75rem; font-weight: 700; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">{{ goal.progress_cached }}%</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="mt-2 text-center" style="font-size: 0.85rem; color: #64748b;">
+        {% with total=goal.milestones|length %}
+          {% with done_count=0 %}
+            {% for m in goal.milestones %}
+              {% if m.done %}
+                {% with done_count=done_count|add:1 %}{% endwith %}
+              {% endif %}
+            {% endfor %}
+          {% endwith %}
+          <span style="font-weight: 600; color: #6366f1;">{{ total }}</span> tâche{{ total|pluralize }} au total
+        {% endwith %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- IA Prédiction & Motivation -->
+    {% if motivation %}
+    <div class="goal-info-section" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; box-shadow: 0 8px 20px rgba(102, 126, 234, 0.35); position: relative; overflow: hidden; padding: 1.25rem;">
+      <!-- Decorative elements -->
+      <div style="position: absolute; top: -30px; right: -30px; width: 100px; height: 100px; background: rgba(255,255,255,0.08); border-radius: 50%; filter: blur(30px);"></div>
+      <div style="position: absolute; bottom: -20px; left: -20px; width: 70px; height: 70px; background: rgba(255,255,255,0.06); border-radius: 50%; filter: blur(25px);"></div>
+      
+      <!-- Content Grid: 2 columns on larger screens -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; position: relative;">
+        
+        <!-- Prédiction de durée -->
+        <div style="background: rgba(255,255,255,0.18); border-radius: 12px; padding: 1rem; backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.25); box-shadow: 0 3px 10px rgba(0,0,0,0.08);">
+          <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.75rem;">
+            <div style="background: linear-gradient(135deg, #fbbf24, #f59e0b); width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(251, 191, 36, 0.35);">
+              <i class="fas fa-clock" style="color: white; font-size: 1.1rem;"></i>
+            </div>
+            <strong style="font-size: 0.95rem; letter-spacing: 0.2px;">Prédiction IA</strong>
+          </div>
+          <div style="font-size: 1.6rem; font-weight: 800; margin-bottom: 0.5rem; text-shadow: 0 2px 6px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 0.4rem;">
+            <i class="fas fa-calendar-alt" style="font-size: 1.2rem; color: #fbbf24;"></i>
+            <span>{{ duration_min }}-{{ duration_max }}j</span>
+          </div>
+          {% if motivation.estimated_days_left > 0 %}
+          <div style="background: rgba(255,255,255,0.15); border-radius: 8px; padding: 0.5rem 0.75rem; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.15); display: flex; align-items: center; gap: 0.4rem;">
+            <i class="fas fa-hourglass-half" style="color: #fbbf24; font-size: 0.9rem;"></i>
+            <span style="font-weight: 600;">{{ motivation.estimated_days_left }}j restant{{ motivation.estimated_days_left|pluralize }}</span>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Message de motivation -->
+        <div style="background: rgba(255,255,255,0.18); border-radius: 12px; padding: 1rem; backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.25); box-shadow: 0 3px 10px rgba(0,0,0,0.08);">
+          <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.75rem;">
+            <div style="background: linear-gradient(135deg, #ef4444, #dc2626); width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(239, 68, 68, 0.35); animation: pulse 2s ease-in-out infinite;">
+              <i class="fas fa-fire" style="color: white; font-size: 1.1rem;"></i>
+            </div>
+            <strong style="font-size: 0.95rem; letter-spacing: 0.2px;">Motivation</strong>
+          </div>
+          <div style="background: rgba(255,255,255,0.12); border-left: 3px solid #fbbf24; border-radius: 6px; padding: 0.7rem 0.9rem; font-size: 0.95rem; line-height: 1.5; margin-bottom: 0.75rem; font-weight: 500; text-shadow: 0 1px 2px rgba(0,0,0,0.08);">
+            {{ motivation.message }}
+          </div>
+          <div style="background: rgba(255,255,255,0.12); border-radius: 6px; padding: 0.6rem 0.8rem; font-size: 0.85rem; display: flex; align-items: start; gap: 0.5rem; border: 1px solid rgba(255,255,255,0.15);">
+            <i class="fas fa-lightbulb" style="color: #fbbf24; font-size: 1rem; margin-top: 0.1rem;"></i>
+            <span style="line-height: 1.5;">{{ motivation.tip }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Statistiques rapides -->
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-top: 1rem;">
+        <div style="background: rgba(255,255,255,0.18); border-radius: 10px; padding: 0.7rem 0.5rem; text-align: center; backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.25); transition: transform 0.2s ease;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='translateY(0)'">
+          <div style="font-size: 1.5rem; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.15);">{{ motivation.progress }}%</div>
+          <div style="font-size: 0.7rem; opacity: 0.95; font-weight: 600; margin-top: 0.15rem; letter-spacing: 0.3px;">PROGRESSION</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.18); border-radius: 10px; padding: 0.7rem 0.5rem; text-align: center; backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.25); transition: transform 0.2s ease;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='translateY(0)'">
+          <div style="font-size: 1.5rem; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.15);">{{ motivation.completed_tasks }}</div>
+          <div style="font-size: 0.7rem; opacity: 0.95; font-weight: 600; margin-top: 0.15rem; letter-spacing: 0.3px;">TERMINÉES</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.18); border-radius: 10px; padding: 0.7rem 0.5rem; text-align: center; backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.25); transition: transform 0.2s ease;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='translateY(0)'">
+          <div style="font-size: 1.5rem; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.15);">{{ motivation.remaining_tasks }}</div>
+          <div style="font-size: 0.7rem; opacity: 0.95; font-weight: 600; margin-top: 0.15rem; letter-spacing: 0.3px;">RESTANTES</div>
+        </div>
+      </div>
+    </div>
+
+    <style>
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+      }
+    </style>
+    {% endif %}
+
+    {% if goal.start_date or goal.end_date %}
+      <div class="goal-info-section">
+        <div class="goal-info-label">Période</div>
+        <div class="d-flex gap-4 flex-wrap">
+          {% if goal.start_date %}
+            <div><span class="text-muted">Début:</span> <strong>{{ goal.start_date }}</strong></div>
+          {% endif %}
+          {% if goal.end_date %}
+            <div><span class="text-muted">Fin:</span> <strong>{{ goal.end_date }}</strong></div>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+
+    {% if goal.milestones %}
+      <div class="goal-info-section">
+        <div class="goal-info-label mb-3">Liste de tâches</div>
+        <ul class="goal-tasks-list" id="milestones-list">
+          {% for m in goal.milestones %}
+            <li>
+              <input type="checkbox" class="milestone-checkbox" data-index="{{ forloop.counter0 }}" id="ms-{{ forloop.counter0 }}" {% if m.done %}checked{% endif %}>
+              <label for="ms-{{ forloop.counter0 }}">{{ m.title }}</label>
+              {% if m.due %}<small class="text-muted">({{ m.due }})</small>{% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mt-4 pt-3" style="border-top: 2px solid #e5e7eb;">
+      <a href="{% url 'goals_list' %}" style="color: #6366f1; text-decoration: none; font-weight: 500;">
+        <i class="fas fa-arrow-left me-2"></i>Retour aux objectifs
+      </a>
+      <div class="d-flex gap-2">
+        <a class="goal-action-btn secondary" href="{% url 'goal_update' goal.slug %}">
+          <i class="fas fa-edit"></i> Modifier
+        </a>
+        <a class="goal-action-btn danger" href="{% url 'goal_delete' goal.slug %}">
+          <i class="fas fa-trash"></i> Supprimer
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+}
+document.addEventListener('DOMContentLoaded', function(){
+  const csrftoken = getCookie('csrftoken');
+  const checkboxes = document.querySelectorAll('.milestone-checkbox');
+  for (const cb of checkboxes) {
+    cb.addEventListener('change', function(e){
+      const index = Number(e.target.dataset.index);
+      fetch('{% url "toggle_milestone" goal.slug %}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+        body: JSON.stringify({ index: index })
+      }).then(resp => {
+        // If server returned non-2xx, try to read text for diagnostics
+        if (!resp.ok) {
+          return resp.text().then(text => { throw { status: resp.status, text: text }; });
+        }
+        // If content-type is not JSON, read text and throw for better message
+        const ct = resp.headers.get('Content-Type') || '';
+        if (!ct.includes('application/json')) {
+          return resp.text().then(text => { throw { status: resp.status, text: text }; });
+        }
+        return resp.json();
+      }).then(data => {
+        if(!data.ok){
+          alert('Erreur: ' + (data.error || 'Impossible de basculer le jalon'));
+          e.target.checked = !e.target.checked;
+        } else {
+          // Update status badge if all tasks are completed
+          if(data.status){
+            const statusBadge = document.querySelector('.goal-status-badge');
+            if(statusBadge){
+              if(data.status === 'completed'){
+                statusBadge.textContent = 'Terminé';
+                statusBadge.className = 'goal-status-badge completed';
+                // Show success message
+                if(data.progress === 100){
+                  const msg = document.createElement('div');
+                  msg.className = 'alert alert-success mt-3';
+                  msg.innerHTML = '<i class="fas fa-check-circle me-2"></i><strong>Félicitations !</strong> Toutes les tâches sont terminées. Cet objectif est maintenant marqué comme terminé.';
+                  msg.style.borderRadius = '12px';
+                  msg.style.border = 'none';
+                  msg.style.background = 'linear-gradient(135deg, #d1fae5, #a7f3d0)';
+                  msg.style.color = '#065f46';
+                  const card = document.querySelector('.goal-detail-card');
+                  if(card) card.insertBefore(msg, card.firstChild);
+                  setTimeout(() => msg.remove(), 5000);
+                }
+              } else if(data.status === 'ongoing'){
+                statusBadge.textContent = 'En cours';
+                statusBadge.className = 'goal-status-badge ongoing';
+              }
+            }
+          }
+        }
+      }).catch(err => {
+        // If we threw a Response-like object, show status and text
+        if (err && err.status) {
+          const short = err.text ? (err.text.length > 300 ? err.text.slice(0,300) + '...' : err.text) : '';
+          alert('Erreur réseau: ' + err.status + '\n' + short);
+        } else if (err && err.message) {
+          alert('Erreur: ' + err.message);
+        } else {
+          alert('Erreur réseau');
+        }
+        e.target.checked = !e.target.checked;
+      });
+    });
+  }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,673 @@
+{% extends 'base.html' %}
+
+{% block title %}Profil | Journal Personnel Intelligent{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-header {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .profile-header::before {
+        content: '';
+        position: absolute;
+        top: -50px;
+        right: -50px;
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .profile-header::after {
+        content: '';
+        position: absolute;
+        bottom: -30px;
+        left: -30px;
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .profile-avatar-container {
+        position: relative;
+        width: 150px;
+        height: 150px;
+        margin: 0 auto 1.5rem;
+    }
+    
+    .profile-avatar {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid white;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .avatar-upload {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        background-color: var(--primary-color);
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .avatar-upload:hover {
+        transform: scale(1.1);
+    }
+    
+    .profile-stats {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stat-item {
+        text-align: center;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: white;
+    }
+    
+    .stat-label {
+        font-size: 0.875rem;
+        color: rgba(255, 255, 255, 0.8);
+    }
+    
+    .profile-card {
+        background-color: white;
+        border-radius: 16px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        padding: 2rem;
+        margin-bottom: 2rem;
+        transition: all 0.3s ease;
+    }
+    
+    .profile-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .avatar-gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .avatar-option {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        cursor: pointer;
+        border: 3px solid transparent;
+        transition: all 0.3s ease;
+    }
+    
+    .avatar-option:hover {
+        transform: scale(1.1);
+    }
+    
+    .avatar-option.selected {
+        border-color: var(--primary-color);
+    }
+    
+    .avatar-customizer {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .color-option {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .color-option:hover {
+        transform: scale(1.2);
+    }
+    
+    .avatar-preview {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        margin: 1rem auto;
+        border: 3px solid var(--primary-color);
+    }
+    
+    .badge-item {
+        display: flex;
+        align-items: center;
+        background-color: #f9fafb;
+        border-radius: 12px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .badge-item:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    .badge-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background-color: var(--primary-color);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-right: 1rem;
+    }
+    
+    .badge-locked {
+        opacity: 0.5;
+    }
+    
+    .progress {
+        height: 8px;
+        border-radius: 4px;
+        margin-top: 0.5rem;
+    }
+    
+    .theme-option {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+        margin-right: 0.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .theme-option:hover {
+        transform: scale(1.1);
+    }
+    
+    .theme-light {
+        background: linear-gradient(135deg, #f3f4f6 0%, #ffffff 100%);
+        border: 2px solid #e5e7eb;
+    }
+    
+    .theme-dark {
+        background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+        border: 2px solid #374151;
+    }
+    
+    .theme-purple {
+        background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+        border: 2px solid #7c3aed;
+    }
+    
+    .theme-green {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        border: 2px solid #059669;
+    }
+    
+    .theme-blue {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        border: 2px solid #2563eb;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Profile Header -->
+    <div class="profile-header text-center text-white" data-aos="fade-up">
+        <div class="profile-avatar-container">
+            <img src="https://ui-avatars.com/api/?name=User&background=random&size=150" alt="Avatar" class="profile-avatar" id="current-avatar">
+            <label for="avatar-upload" class="avatar-upload">
+                <i class="fas fa-camera"></i>
+                <input type="file" id="avatar-upload" accept="image/*" style="display: none;">
+            </label>
+        </div>
+        <h1 class="mb-2">Utilisateur</h1>
+        <p class="lead mb-4">Membre depuis {{ user.date_joined|date:"F Y" }}</p>
+        
+        <div class="profile-stats">
+            <div class="stat-item">
+                <div class="stat-value">42</div>
+                <div class="stat-label">Notes</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">18</div>
+                <div class="stat-label">Médias</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">7</div>
+                <div class="stat-label">Jours consécutifs</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Personal Information -->
+            <div class="profile-card mb-4" data-aos="fade-up">
+                <h3 class="mb-4">Informations personnelles</h3>
+                <form>
+                    <div class="row mb-3">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <label for="firstName" class="form-label">Prénom</label>
+                            <input type="text" class="form-control" id="firstName" value="{{ user.first_name }}" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="lastName" class="form-label">Nom</label>
+                            <input type="text" class="form-control" id="lastName" value="{{ user.last_name }}" readonly>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" value="{{ user.email }}" readonly>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="bio" class="form-label">Biographie</label>
+                        <textarea class="form-control" id="bio" rows="3">Passionné d'écriture et de développement personnel. J'utilise ce journal pour capturer mes pensées et suivre mon évolution.</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="birthdate" class="form-label">Date de naissance</label>
+                        <input type="date" class="form-control" id="birthdate" value="{{ user_profile.date_of_birth|date:'Y-m-d' }}" readonly>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="location" class="form-label">Localisation</label>
+                        <input type="text" class="form-control" id="location" value="{{ user_profile.location }}" readonly>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Enregistrer les modifications
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Achievements and Badges -->
+            <div class="profile-card" data-aos="fade-up">
+                <h3 class="mb-4">Réalisations et badges</h3>
+                
+                <div class="badge-item">
+                    <div class="badge-icon" style="background-color: #10b981;">
+                        <i class="fas fa-pen"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between">
+                            <h5 class="mb-0">Écrivain débutant</h5>
+                            <span class="badge bg-success">Débloqué</span>
+                        </div>
+                        <p class="text-muted mb-0">Écrire 10 notes dans votre journal</p>
+                        <div class="progress">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: 100%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="badge-item">
+                    <div class="badge-icon" style="background-color: #3b82f6;">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between">
+                            <h5 class="mb-0">Habitude constante</h5>
+                            <span class="badge bg-primary">En cours</span>
+                        </div>
+                        <p class="text-muted mb-0">Écrire pendant 30 jours consécutifs</p>
+                        <div class="progress">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: 23%"></div>
+                        </div>
+                        <small class="text-muted">7/30 jours</small>
+                    </div>
+                </div>
+                
+                <div class="badge-item badge-locked">
+                    <div class="badge-icon" style="background-color: #f59e0b;">
+                        <i class="fas fa-image"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between">
+                            <h5 class="mb-0">Photographe</h5>
+                            <span class="badge bg-secondary">Verrouillé</span>
+                        </div>
+                        <p class="text-muted mb-0">Ajouter 20 photos à votre journal</p>
+                        <div class="progress">
+                            <div class="progress-bar bg-warning" role="progressbar" style="width: 60%"></div>
+                        </div>
+                        <small class="text-muted">12/20 photos</small>
+                    </div>
+                </div>
+                
+                <div class="badge-item badge-locked">
+                    <div class="badge-icon" style="background-color: #ef4444;">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between">
+                            <h5 class="mb-0">Analyste</h5>
+                            <span class="badge bg-secondary">Verrouillé</span>
+                        </div>
+                        <p class="text-muted mb-0">Consulter vos statistiques pendant 14 jours consécutifs</p>
+                        <div class="progress">
+                            <div class="progress-bar bg-danger" role="progressbar" style="width: 30%"></div>
+                        </div>
+                        <small class="text-muted">4/14 jours</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Avatar Customization -->
+            <div class="profile-card mb-4" data-aos="fade-up">
+                <h3 class="mb-4">Personnalisation de l'avatar</h3>
+                
+                <ul class="nav nav-tabs mb-4" id="avatarTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="gallery-tab" data-bs-toggle="tab" data-bs-target="#gallery" type="button" role="tab">Galerie</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="custom-tab" data-bs-toggle="tab" data-bs-target="#custom" type="button" role="tab">Personnalisé</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload" type="button" role="tab">Importer</button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content" id="avatarTabsContent">
+                    <!-- Gallery Tab -->
+                    <div class="tab-pane fade show active" id="gallery" role="tabpanel" aria-labelledby="gallery-tab">
+                        <div class="avatar-gallery">
+                            <img src="https://ui-avatars.com/api/?name=A&background=6366f1&color=fff" class="avatar-option selected" onclick="selectAvatar(this)">
+                            <img src="https://ui-avatars.com/api/?name=B&background=8b5cf6&color=fff" class="avatar-option" onclick="selectAvatar(this)">
+                            <img src="https://ui-avatars.com/api/?name=C&background=ec4899&color=fff" class="avatar-option" onclick="selectAvatar(this)">
+                            <img src="https://ui-avatars.com/api/?name=D&background=10b981&color=fff" class="avatar-option" onclick="selectAvatar(this)">
+                            <img src="https://ui-avatars.com/api/?name=E&background=f59e0b&color=fff" class="avatar-option" onclick="selectAvatar(this)">
+                            <img src="https://ui-avatars.com/api/?name=F&background=ef4444&color=fff" class="avatar-option" onclick="selectAvatar(this)">
+                            <img src="https://ui-avatars.com/api/?name=G&background=3b82f6&color=fff" class="avatar-option" onclick="selectAvatar(this)">
+                            <img src="https://ui-avatars.com/api/?name=H&background=14b8a6&color=fff" class="avatar-option" onclick="selectAvatar(this)">
+                        </div>
+                    </div>
+                    
+                    <!-- Custom Tab -->
+                    <div class="tab-pane fade" id="custom" role="tabpanel" aria-labelledby="custom-tab">
+                        <div class="text-center mb-3">
+                            <img src="https://ui-avatars.com/api/?name=JD&background=6366f1&color=fff" class="avatar-preview" id="custom-avatar-preview">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="avatar-initials" class="form-label">Initiales</label>
+                            <input type="text" class="form-control" id="avatar-initials" maxlength="2" value="JD" onchange="updateCustomAvatar()">
+                        </div>
+                        
+                        <label class="form-label">Couleur de fond</label>
+                        <div class="avatar-customizer mb-3">
+                            <div class="color-option" style="background-color: #6366f1;" onclick="setAvatarColor('#6366f1')"></div>
+                            <div class="color-option" style="background-color: #8b5cf6;" onclick="setAvatarColor('#8b5cf6')"></div>
+                            <div class="color-option" style="background-color: #ec4899;" onclick="setAvatarColor('#ec4899')"></div>
+                            <div class="color-option" style="background-color: #10b981;" onclick="setAvatarColor('#10b981')"></div>
+                            <div class="color-option" style="background-color: #f59e0b;" onclick="setAvatarColor('#f59e0b')"></div>
+                            <div class="color-option" style="background-color: #ef4444;" onclick="setAvatarColor('#ef4444')"></div>
+                            <div class="color-option" style="background-color: #3b82f6;" onclick="setAvatarColor('#3b82f6')"></div>
+                            <div class="color-option" style="background-color: #14b8a6;" onclick="setAvatarColor('#14b8a6')"></div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button class="btn btn-primary" onclick="applyCustomAvatar()">
+                                <i class="fas fa-check me-2"></i>Appliquer
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Upload Tab -->
+                    <div class="tab-pane fade" id="upload" role="tabpanel" aria-labelledby="upload-tab">
+                        <div class="text-center mb-4">
+                            <img src="https://ui-avatars.com/api/?name=User&background=random&size=150" alt="Avatar Preview" class="avatar-preview" id="upload-preview">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="avatar-file" class="form-label">Importer une image</label>
+                            <input class="form-control" type="file" id="avatar-file" accept="image/*" onchange="previewUploadedAvatar(this)">
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button class="btn btn-primary" onclick="applyUploadedAvatar()">
+                                <i class="fas fa-check me-2"></i>Appliquer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Appearance Settings -->
+            <div class="profile-card mb-4" data-aos="fade-up">
+                <h3 class="mb-4">Apparence</h3>
+                
+                <div class="mb-4">
+                    <label class="form-label">Thème</label>
+                    <div class="d-flex">
+                        <div class="theme-option theme-light me-2 active" data-theme="light" onclick="setTheme(this)"></div>
+                        <div class="theme-option theme-dark me-2" data-theme="dark" onclick="setTheme(this)"></div>
+                        <div class="theme-option theme-purple me-2" data-theme="purple" onclick="setTheme(this)"></div>
+                        <div class="theme-option theme-green me-2" data-theme="green" onclick="setTheme(this)"></div>
+                        <div class="theme-option theme-blue" data-theme="blue" onclick="setTheme(this)"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label">Taille de police</label>
+                    <div class="d-flex align-items-center">
+                        <span class="me-2">A</span>
+                        <input type="range" class="form-range" min="1" max="5" step="1" value="3" id="font-size-range">
+                        <span class="ms-2">A</span>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="darkModeSwitch">
+                        <label class="form-check-label" for="darkModeSwitch">Mode sombre</label>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="animationsSwitch" checked>
+                        <label class="form-check-label" for="animationsSwitch">Animations</label>
+                    </div>
+                </div>
+                
+                <div class="d-grid">
+                    <button class="btn btn-primary" onclick="saveAppearanceSettings()">
+                        <i class="fas fa-save me-2"></i>Enregistrer les préférences
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Account Settings -->
+            <div class="profile-card" data-aos="fade-up">
+                <h3 class="mb-4">Paramètres du compte</h3>
+                
+                <div class="mb-3">
+                    <label for="current-password" class="form-label">Mot de passe actuel</label>
+                    <input type="password" class="form-control" id="current-password">
+                </div>
+                
+                <div class="mb-3">
+                    <label for="new-password" class="form-label">Nouveau mot de passe</label>
+                    <input type="password" class="form-control" id="new-password">
+                </div>
+                
+                <div class="mb-4">
+                    <label for="confirm-password" class="form-label">Confirmer le mot de passe</label>
+                    <input type="password" class="form-control" id="confirm-password">
+                </div>
+                
+                <div class="d-grid mb-4">
+                    <button class="btn btn-primary">
+                        <i class="fas fa-key me-2"></i>Changer le mot de passe
+                    </button>
+                </div>
+                
+                <div class="d-grid">
+                    <button class="btn btn-outline-danger">
+                        <i class="fas fa-trash-alt me-2"></i>Supprimer mon compte
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Avatar selection from gallery
+    function selectAvatar(element) {
+        // Remove selected class from all options
+        document.querySelectorAll('.avatar-option').forEach(option => {
+            option.classList.remove('selected');
+        });
+        
+        // Add selected class to clicked option
+        element.classList.add('selected');
+        
+        // Update current avatar
+        document.getElementById('current-avatar').src = element.src;
+    }
+    
+    // Custom avatar variables
+    let currentAvatarColor = '#6366f1';
+    
+    // Update custom avatar preview
+    function updateCustomAvatar() {
+        const initials = document.getElementById('avatar-initials').value || 'JD';
+        const colorHex = currentAvatarColor.replace('#', '');
+        document.getElementById('custom-avatar-preview').src = `https://ui-avatars.com/api/?name=${initials}&background=${colorHex}&color=fff`;
+    }
+    
+    // Set avatar background color
+    function setAvatarColor(color) {
+        currentAvatarColor = color;
+        updateCustomAvatar();
+    }
+    
+    // Apply custom avatar
+    function applyCustomAvatar() {
+        document.getElementById('current-avatar').src = document.getElementById('custom-avatar-preview').src;
+        
+        // Show success message
+        const successAlert = document.createElement('div');
+        successAlert.className = 'alert alert-success mt-3';
+        successAlert.innerHTML = '<i class="fas fa-check-circle me-2"></i>Avatar personnalisé appliqué avec succès !';
+        document.getElementById('custom').appendChild(successAlert);
+        
+        // Remove alert after 3 seconds
+        setTimeout(() => {
+            successAlert.remove();
+        }, 3000);
+    }
+    
+    // Preview uploaded avatar
+    function previewUploadedAvatar(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                document.getElementById('upload-preview').src = e.target.result;
+            }
+            
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+    
+    // Apply uploaded avatar
+    function applyUploadedAvatar() {
+        document.getElementById('current-avatar').src = document.getElementById('upload-preview').src;
+        
+        // Show success message
+        const successAlert = document.createElement('div');
+        successAlert.className = 'alert alert-success mt-3';
+        successAlert.innerHTML = '<i class="fas fa-check-circle me-2"></i>Avatar importé appliqué avec succès !';
+        document.getElementById('upload').appendChild(successAlert);
+        
+        // Remove alert after 3 seconds
+        setTimeout(() => {
+            successAlert.remove();
+        }, 3000);
+    }
+    
+    // Set theme
+    function setTheme(element) {
+        // Remove active class from all theme options
+        document.querySelectorAll('.theme-option').forEach(option => {
+            option.classList.remove('active');
+        });
+        
+        // Add active class to clicked option
+        element.classList.add('active');
+        
+        // Get theme name
+        const theme = element.getAttribute('data-theme');
+        console.log(`Theme changed to: ${theme}`);
+        
+        // Here you would apply the theme to the application
+        // This is just a placeholder for demonstration
+    }
+    
+    // Save appearance settings
+    function saveAppearanceSettings() {
+        const fontSize = document.getElementById('font-size-range').value;
+        const darkMode = document.getElementById('darkModeSwitch').checked;
+        const animations = document.getElementById('animationsSwitch').checked;
+        
+        console.log(`Saving appearance settings: fontSize=${fontSize}, darkMode=${darkMode}, animations=${animations}`);
+        
+        // Show success message
+        const successAlert = document.createElement('div');
+        successAlert.className = 'alert alert-success mt-3';
+        successAlert.innerHTML = '<i class="fas fa-check-circle me-2"></i>Préférences d\'apparence enregistrées !';
+        document.querySelector('.profile-card:nth-of-type(2)').appendChild(successAlert);
+        
+        // Remove alert after 3 seconds
+        setTimeout(() => {
+            successAlert.remove();
+        }, 3000);
+    }
+    
+    // Initialize tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    });
+</script>
+{% endblock %}

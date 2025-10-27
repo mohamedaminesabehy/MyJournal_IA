@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+<h3>Delete this affirmation?</h3>
+<p>{{ item.text }}</p>
+<form method="post">{% csrf_token %}<button>Yes, delete</button></form>
+<a href="{% url 'affirmation_list' %}">Cancel</a>
+{% endblock %}

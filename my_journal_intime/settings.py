@@ -20,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-7$+)d3970^c0jy%_3#wdl-9-0p0$xl$5ou895@)osr+fyx#-mf'
+SECRET_KEY = 'django-insecure-6ej!@mk=5ro+7ndelelu&3jf+jz(#p&k_acsk+2hwjk+nu59b2'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -32,12 +32,14 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'journal',
+    'djongo',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+     
 ]
 
 MIDDLEWARE = [
@@ -55,7 +57,7 @@ ROOT_URLCONF = 'my_journal_intime.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'template'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -75,8 +77,25 @@ WSGI_APPLICATION = 'my_journal_intime.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'djongo',
+        'NAME': 'journalDB',
+        'ENFORCE_SCHEMA': False,
+        'CLIENT': {
+<<<<<<< HEAD
+            'host': 'mongodb+srv://journal_db_user:4PIF3Mk876wkTopF@cluster0.kgaymb3.mongodb.net/journalDB?retryWrites=true&w=majority',
+            'serverSelectionTimeoutMS': 30000,
+            'connectTimeoutMS': 30000,
+            'socketTimeoutMS': 30000,
+            'maxPoolSize': 50,
+            'minPoolSize': 10,
+            'maxIdleTimeMS': 45000,
+            'waitQueueTimeoutMS': 10000,
+        },
+        'CONN_MAX_AGE': None,  # Keep connections open indefinitely
+=======
+            'host': 'mongodb+srv://journal_db_user:4PIF3Mk876wkTopF@cluster0.kgaymb3.mongodb.net/journalDB'
+        }
+>>>>>>> origin/yassineJawadi
     }
 }
 
@@ -107,16 +126,42 @@ LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'
 
+LOGIN_REDIRECT_URL = '/category_management/'
+LOGIN_URL = '/login/'
+LOGOUT_REDIRECT_URL = '/'
+
 USE_I18N = True
 
 USE_TZ = True
 
+<<<<<<< HEAD
+# Session configuration - Use signed cookies instead of database
+# This avoids MongoDB session issues with djongo
+SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
+SESSION_COOKIE_HTTPONLY = True
+=======
+>>>>>>> origin/yassineJawadi
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
 
+<<<<<<< HEAD
+=======
+# Media files (User uploads)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# Limite de taille pour les uploads (50MB)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50MB
+
+>>>>>>> origin/yassineJawadi
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 

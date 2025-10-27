@@ -1,0 +1,101 @@
+title,description,nb_tasks,complexity_score,actual_duration_days,motivation_phase
+Lire un livre,Livre de fiction,3,1,7,demarrage
+Apprendre Python,Cours complet Python débutant,8,2,21,progression
+Perdre 5 kilos,Régime alimentaire et sport,10,2,45,critique
+Ranger la maison,Nettoyage complet toutes pièces,5,1,3,sprint
+Créer un site web,Site Django avec base de données,15,3,42,progression
+Apprendre le piano,Cours de piano 3 fois par semaine,12,2,60,critique
+Lire 5 livres,Fiction et développement personnel,5,1,30,progression
+Courir un marathon,Entraînement progressif course,20,3,120,blocage
+Apprendre l'espagnol,Cours en ligne et pratique,18,3,90,progression
+Écrire un roman,Roman de 200 pages,25,4,180,blocage
+Développer une app,Application mobile React Native,20,4,60,progression
+Maîtriser Django,Framework web complet,15,3,45,progression
+Créer un portfolio,Site personnel avec projets,8,2,14,sprint
+Apprendre le dessin,Cours de dessin artistique,10,2,40,progression
+Perdre 10 kilos,Programme minceur complet,15,3,90,critique
+Ranger le garage,Tri et organisation complète,4,1,2,demarrage
+Apprendre la guitare,Cours débutant 3 fois semaine,14,2,60,progression
+Lire 10 livres,Littérature classique,10,2,60,progression
+Créer un blog,Blog WordPress avec articles,6,1,10,sprint
+Apprendre React,Framework JavaScript moderne,12,3,35,progression
+Terminer un projet,Finir projet en cours,8,2,21,sprint
+Apprendre le japonais,Langue japonaise niveau débutant,20,4,120,blocage
+Rénover la cuisine,Travaux de rénovation,15,3,60,critique
+Écrire 50 articles,Articles de blog réguliers,50,4,180,blocage
+Apprendre la photo,Photographie professionnelle,10,2,30,progression
+Créer une startup,Entreprise technologique,30,5,365,blocage
+Maîtriser Python,Python niveau avancé,18,3,75,progression
+Développer un jeu,Jeu vidéo Unity,25,4,120,progression
+Apprendre le yoga,Cours de yoga 4 fois semaine,8,1,30,demarrage
+Ranger les papiers,Organisation administrative,3,1,2,demarrage
+Créer un podcast,Podcast 10 épisodes,12,2,45,progression
+Apprendre SQL,Base de données SQL,10,2,28,progression
+Lire 3 livres,Romans fiction,3,1,15,sprint
+Perdre 3 kilos,Régime léger,6,1,21,progression
+Apprendre Excel,Tableur niveau avancé,8,2,20,progression
+Créer un CV,CV professionnel complet,2,1,1,demarrage
+Nettoyer l'ordinateur,Tri fichiers et optimisation,4,1,3,demarrage
+Apprendre Photoshop,Logiciel de retouche photo,12,2,40,progression
+Écrire un livre,Livre de 150 pages,20,4,150,blocage
+Apprendre la cuisine,Cours de cuisine gastronomique,15,2,60,progression
+Ranger la chambre,Organisation complète chambre,4,1,2,demarrage
+Créer une vidéo,Montage vidéo YouTube,5,1,7,sprint
+Apprendre Node.js,Backend JavaScript,14,3,42,progression
+Lire 7 livres,Développement personnel,7,1,35,progression
+Perdre 7 kilos,Programme fitness complet,12,2,60,critique
+Apprendre Flutter,Développement mobile,16,3,50,progression
+Créer une chaîne YouTube,Chaîne avec 20 vidéos,20,3,90,progression
+Apprendre le chinois,Langue chinoise débutant,22,4,150,blocage
+Ranger le bureau,Organisation espace travail,3,1,1,demarrage
+Apprendre TypeScript,JavaScript typé,10,2,25,progression
+Créer un e-commerce,Boutique en ligne complète,25,4,90,progression
+Maîtriser Git,Contrôle de version,8,2,14,sprint
+Apprendre Angular,Framework frontend,14,3,45,progression
+Lire 15 livres,Lecture variée,15,2,90,critique
+Perdre 15 kilos,Transformation physique,20,3,180,blocage
+Apprendre Swift,Développement iOS,18,3,60,progression
+Créer une API,API REST complète,12,3,35,progression
+Apprendre Vue.js,Framework JavaScript,11,2,30,progression
+Ranger l'appartement,Grand nettoyage complet,6,1,3,demarrage
+Apprendre Docker,Conteneurisation,9,2,21,progression
+Créer un jeu mobile,Jeu Unity pour mobile,22,4,100,progression
+Maîtriser CSS,CSS avancé et animations,10,2,28,progression
+Apprendre Laravel,Framework PHP,14,3,42,progression
+Lire 20 livres,Challenge lecture annuel,20,2,180,blocage
+Créer une newsletter,Newsletter hebdomadaire,8,1,30,progression
+Apprendre Kubernetes,Orchestration containers,15,4,60,critique
+Développer un SaaS,Application SaaS complète,35,5,365,blocage
+Apprendre Go,Langage Go,12,3,35,progression
+Créer un dashboard,Tableau de bord analytique,10,2,28,progression
+Apprendre Rust,Langage Rust,16,4,70,progression
+Maîtriser AWS,Cloud Amazon Web Services,18,4,90,critique
+Ranger le grenier,Tri et nettoyage grenier,5,1,4,demarrage
+Apprendre MongoDB,Base NoSQL,10,2,25,progression
+Créer un CRM,Système de gestion clients,20,4,80,progression
+Apprendre GraphQL,API GraphQL,11,3,30,progression
+Lire 30 livres,Lecture intensive annuelle,30,3,365,blocage
+Apprendre Redis,Cache et base de données,8,2,18,sprint
+Créer une marketplace,Plateforme marketplace,30,5,180,blocage
+Apprendre Elasticsearch,Moteur de recherche,12,3,40,progression
+Développer microservices,Architecture microservices,25,4,120,progression
+Maîtriser Spring Boot,Framework Java,16,3,55,progression
+Apprendre Kafka,Streaming de données,14,4,50,critique
+Créer un chatbot,Bot conversationnel IA,12,3,35,progression
+Apprendre TensorFlow,Machine Learning framework,20,4,90,critique
+Ranger la cave,Nettoyage et organisation cave,4,1,3,demarrage
+Apprendre PyTorch,Deep Learning framework,18,4,75,progression
+Créer un réseau social,Plateforme sociale simple,28,5,150,blocage
+Maîtriser Linux,Système d'exploitation,15,3,60,progression
+Apprendre Jenkins,CI/CD pipeline,10,3,28,progression
+Créer une app santé,Application de suivi santé,18,3,65,progression
+Apprendre Terraform,Infrastructure as Code,12,3,40,progression
+Lire 50 livres,Défi lecture extrême,50,4,365,blocage
+Développer un CMS,Système de gestion contenu,22,4,90,progression
+Apprendre Ansible,Automatisation IT,11,3,32,progression
+Créer un forum,Forum communautaire,16,3,55,progression
+Maîtriser PostgreSQL,Base de données avancée,13,3,45,progression
+Apprendre Nginx,Serveur web et proxy,9,2,22,sprint
+Créer un wiki,Wiki collaboratif,10,2,28,progression
+Apprendre Selenium,Tests automatisés,10,2,25,progression
+Développer un ERP,Système de gestion entreprise,40,5,365,blocage

@@ -1,0 +1,367 @@
+{% extends 'base.html' %}
+{% block title %}Mes objectifs{% endblock %}
+{% block extra_css %}
+<style>
+  /* Clean & elegant goals list - following site's color scheme */
+  .goals-page-wrapper {
+    background: linear-gradient(to bottom, #f8fafc 0%, #f1f5f9 100%);
+    min-height: 100vh;
+    padding: 2.5rem 0;
+  }
+
+  .goals-header {
+    margin-bottom: 2.5rem;
+  }
+
+  .goals-page-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 0;
+  }
+
+  .goals-create-btn {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 12px 28px !important;
+    font-weight: 600 !important;
+    color: white !important;
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3) !important;
+    transition: all 0.3s ease !important;
+  }
+
+  .goals-create-btn:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4) !important;
+  }
+
+  .goals-grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); 
+    gap: 24px;
+    padding: 1rem 0;
+  }
+
+  @media (max-width: 576px) { 
+    .goals-grid { grid-template-columns: 1fr; } 
+  }
+
+  /* Simple & elegant card design */
+  .goal-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.75rem;
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.08);
+    border-left: 4px solid #6366f1;
+    position: relative;
+    transition: all 0.3s ease;
+  }
+
+  .goal-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(99, 102, 241, 0.15);
+  }
+
+  .goal-title { 
+    font-weight: 600;
+    font-size: 1.3rem;
+    color: #1e293b;
+    text-decoration: none;
+    display: block;
+    margin-bottom: 0.75rem;
+    transition: color 0.2s ease;
+  }
+
+  .goal-title:hover {
+    color: #6366f1;
+  }
+
+  .goal-meta { 
+    color: #94a3b8;
+    font-size: 0.875rem;
+  }
+
+  .goal-description { 
+    color: #64748b;
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+    line-height: 1.6;
+  }
+
+  /* Priority badges - simple and clean */
+  .goal-badge { 
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 12px;
+    display: inline-block;
+  }
+
+  .goal-badge.low { 
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  .goal-badge.medium { 
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .goal-badge.high { 
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  /* Status badge for completed goals */
+  .goal-status-mini {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.6rem;
+    border-radius: 10px;
+    display: inline-block;
+  }
+
+  .goal-status-mini.completed {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  .goal-status-mini.ongoing {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+
+  .goal-status-mini.abandoned {
+    background: #e5e7eb;
+    color: #475569;
+  }
+
+  /* Completed goal card styling */
+  .goal-card.completed {
+    border-left-color: #10b981;
+    opacity: 0.85;
+  }
+
+  .goal-card.completed .goal-title {
+    color: #059669;
+  }
+
+  /* Progress bar */
+  .goal-progress-wrapper {
+    margin: 1rem 0 0.75rem 0;
+    padding: 0.75rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+  }
+  
+  .goal-progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+  
+  .goal-progress-label {
+    font-size: 0.8rem;
+    color: #64748b;
+    font-weight: 600;
+  }
+  
+  .goal-progress-percentage {
+    font-size: 1.2rem;
+    color: #6366f1;
+    font-weight: 700;
+  }
+
+  .goal-progress { 
+    height: 14px;
+    border-radius: 10px;
+    background: #e5e7eb;
+    overflow: hidden;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
+  }
+
+  .goal-progress > .bar { 
+    height: 100%;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    width: calc(var(--progress) * 1%);
+    border-radius: 10px;
+    transition: width 0.6s ease;
+    box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+  }
+
+  .goal-motivation {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+    color: #475569;
+  }
+
+  .goal-motivation i {
+    color: #8b5cf6;
+  }
+
+  .goal-motivation strong {
+    color: #1e293b;
+    font-weight: 600;
+  }
+
+  /* Action buttons - simple and clean */
+  .goal-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  .goal-action-btn {
+    flex: 1;
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    border: 1px solid;
+    text-decoration: none;
+    text-align: center;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+  }
+
+  .goal-action-btn.edit {
+    background: #f1f5f9;
+    color: #6366f1;
+    border-color: #e2e8f0;
+  }
+
+  .goal-action-btn.edit:hover {
+    background: #e0e7ff;
+    border-color: #6366f1;
+  }
+
+  .goal-action-btn.delete {
+    background: #f1f5f9;
+    color: #ef4444;
+    border-color: #e2e8f0;
+  }
+
+  .goal-action-btn.delete:hover {
+    background: #fee2e2;
+    border-color: #ef4444;
+  }
+
+  /* Empty state */
+  .goal-empty {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: white;
+    border-radius: 16px;
+    border: 2px dashed #cbd5e1;
+  }
+
+  .goal-empty i {
+    color: #cbd5e1;
+    margin-bottom: 1rem;
+  }
+
+  .goal-empty p {
+    font-size: 1.1rem;
+    color: #64748b;
+    margin: 0;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="goals-page-wrapper">
+  <div class="container py-4">
+    <div class="goals-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <h1 class="goals-page-title">Mes objectifs</h1>
+      <a class="btn btn-lg goals-create-btn" href="{% url 'goal_create' %}">
+        <i class="fas fa-plus me-2"></i>Créer un objectif
+      </a>
+    </div>
+
+    <div class="goals-grid">
+    {% for goal in goals %}
+      <div class="goal-card {% if goal.status == 'completed' %}completed{% endif %}">
+        <a href="{% url 'goal_detail' goal.slug %}" class="goal-title">{{ goal.title }}</a>
+        
+        <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+          {% if goal.status == 'completed' %}
+            <span class="goal-status-mini completed">✓ Terminé</span>
+          {% elif goal.status == 'ongoing' %}
+            <span class="goal-status-mini ongoing">En cours</span>
+          {% elif goal.status == 'abandoned' %}
+            <span class="goal-status-mini abandoned">Abandonné</span>
+          {% endif %}
+          
+          {% if goal.priority == 1 %}
+            <span class="goal-badge low">Faible</span>
+          {% elif goal.priority == 2 %}
+            <span class="goal-badge medium">Moyenne</span>
+          {% else %}
+            <span class="goal-badge high">Haute</span>
+          {% endif %}
+          <small class="goal-meta">• Créé le {{ goal.created_at|date:'d M Y' }}</small>
+        </div>
+        
+        {% if goal.description %}
+          <div class="goal-description">{{ goal.description|truncatechars:100 }}</div>
+        {% endif %}
+        
+        <div class="goal-progress-wrapper">
+          <div class="goal-progress-header">
+            <span class="goal-progress-label">Progression</span>
+            <span class="goal-progress-percentage">{{ goal.progress_cached|default:0 }}%</span>
+          </div>
+          <div class="goal-progress" style="--progress: {{ goal.progress_cached|default:0 }};"><div class="bar"></div></div>
+        </div>
+        
+        {% if goal.ai_motivation %}
+        <div style="margin: 0.75rem 0; padding: 0.75rem; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-radius: 8px; border-left: 3px solid #6366f1;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem;">
+            <i class="fas fa-robot" style="color: #6366f1; font-size: 0.9rem;"></i>
+            <span style="font-size: 0.75rem; font-weight: 600; color: #6366f1; text-transform: uppercase;">IA Motivation</span>
+          </div>
+          <div style="font-size: 0.85rem; color: #475569; line-height: 1.4;">
+            {{ goal.ai_motivation.message|truncatechars:120 }}
+          </div>
+          {% if goal.ai_motivation.estimated_days_left > 0 %}
+          <div style="margin-top: 0.4rem; font-size: 0.75rem; color: #64748b;">
+            ⏱️ ~{{ goal.ai_motivation.estimated_days_left }} jour{{ goal.ai_motivation.estimated_days_left|pluralize }} restant{{ goal.ai_motivation.estimated_days_left|pluralize }}
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+        
+        <div class="goal-motivation">
+          <i class="fas fa-heart"></i>
+          Motivation: <strong>{{ goal.motivation_level }}/10</strong>
+        </div>
+        
+        <div class="goal-actions">
+          <a class="goal-action-btn edit" href="{% url 'goal_update' goal.slug %}">
+            <i class="fas fa-edit"></i> Modifier
+          </a>
+          <a class="goal-action-btn delete" href="{% url 'goal_delete' goal.slug %}">
+            <i class="fas fa-trash"></i> Supprimer
+          </a>
+        </div>
+      </div>
+    {% empty %}
+      <div class="goal-empty">
+        <i class="fas fa-bullseye fa-4x"></i>
+        <p>Aucun objectif pour le moment.<br>Cliquez sur "Créer un objectif" pour commencer !</p>
+      </div>
+    {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

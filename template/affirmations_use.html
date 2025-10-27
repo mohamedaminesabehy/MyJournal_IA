@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Affirmation</h2>
+<p style="font-size:1.2rem;">“{{ item.text }}”</p>
+<a href="{% url 'affirmation_list' %}">← Back</a>
+{% endblock %}
