@@ -369,15 +369,15 @@ def category_management(request):
                 }
                 
                 result = collection.insert_one(category_doc)
-                category_id = str(next_id)  # Utiliser l'ID numérique, pas l'ObjectId
+                category_id = next_id  # Utiliser l'ID numérique, pas l'ObjectId
                 
                 client.close()  # Fermer la connexion
                 
                 return JsonResponse({
-                    'success': True, 
+                    'success': True,
                     'category': {
-                        'id': category_id, 
-                        'name': category_name, 
+                        'id': category_id,
+                        'name': category_name,
                         'icon': category_icon or ''
                     }
                 })
@@ -392,12 +392,45 @@ def category_management(request):
                 return JsonResponse({'success': False, 'error': f'Erreur: {error_message}'})
         return JsonResponse({'success': False, 'error': 'Le nom de la catégorie est requis.'})
     
+    # For consistency with direct PyMongo inserts/updates above, load categories
+    # directly from the Mongo collection so the AJAX-created documents are
+    # immediately visible in the management UI (avoids potential Djongo sync issues).
     try:
-                categories = Category.objects.filter(users=request.user)
-    except Exception as e:
-        print(f"❌ Erreur récupération catégories: {str(e)}")
+        from pymongo import MongoClient
+        from django.conf import settings
+
+        mongo_uri = settings.DATABASES['default']['CLIENT']['host']
+        client = MongoClient(mongo_uri)
+        db = client['journalDB']
+        collection = db['journal_category']
+
+        categories_data = list(collection.find({'users': request.user.id}))
+        client.close()
+
+        # Convert raw documents into simple proxy objects expected by the template
         categories = []
-    
+        for data in categories_data:
+            class CategoryProxy:
+                def __init__(self, d):
+                    # Use the numeric 'id' field when present (created by our insert logic)
+                    self.id = d.get('id') or d.get('_id')
+                    self.name = d.get('name', '')
+                    self.icon = d.get('icon', '')
+                    users = d.get('users')
+                    try:
+                        self.user_id = users[0] if isinstance(users, list) and users else users
+                    except Exception:
+                        self.user_id = users
+
+            categories.append(CategoryProxy(data))
+    except Exception as e:
+        print(f"❌ Erreur récupération catégories (Mongo): {str(e)}")
+        # Fallback to ORM query if direct Mongo read fails
+        try:
+            categories = Category.objects.filter(users=request.user)
+        except Exception:
+            categories = []
+
     return render(request, 'category_management.html', {'categories': categories})
 
 

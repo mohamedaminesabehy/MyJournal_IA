@@ -415,8 +415,21 @@ class GoalForm(forms.ModelForm):
             'priority': forms.Select(attrs={'class': 'form-select form-select-sm'}),
             'difficulty': forms.NumberInput(attrs={'type': 'range', 'min': '1', 'max': '5', 'class': 'form-range', 'step': '1'}),
             'reward': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Récompense prévue (optionnel)'}),
-            'recurrence': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'ex: daily, weekly, monthly (optionnel)'}),
+            'recurrence': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'ex : quotidien, hebdomadaire, mensuel (optionnel)'}),
             'milestones': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Entrez les jalons en JSON simple: [{"title": "Étape 1", "due": "2025-10-31"}]'}),
+        }
+        labels = {
+            'title': 'Titre',
+            'description': 'Description',
+            'start_date': 'Date de début',
+            'end_date': 'Date de fin',
+            'status': 'Statut',
+            'motivation_level': 'Niveau de motivation',
+            'priority': 'Priorité',
+            'difficulty': 'Difficulté',
+            'reward': 'Récompense',
+            'recurrence': 'Récurrence',
+            'milestones': 'Jalons',
         }
 
     def __init__(self, *args, **kwargs):
