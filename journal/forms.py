@@ -45,6 +45,87 @@ class NoteForm(forms.ModelForm):
             'category': forms.Select(attrs={'class': 'form-control'}),
         }
 
+    def __init__(self, *args, **kwargs):
+        # Support passing `user` from views (e.g. NoteForm(user=request.user))
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        # Ensure the category queryset is filtered by the provided user
+        try:
+            if user:
+                qs = Category.objects.filter(users=user)
+                if qs.exists():
+                    # Normal case: ORM has Category objects linked to the user
+                    self.fields['category'].queryset = qs
+                else:
+                    # Fallback: categories may be stored directly in MongoDB and not
+                    # reflected as ORM objects. In that case, replace the field
+                    # with a ChoiceField populated from the Mongo collection so the
+                    # template shows options and the form still returns a PK value.
+                    try:
+                        from pymongo import MongoClient
+                        from django.conf import settings
+                        mongo_uri = settings.DATABASES['default']['CLIENT']['host']
+                        client = MongoClient(mongo_uri)
+                        db = client['journalDB']
+                        collection = db['journal_category']
+                        docs = list(collection.find({'$or': [{'user_id': user.id}, {'users': user.id}]}))
+                        client.close()
+                        choices = [('', '---------')]
+                        for d in docs:
+                            # prefer numeric 'id' (Djongo style) otherwise use _id
+                            cid = d.get('id') or d.get('_id')
+                            # ensure string/int stable representation
+                            choices.append((str(cid), d.get('name', '')))
+                        # replace ModelChoiceField with a ChoiceField
+                        self.fields['category'] = forms.ChoiceField(choices=choices, required=False, widget=forms.Select(attrs={'class': 'form-control'}))
+                    except Exception:
+                        # final defensive fallback
+                        self.fields['category'].queryset = Category.objects.none()
+            else:
+                self.fields['category'].queryset = Category.objects.none()
+        except Exception:
+            # Be defensive: if Category model/query fails, default to empty queryset
+            self.fields['category'].queryset = Category.objects.none()
+
+    def clean_category(self):
+        """Normalize category cleaned value:
+
+        - If the field returned a Category instance, keep it.
+        - If it returned a PK (string/int) from the ChoiceField fallback, return the PK
+          so assigning to a ForeignKey (category_id) will work when saving the model.
+        """
+        val = self.cleaned_data.get('category')
+        if val is None or val == '':
+            return None
+        # If it's already a Category instance, return it
+        if isinstance(val, Category):
+            return val
+
+        # If the fallback ChoiceField returned a PK (string/int), try to
+        # resolve it to a Category instance; if not present in ORM, create a
+        # lightweight Category with that PK so Django can assign the FK.
+        try:
+            cid = int(val)
+        except Exception:
+            # Not an int-like value; return as-is and let validation fail later
+            return val
+
+        try:
+            cat = Category.objects.filter(pk=cid).first()
+            if cat:
+                return cat
+        except Exception:
+            # ORM lookup failed; fall through to create lightweight instance
+            pass
+
+        # Create a transient Category instance with the given PK so the
+        # ModelForm can assign the FK (Django will store category_id on save).
+        try:
+            tmp = Category()
+            tmp.pk = cid
+            return tmp
+        except Exception:
+            return None
 # ==================== GALERIE INTELLIGENTE ====================
 
 class MediaUploadForm(forms.ModelForm):
@@ -373,31 +454,7 @@ class CustomUserCreationForm(UserCreationForm):
 
     class Meta(UserCreationForm.Meta):
         fields = UserCreationForm.Meta.fields + ('email', 'first_name', 'last_name', 'date_of_birth', 'location',)
-class NoteForm(forms.ModelForm):
-    # Redéfinir le champ category comme ChoiceField pour éviter la validation de ForeignKey
-    category = forms.ChoiceField(
-        required=False,
-        widget=forms.Select(attrs={'class': 'form-control'})
-    )
-    
-    class Meta:
-        model = Note
-        fields = ['title', 'content', 'location']
 
-        widgets = {
-            'title': forms.TextInput(attrs={'class': 'form-control form-control-lg', 'placeholder': 'Donnez un titre à votre note...', 'required': 'required'}),
-            'content': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Écrivez votre note ici...', 'rows': 10}),
-            'location': forms.TextInput(attrs={'class': 'form-control mb-3', 'placeholder': 'Entrez un lieu ou utilisez votre position actuelle'}),
-            'category': forms.Select(attrs={'class': 'form-control'}),
-        }
-
-    def __init__(self, *args, **kwargs):
-        user = kwargs.pop('user', None)
-        super(NoteForm, self).__init__(*args, **kwargs)
-        if user:
-            # Adapter à ManyToMany: seules les catégories associées à l'utilisateur
-            # doivent être sélectionnables
-            self.fields['category'].queryset = Category.objects.filter(users=user)
 
 
 class GoalForm(forms.ModelForm):

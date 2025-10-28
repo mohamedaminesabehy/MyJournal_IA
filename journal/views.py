@@ -114,6 +114,18 @@ def create_note(request):
                 except Exception as e:
                     print(f"Error predicting emotion: {e}")
             
+            # If the form returned a numeric PK for category (ChoiceField fallback),
+            # assign it to category_id so the FK is set correctly.
+            cat_val = form.cleaned_data.get('category')
+            try:
+                if isinstance(cat_val, int):
+                    note.category_id = cat_val
+                elif isinstance(cat_val, str) and cat_val.isdigit():
+                    note.category_id = int(cat_val)
+            except Exception:
+                # ignore and let save fail if invalid
+                pass
+
             note.save()
             return redirect('view_notes')
         else:
@@ -359,25 +371,31 @@ def category_management(request):
                 next_id = (max_doc['id'] + 1) if max_doc and 'id' in max_doc and max_doc['id'] is not None else 1
                 
                 # Créer le document MongoDB avec un champ 'id' pour Djongo
-                # Note: Category model stores relation to users in a ManyToManyField named 'users'
-                # so we store the list of user ids under 'users' to be compatible with Djongo lookups.
+                # On stocke à la fois 'user_id' (scalar) et 'users' (liste) pour compatibilité
                 category_doc = {
                     'id': next_id,
                     'name': category_name,
                     'icon': category_icon or '',
-                    'users': [request.user.id]  # Stocker l'ID de l'utilisateur dans la liste 'users'
+                    'user_id': request.user.id,  # Stocker l'ID de l'utilisateur (index unique attendu)
+                    'users': [request.user.id],  # Ancienne shape utilisée ailleurs dans le code
                 }
-                
-                result = collection.insert_one(category_doc)
-                category_id = next_id  # Utiliser l'ID numérique, pas l'ObjectId
+
+                # Insertet en gérant les doublons explicitement pour renvoyer un message clair
+                from pymongo.errors import DuplicateKeyError
+                try:
+                    result = collection.insert_one(category_doc)
+                except DuplicateKeyError as dk:
+                    client.close()
+                    return JsonResponse({'success': False, 'error': 'Une catégorie avec ce nom existe déjà.'})
+                category_id = str(next_id)  # Utiliser l'ID numérique, pas l'ObjectId
                 
                 client.close()  # Fermer la connexion
                 
                 return JsonResponse({
-                    'success': True,
+                    'success': True, 
                     'category': {
-                        'id': category_id,
-                        'name': category_name,
+                        'id': category_id, 
+                        'name': category_name, 
                         'icon': category_icon or ''
                     }
                 })
@@ -392,10 +410,9 @@ def category_management(request):
                 return JsonResponse({'success': False, 'error': f'Erreur: {error_message}'})
         return JsonResponse({'success': False, 'error': 'Le nom de la catégorie est requis.'})
     
-    # For consistency with direct PyMongo inserts/updates above, load categories
-    # directly from the Mongo collection so the AJAX-created documents are
-    # immediately visible in the management UI (avoids potential Djongo sync issues).
     try:
+        # Charger les catégories directement depuis MongoDB pour couvrir les cas
+        # où les documents sont présents uniquement dans la collection Mongo
         from pymongo import MongoClient
         from django.conf import settings
 
@@ -404,33 +421,26 @@ def category_management(request):
         db = client['journalDB']
         collection = db['journal_category']
 
-        categories_data = list(collection.find({'users': request.user.id}))
+        # Chercher par user_id scalar ou présence dans le tableau 'users'
+        user_categories_data = list(collection.find({'$or': [{'user_id': request.user.id}, {'users': request.user.id}]}))
         client.close()
 
-        # Convert raw documents into simple proxy objects expected by the template
+        # Convertir en objets simples pour le template (compatibilité avec ORM objects)
         categories = []
-        for data in categories_data:
+        for cat_data in user_categories_data:
             class CategoryProxy:
-                def __init__(self, d):
-                    # Use the numeric 'id' field when present (created by our insert logic)
-                    self.id = d.get('id') or d.get('_id')
-                    self.name = d.get('name', '')
-                    self.icon = d.get('icon', '')
-                    users = d.get('users')
-                    try:
-                        self.user_id = users[0] if isinstance(users, list) and users else users
-                    except Exception:
-                        self.user_id = users
-
-            categories.append(CategoryProxy(data))
+                def __init__(self, data):
+                    # Djongo-compatible numeric 'id' may be stored in 'id' field
+                    self.id = data.get('id') or data.get('_id')
+                    self.name = data.get('name', '')
+                    self.icon = data.get('icon', '')
+                    # Expose user_id for debugging/compat
+                    self.user_id = data.get('user_id')
+            categories.append(CategoryProxy(cat_data))
     except Exception as e:
-        print(f"❌ Erreur récupération catégories (Mongo): {str(e)}")
-        # Fallback to ORM query if direct Mongo read fails
-        try:
-            categories = Category.objects.filter(users=request.user)
-        except Exception:
-            categories = []
-
+        print(f"❌ Erreur récupération catégories: {str(e)}")
+        categories = []
+    
     return render(request, 'category_management.html', {'categories': categories})
 
 
@@ -450,24 +460,24 @@ def edit_category(request, category_id):
                 db = client['journalDB']
                 collection = db['journal_category']
                 
-                # Vérifier que la catégorie appartient bien à l'utilisateur (recherche dans le tableau 'users')
-                category = collection.find_one({
-                    'id': int(category_id),
-                    'users': request.user.id
-                })
-                
+                # Vérifier que la catégorie appartient bien à l'utilisateur
+                # Supporter les deux shapes: scalar 'user_id' ou liste 'users'
+                category = collection.find_one({'id': int(category_id), 'user_id': request.user.id})
+                used_filter = None
+                if category:
+                    used_filter = {'id': int(category_id), 'user_id': request.user.id}
+                else:
+                    category = collection.find_one({'id': int(category_id), 'users': request.user.id})
+                    if category:
+                        used_filter = {'id': int(category_id), 'users': request.user.id}
+
                 if not category:
                     client.close()
                     return JsonResponse({'success': False, 'error': 'Catégorie non trouvée'})
-                
-                # Mettre à jour la catégorie
-                collection.update_one(
-                    {'id': int(category_id), 'users': request.user.id},
-                    {'$set': {
-                        'name': category_name,
-                        'icon': category_icon or ''
-                    }}
-                )
+
+                # Mettre à jour la catégorie (mettre à jour les deux champs si possible)
+                update_payload = {'$set': {'name': category_name, 'icon': category_icon or ''}}
+                collection.update_one(used_filter, update_payload)
                 
                 client.close()
                 
@@ -500,10 +510,10 @@ def delete_category(request, category_id):
             collection = db['journal_category']
             
             # Vérifier que la catégorie appartient bien à l'utilisateur avant suppression
-            result = collection.delete_one({
-                'id': int(category_id),
-                'users': request.user.id
-            })
+            # Essayer suppression par 'user_id' puis par 'users' pour compatibilité
+            result = collection.delete_one({'id': int(category_id), 'user_id': request.user.id})
+            if result.deleted_count == 0:
+                result = collection.delete_one({'id': int(category_id), 'users': request.user.id})
             
             client.close()
             
@@ -1188,16 +1198,114 @@ def view_notes(request):
 
 @login_required
 def notes_by_category(request, category_id):
-    category = get_object_or_404(Category, id=category_id, users=request.user)
-    notes = Note.objects.filter(user=request.user, category=category).order_by('-created_at')
-    categories = Category.objects.filter(users=request.user)
+    # Try ORM lookup using the 'users' relation (ManyToMany)
+    try:
+        category = get_object_or_404(Category, id=category_id, users=request.user)
+        notes = Note.objects.filter(user=request.user, category=category).order_by('-created_at')
+        categories = Category.objects.filter(users=request.user)
+    except Exception:
+        # Fallback: category may be stored only in MongoDB
+        try:
+            mongo_uri = settings.DATABASES['default']['CLIENT']['host']
+            client = MongoClient(mongo_uri)
+            db = client.get('journalDB')
+            collection = db.get('journal_category')
+
+            # Try to match numeric 'id' or _id ObjectId
+            cat_doc = None
+            try:
+                cid_int = int(category_id)
+                cat_doc = collection.find_one({'id': cid_int})
+            except Exception:
+                pass
+
+            if not cat_doc:
+                # try by _id as ObjectId or string
+                try:
+                    cat_doc = collection.find_one({'_id': ObjectId(str(category_id))})
+                except Exception:
+                    cat_doc = collection.find_one({'_id': category_id})
+
+            client.close()
+
+            if not cat_doc:
+                # No Mongo document found — build a fallback category proxy using ORM name if available
+                try:
+                    cid_try = int(category_id)
+                    orm_cat = Category.objects.filter(id=cid_try).first()
+                    fallback_name = orm_cat.name if orm_cat else 'Catégorie inconnue'
+                except Exception:
+                    fallback_name = 'Catégorie inconnue'
+
+                class CategoryProxy:
+                    def __init__(self, cid, name='Catégorie inconnue'):
+                        self.id = cid
+                        self.name = name
+                        self.icon = ''
+
+                category = CategoryProxy(category_id, fallback_name)
+
+            # Build a proxy Category for templates
+            class CategoryProxy:
+                def __init__(self, data):
+                    self.id = data.get('id') or data.get('_id')
+                    self.name = data.get('name', '')
+                    self.icon = data.get('icon', '')
+
+            category = CategoryProxy(cat_doc)
+
+            # Query notes by category_id (best-effort)
+            try:
+                notes = Note.objects.filter(user=request.user, category_id=int(cat_doc.get('id') or cat_doc.get('_id'))).order_by('-created_at')
+            except Exception:
+                notes = Note.objects.filter(user=request.user).order_by('-created_at')
+
+            # Load categories list (ORM preferred)
+            try:
+                categories = Category.objects.filter(users=request.user)
+            except Exception:
+                # fallback to Mongo loader
+                client = MongoClient(mongo_uri)
+                db = client.get('journalDB')
+                collection = db.get('journal_category')
+                user_cats = list(collection.find({'$or': [{'user_id': request.user.id}, {'users': request.user.id}]}))
+                client.close()
+                categories = []
+                for cd in user_cats:
+                    class CP:
+                        def __init__(self, d):
+                            self.id = d.get('id') or d.get('_id')
+                            self.name = d.get('name', '')
+                            self.icon = d.get('icon', '')
+                    categories.append(CP(cd))
+
+        except Http404:
+            raise
+        except Exception:
+            # As a last-resort fallback, avoid raising 404: show an empty/fallback category
+            try:
+                notes = Note.objects.filter(user=request.user, category_id=int(category_id)).order_by('-created_at')
+            except Exception:
+                notes = Note.objects.filter(user=request.user).order_by('-created_at')
+
+            try:
+                categories = Category.objects.filter(users=request.user)
+            except Exception:
+                categories = []
+
+            class CategoryProxy:
+                def __init__(self, cid, name='Catégorie inconnue'):
+                    self.id = cid
+                    self.name = name
+                    self.icon = ''
+
+            category = CategoryProxy(category_id, 'Catégorie inconnue')
     context = {
         'category': category,
         'notes': notes,
         'categories': categories,
     }
     return render(request, 'view_notes.html', context)
-
 
 @login_required
 def tag_create(request):
@@ -1585,8 +1693,8 @@ def media_upload(request):
     db = client['journalDB']
     collection = db['journal_category']
     
-    # Charger les catégories depuis MongoDB (recherche par présence de l'utilisateur dans le tableau 'users')
-    user_categories_data = list(collection.find({'users': request.user.id}))
+    # Charger les catégories depuis MongoDB (recherche par 'user_id' scalar ou présence de l'utilisateur dans le tableau 'users')
+    user_categories_data = list(collection.find({'$or': [{'user_id': request.user.id}, {'users': request.user.id}]}))
     client.close()
     
     # Convertir en objets simples pour le template
@@ -1696,6 +1804,33 @@ def media_edit(request, media_id):
     """Vue pour éditer un média"""
     
     media = get_object_or_404(Media, id=media_id, user=request.user)
+    # Prepare user categories once (ORM preferred, fallback to Mongo)
+    try:
+        user_categories = list(Category.objects.filter(users=request.user))
+    except Exception:
+        user_categories = []
+
+    if not user_categories:
+        try:
+            from pymongo import MongoClient
+            from django.conf import settings
+            mongo_uri = settings.DATABASES['default']['CLIENT']['host']
+            client = MongoClient(mongo_uri)
+            db = client['journalDB']
+            collection = db['journal_category']
+            user_cats = list(collection.find({'$or': [{'user_id': request.user.id}, {'users': request.user.id}]}))
+            client.close()
+
+            user_categories = []
+            for cat_data in user_cats:
+                class CategoryProxy:
+                    def __init__(self, data):
+                        self.id = data.get('id') or data.get('_id')
+                        self.name = data.get('name', '')
+                        self.icon = data.get('icon', '')
+                user_categories.append(CategoryProxy(cat_data))
+        except Exception:
+            user_categories = []
     
     if request.method == 'POST':
         # Validation manuelle pour éviter les bugs Djongo avec ForeignKey validation
@@ -1736,7 +1871,7 @@ def media_edit(request, media_id):
                 context = {
                     'form': MediaEditForm(instance=media),
                     'media': media,
-                    'categories': Category.objects.filter(users=request.user),
+                    'categories': user_categories,
                 }
                 return render(request, 'media_edit.html', context)
         
@@ -1774,7 +1909,7 @@ def media_edit(request, media_id):
     context = {
         'form': form,
         'media': media,
-    'categories': Category.objects.filter(users=request.user),
+        'categories': user_categories,
     }
     
     return render(request, 'media_edit.html', context)
