@@ -88,7 +88,7 @@ class MediaUploadForm(forms.ModelForm):
         # Filtrer les catégories par utilisateur
         if user:
             from .models import Category
-            self.fields['category'].queryset = Category.objects.filter(user=user)
+            self.fields['category'].queryset = Category.objects.filter(users=user)
         else:
             from .models import Category
             self.fields['category'].queryset = Category.objects.none()
@@ -197,7 +197,7 @@ class MultipleMediaUploadForm(forms.Form):
         super().__init__(*args, **kwargs)
         if user:
             from .models import Category
-            self.fields['category'].queryset = Category.objects.filter(user=user)
+            self.fields['category'].queryset = Category.objects.filter(users=user)
     
     def clean_files(self):
         files = self.cleaned_data.get('files')
@@ -362,7 +362,7 @@ class GalleryFilterForm(forms.Form):
         super().__init__(*args, **kwargs)
         if user:
             from .models import Category
-            self.fields['category'].queryset = Category.objects.filter(user=user)
+            self.fields['category'].queryset = Category.objects.filter(users=user)
 
 class CustomUserCreationForm(UserCreationForm):
     email = forms.EmailField(required=True)
@@ -524,7 +524,7 @@ class MediaUploadForm(forms.ModelForm):
         # Filtrer les catégories par utilisateur
         if user:
             from .models import Category
-            self.fields['category'].queryset = Category.objects.filter(user=user)
+            self.fields['category'].queryset = Category.objects.filter(users=user)
         else:
             from .models import Category
             self.fields['category'].queryset = Category.objects.none()
@@ -633,7 +633,7 @@ class MultipleMediaUploadForm(forms.Form):
         super().__init__(*args, **kwargs)
         if user:
             from .models import Category
-            self.fields['category'].queryset = Category.objects.filter(user=user)
+            self.fields['category'].queryset = Category.objects.filter(users=user)
     
     def clean_files(self):
         files = self.cleaned_data.get('files')
@@ -883,7 +883,7 @@ class GalleryFilterForm(forms.Form):
         super().__init__(*args, **kwargs)
         if user:
             from .models import Category
-            self.fields['category'].queryset = Category.objects.filter(user=user)
+            self.fields['category'].queryset = Category.objects.filter(users=user)
 
 
 

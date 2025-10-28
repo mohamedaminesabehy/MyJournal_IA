@@ -6,7 +6,7 @@ import logging
 import traceback
 import os
 import threading
-from datetime import datetime, timedelta
+from datetime import datetime, date, time, timedelta
 
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login, logout, authenticate
@@ -63,6 +63,32 @@ from bson import ObjectId
 from PIL import Image
 
 logger = logging.getLogger(__name__)
+
+
+def _to_bson_datetime(value):
+    """Convert date or naive datetime to a BSON-compatible datetime.
+
+    - If value is a datetime, return as-is.
+    - If value is a date (no time), combine with time.min to create a datetime.
+    - Try to make it timezone-aware if Django timezone utilities are available.
+    - If None or other types, return as-is (caller must handle validation).
+    """
+    if value is None:
+        return None
+    # If already a datetime, return it
+    if isinstance(value, datetime):
+        return value
+    # If it's a date (no time part), combine with midnight
+    if isinstance(value, date):
+        dt = datetime.combine(value, time.min)
+        try:
+            if timezone.is_naive(dt):
+                dt = timezone.make_aware(dt)
+        except Exception:
+            # If timezone utilities fail for any reason, fall back to naive datetime
+            pass
+        return dt
+    return value
 
 
 @login_required
@@ -126,7 +152,7 @@ def edit_note(request, note_id):
             return redirect('view_notes')
         else:
             # Re-render notes list with an error message (simple approach)
-            categories = Category.objects.filter(user=request.user)
+            categories = Category.objects.filter(users=request.user)
             notes = Note.objects.filter(user=request.user).order_by('-created_at')
             context = {
                 'categories': categories,
@@ -333,11 +359,13 @@ def category_management(request):
                 next_id = (max_doc['id'] + 1) if max_doc and 'id' in max_doc and max_doc['id'] is not None else 1
                 
                 # Créer le document MongoDB avec un champ 'id' pour Djongo
+                # Note: Category model stores relation to users in a ManyToManyField named 'users'
+                # so we store the list of user ids under 'users' to be compatible with Djongo lookups.
                 category_doc = {
                     'id': next_id,
                     'name': category_name,
                     'icon': category_icon or '',
-                    'user_id': request.user.id  # Stocker l'ID de l'utilisateur
+                    'users': [request.user.id]  # Stocker l'ID de l'utilisateur dans la liste 'users'
                 }
                 
                 result = collection.insert_one(category_doc)
@@ -365,7 +393,7 @@ def category_management(request):
         return JsonResponse({'success': False, 'error': 'Le nom de la catégorie est requis.'})
     
     try:
-        categories = Category.objects.filter(user=request.user)
+                categories = Category.objects.filter(users=request.user)
     except Exception as e:
         print(f"❌ Erreur récupération catégories: {str(e)}")
         categories = []
@@ -389,10 +417,10 @@ def edit_category(request, category_id):
                 db = client['journalDB']
                 collection = db['journal_category']
                 
-                # Vérifier que la catégorie appartient bien à l'utilisateur
+                # Vérifier que la catégorie appartient bien à l'utilisateur (recherche dans le tableau 'users')
                 category = collection.find_one({
                     'id': int(category_id),
-                    'user_id': request.user.id
+                    'users': request.user.id
                 })
                 
                 if not category:
@@ -401,7 +429,7 @@ def edit_category(request, category_id):
                 
                 # Mettre à jour la catégorie
                 collection.update_one(
-                    {'id': int(category_id), 'user_id': request.user.id},
+                    {'id': int(category_id), 'users': request.user.id},
                     {'$set': {
                         'name': category_name,
                         'icon': category_icon or ''
@@ -441,7 +469,7 @@ def delete_category(request, category_id):
             # Vérifier que la catégorie appartient bien à l'utilisateur avant suppression
             result = collection.delete_one({
                 'id': int(category_id),
-                'user_id': request.user.id
+                'users': request.user.id
             })
             
             client.close()
@@ -875,12 +903,16 @@ def goal_update(request, slug):
             else:
                 progress = 0
 
+            # Convert date objects to BSON-compatible datetimes before sending to PyMongo
+            start_date_val = _to_bson_datetime(form.cleaned_data.get('start_date'))
+            end_date_val = _to_bson_datetime(form.cleaned_data.get('end_date'))
+
             result = collection.update_one({'slug': slug, 'user_id': request.user.id}, {'$set': {
                 'title': form.cleaned_data['title'],
                 'description': form.cleaned_data.get('description', ''),
                 'status': form.cleaned_data['status'],
-                'start_date': form.cleaned_data.get('start_date'),
-                'end_date': form.cleaned_data.get('end_date'),
+                'start_date': start_date_val,
+                'end_date': end_date_val,
                 'priority': form.cleaned_data.get('priority', Goal.PRIORITY_MEDIUM),
                 'difficulty': form.cleaned_data.get('difficulty', 3),
                 'reward': form.cleaned_data.get('reward', ''),
@@ -1111,7 +1143,7 @@ def tags(request):
 
 @login_required
 def view_notes(request):
-    categories = Category.objects.filter(user=request.user)
+    categories = Category.objects.filter(users=request.user)
     notes = Note.objects.filter(user=request.user).order_by('-created_at')
     context = {
         'categories': categories,
@@ -1123,9 +1155,9 @@ def view_notes(request):
 
 @login_required
 def notes_by_category(request, category_id):
-    category = get_object_or_404(Category, id=category_id, user=request.user)
+    category = get_object_or_404(Category, id=category_id, users=request.user)
     notes = Note.objects.filter(user=request.user, category=category).order_by('-created_at')
-    categories = Category.objects.filter(user=request.user)
+    categories = Category.objects.filter(users=request.user)
     context = {
         'category': category,
         'notes': notes,
@@ -1323,7 +1355,7 @@ def media_upload(request):
             # Validation du fichier
             if not file:
                 messages.error(request, '❌ Vous devez sélectionner un fichier à uploader.')
-                user_categories = Category.objects.filter(user=request.user)
+                user_categories = Category.objects.filter(users=request.user)
                 context = {
                     'single_form': MediaUploadForm(),
                     'multiple_form': MultipleMediaUploadForm(user=request.user),
@@ -1334,7 +1366,7 @@ def media_upload(request):
             # Validation de la catégorie
             if not category_id:
                 messages.error(request, '❌ Vous devez sélectionner une catégorie.')
-                user_categories = Category.objects.filter(user=request.user)
+                user_categories = Category.objects.filter(users=request.user)
                 context = {
                     'single_form': MediaUploadForm(),
                     'multiple_form': MultipleMediaUploadForm(user=request.user),
@@ -1350,7 +1382,7 @@ def media_upload(request):
                 validated_file = upload_form.clean_file()
             except forms.ValidationError as e:
                 messages.error(request, str(e.message))
-                user_categories = Category.objects.filter(user=request.user)
+                user_categories = Category.objects.filter(users=request.user)
                 context = {
                     'single_form': MediaUploadForm(),
                     'multiple_form': MultipleMediaUploadForm(user=request.user),
@@ -1399,7 +1431,7 @@ def media_upload(request):
             # Validation des fichiers
             if not files:
                 messages.error(request, '❌ Vous devez sélectionner au moins un fichier.')
-                user_categories = Category.objects.filter(user=request.user)
+                user_categories = Category.objects.filter(users=request.user)
                 context = {
                     'single_form': MediaUploadForm(),
                     'multiple_form': MultipleMediaUploadForm(user=request.user),
@@ -1414,7 +1446,7 @@ def media_upload(request):
                     f'📋 Maximum autorisé: 3 images\n'
                     f'Nombre sélectionné: {len(files)}'
                 )
-                user_categories = Category.objects.filter(user=request.user)
+                user_categories = Category.objects.filter(users=request.user)
                 context = {
                     'single_form': MediaUploadForm(),
                     'multiple_form': MultipleMediaUploadForm(user=request.user),
@@ -1433,7 +1465,7 @@ def media_upload(request):
                 # Validation de la catégorie pour ce fichier
                 if not category_id:
                     messages.error(request, f'❌ Vous devez sélectionner une catégorie pour l\'image "{file.name}".')
-                    user_categories = Category.objects.filter(user=request.user)
+                    user_categories = Category.objects.filter(users=request.user)
                     context = {
                         'single_form': MediaUploadForm(),
                         'multiple_form': MultipleMediaUploadForm(user=request.user),
@@ -1455,7 +1487,7 @@ def media_upload(request):
                     })
                 except forms.ValidationError as e:
                     messages.error(request, str(e.message))
-                    user_categories = Category.objects.filter(user=request.user)
+                    user_categories = Category.objects.filter(users=request.user)
                     context = {
                         'single_form': MediaUploadForm(),
                         'multiple_form': MultipleMediaUploadForm(user=request.user),
@@ -1520,8 +1552,8 @@ def media_upload(request):
     db = client['journalDB']
     collection = db['journal_category']
     
-    # Charger les catégories depuis MongoDB
-    user_categories_data = list(collection.find({'user_id': request.user.id}))
+    # Charger les catégories depuis MongoDB (recherche par présence de l'utilisateur dans le tableau 'users')
+    user_categories_data = list(collection.find({'users': request.user.id}))
     client.close()
     
     # Convertir en objets simples pour le template
@@ -1532,7 +1564,12 @@ def media_upload(request):
                 self.id = data.get('id')
                 self.name = data.get('name', '')
                 self.icon = data.get('icon', '')
-                self.user_id = data.get('user_id')
+                users = data.get('users')
+                # store primary user id for backward compatibility
+                try:
+                    self.user_id = users[0] if isinstance(users, list) and users else users
+                except Exception:
+                    self.user_id = users
         
         user_categories.append(CategoryProxy(cat_data))
     
@@ -1666,7 +1703,7 @@ def media_edit(request, media_id):
                 context = {
                     'form': MediaEditForm(instance=media),
                     'media': media,
-                    'categories': Category.objects.filter(user=request.user),
+                    'categories': Category.objects.filter(users=request.user),
                 }
                 return render(request, 'media_edit.html', context)
         
@@ -1704,7 +1741,7 @@ def media_edit(request, media_id):
     context = {
         'form': form,
         'media': media,
-        'categories': Category.objects.filter(user=request.user),
+    'categories': Category.objects.filter(users=request.user),
     }
     
     return render(request, 'media_edit.html', context)
