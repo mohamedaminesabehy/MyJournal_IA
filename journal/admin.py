@@ -1,18 +1,22 @@
+
 from django.contrib import admin
-<<<<<<< HEAD
-from .models import UserProfile, Category, Note, Goal
+from .models import (
+    UserProfile,
+    Category,
+    Note,
+    Goal,
+    Media,
+    MediaAnalysis,
+    MediaTag,
+    SmartAlbum,
+)
+
 
 @admin.register(Goal)
 class GoalAdmin(admin.ModelAdmin):
-	list_display = ('title', 'user', 'status', 'priority', 'visibility', 'progress_cached', 'created_at')
-	list_filter = ('status', 'priority', 'visibility')
-	search_fields = ('title', 'description', 'reward')
-=======
-from .models import UserProfile, Category, Media, MediaAnalysis, MediaTag, SmartAlbum
-
-
-
-
+    list_display = ('title', 'user', 'status', 'priority', 'visibility', 'progress_cached', 'created_at')
+    list_filter = ('status', 'priority', 'visibility')
+    search_fields = ('title', 'description', 'reward')
 
 
 @admin.register(Media)
@@ -21,7 +25,7 @@ class MediaAdmin(admin.ModelAdmin):
     list_filter = ('media_type', 'is_analyzed', 'is_favorite', 'uploaded_at')
     search_fields = ('title', 'description', 'user__username')
     readonly_fields = ('file_size', 'width', 'height', 'uploaded_at', 'updated_at')
-    
+
     fieldsets = (
         ('Informations de base', {
             'fields': ('user', 'title', 'description', 'media_type')
@@ -47,7 +51,7 @@ class MediaAnalysisAdmin(admin.ModelAdmin):
     list_filter = ('vision_api_used', 'generative_api_used', 'analyzed_at')
     search_fields = ('media__title', 'ai_title', 'ai_description')
     readonly_fields = ('analyzed_at', 'updated_at')
-    
+
     fieldsets = (
         ('Média', {
             'fields': ('media',)
@@ -83,12 +87,11 @@ class SmartAlbumAdmin(admin.ModelAdmin):
     list_filter = ('album_type', 'created_at')
     search_fields = ('name', 'description', 'user__username')
     filter_horizontal = ('media',)
-    
+
     def media_count(self, obj):
         return obj.media.count()
     media_count.short_description = 'Nombre de médias'
-from .models import UserProfile, Category, Note
->>>>>>> origin/yassineJawadi
+
 
 admin.site.register(UserProfile)
 admin.site.register(Category)

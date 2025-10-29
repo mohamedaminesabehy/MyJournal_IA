@@ -1,55 +1,99 @@
 from django.shortcuts import render, redirect, get_object_or_404
-<<<<<<< HEAD
-=======
 from django.utils import timezone
->>>>>>> origin/yassineJawadi
 import re
+import json
+import logging
+import traceback
+import os
+import threading
+from datetime import datetime, date, time, timedelta
+
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
-<<<<<<< HEAD
 from django.http import JsonResponse, Http404
-import logging
-=======
-from django.http import JsonResponse
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.contrib import messages
 from django import forms
-from .forms import (
-    CustomUserCreationForm, 
-    MediaUploadForm, 
-    MultipleMediaUploadForm, 
-    MediaEditForm, 
-    GalleryFilterForm,
-    MediaTagForm
-)
-from .models import UserProfile, Category, Media, MediaAnalysis, MediaTag, SmartAlbum
-from .services.vision_service import analyze_media_vision
-import json
-from PIL import Image
-import os
-import threading
 
->>>>>>> origin/yassineJawadi
-from django.db import IntegrityError
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods
-from .forms import CustomUserCreationForm, NoteForm
-<<<<<<< HEAD
-from .forms import GoalForm
-from .models import UserProfile, Category, Note, Goal
-from .utils import lr_model, clean_text, predict_emotion, predict_goal_duration, generate_motivation_message
-from django.views.decorators.http import require_POST
-from django.views.decorators.csrf import csrf_protect
-=======
-from .models import UserProfile, Category, Note, ActivityRecommendation
-from .utils import lr_model, clean_text, predict_emotion
+from django.views.decorators.csrf import csrf_exempt, csrf_protect
+from django.views.decorators.http import require_http_methods, require_POST
+
+# Import conditionnel pour éviter les erreurs si cv2 n'est pas installé
+try:
+    from .services.vision_service import analyze_media_vision
+except ImportError:
+    analyze_media_vision = None
+
+from .forms import (
+    CustomUserCreationForm,
+    MediaUploadForm,
+    MultipleMediaUploadForm,
+    MediaEditForm,
+    GalleryFilterForm,
+    MediaTagForm,
+    NoteForm,
+    GoalForm,
+)
+
+from .models import (
+    UserProfile,
+    Category,
+    Media,
+    MediaAnalysis,
+    MediaTag,
+    SmartAlbum,
+    Note,
+    Goal,
+    ActivityRecommendation,
+)
+
+from .utils import (
+    lr_model,
+    clean_text,
+    predict_emotion,
+    predict_goal_duration,
+    generate_motivation_message,
+)
+
+
 from .recommendation_engine import recommendation_engine
 from .perplexity_service import perplexity_service
-from datetime import datetime
-import json
->>>>>>> origin/yassineJawadi
+
+from django.conf import settings
+from pymongo import MongoClient
+from bson import ObjectId
+
+from PIL import Image
+
+logger = logging.getLogger(__name__)
+
+
+def _to_bson_datetime(value):
+    """Convert date or naive datetime to a BSON-compatible datetime.
+
+    - If value is a datetime, return as-is.
+    - If value is a date (no time), combine with time.min to create a datetime.
+    - Try to make it timezone-aware if Django timezone utilities are available.
+    - If None or other types, return as-is (caller must handle validation).
+    """
+    if value is None:
+        return None
+    # If already a datetime, return it
+    if isinstance(value, datetime):
+        return value
+    # If it's a date (no time part), combine with midnight
+    if isinstance(value, date):
+        dt = datetime.combine(value, time.min)
+        try:
+            if timezone.is_naive(dt):
+                dt = timezone.make_aware(dt)
+        except Exception:
+            # If timezone utilities fail for any reason, fall back to naive datetime
+            pass
+        return dt
+    return value
 
 
 @login_required
@@ -75,6 +119,18 @@ def create_note(request):
                 except Exception as e:
                     print(f"Error predicting emotion: {e}")
             
+            # If the form returned a numeric PK for category (ChoiceField fallback),
+            # assign it to category_id so the FK is set correctly.
+            cat_val = form.cleaned_data.get('category')
+            try:
+                if isinstance(cat_val, int):
+                    note.category_id = cat_val
+                elif isinstance(cat_val, str) and cat_val.isdigit():
+                    note.category_id = int(cat_val)
+            except Exception:
+                # ignore and let save fail if invalid
+                pass
+
             note.save()
             return redirect('view_notes')
         else:
@@ -82,6 +138,7 @@ def create_note(request):
     else:
         form = NoteForm(user=request.user)
     return render(request, 'create_note.html', {'form': form})
+
 
 @login_required
 def edit_note(request, note_id):
@@ -112,11 +169,7 @@ def edit_note(request, note_id):
             return redirect('view_notes')
         else:
             # Re-render notes list with an error message (simple approach)
-<<<<<<< HEAD
             categories = Category.objects.filter(users=request.user)
-=======
-            categories = Category.objects.filter(user=request.user)
->>>>>>> origin/yassineJawadi
             notes = Note.objects.filter(user=request.user).order_by('-created_at')
             context = {
                 'categories': categories,
@@ -125,6 +178,7 @@ def edit_note(request, note_id):
             }
             return render(request, 'view_notes.html', context)
     return redirect('view_notes')
+
 
 @login_required
 def delete_note(request, note_id):
@@ -140,12 +194,11 @@ def delete_note(request, note_id):
 def home(request):
     return render(request, 'home.html')
 
+
 @login_required
 def base(request):
     return render(request, 'base.html')
 
-<<<<<<< HEAD
-=======
 
 @login_required
 def dashboard(request):
@@ -298,7 +351,7 @@ def dashboard(request):
         })
 
 
->>>>>>> origin/yassineJawadi
+
 @login_required
 def category_management(request):
     if request.method == 'POST':
@@ -306,26 +359,6 @@ def category_management(request):
         category_icon = request.POST.get('categoryIcon')
         if category_name:
             try:
-<<<<<<< HEAD
-                # Créer ou récupérer la catégorie globale par nom
-                category, created = Category.objects.get_or_create(name=category_name, defaults={'icon': category_icon})
-                # Mettre à jour l'icône si fournie (facultatif)
-                if category_icon:
-                    category.icon = category_icon
-                    category.save() 
-                # Associer l'utilisateur à la catégorie
-                category.users.add(request.user)
-                return JsonResponse({'success': True, 'category': {'id': category.id, 'name': category.name, 'icon': category.icon}})
-            except Exception as e:
-                return JsonResponse({'success': False, 'error': str(e)})
-        return JsonResponse({'success': False, 'error': 'Category name is required.'})
-    categories = Category.objects.filter(users=request.user)
-    return render(request, 'category_management.html', {'categories': categories})
-
-@login_required
-def edit_category(request, category_id):
-    category = get_object_or_404(Category, id=category_id, users=request.user)
-=======
                 # Solution pour contourner les problèmes de validation Djongo avec ForeignKey
                 from pymongo import MongoClient
                 from bson import ObjectId
@@ -343,14 +376,22 @@ def edit_category(request, category_id):
                 next_id = (max_doc['id'] + 1) if max_doc and 'id' in max_doc and max_doc['id'] is not None else 1
                 
                 # Créer le document MongoDB avec un champ 'id' pour Djongo
+                # On stocke à la fois 'user_id' (scalar) et 'users' (liste) pour compatibilité
                 category_doc = {
                     'id': next_id,
                     'name': category_name,
                     'icon': category_icon or '',
-                    'user_id': request.user.id  # Stocker l'ID de l'utilisateur
+                    'user_id': request.user.id,  # Stocker l'ID de l'utilisateur (index unique attendu)
+                    'users': [request.user.id],  # Ancienne shape utilisée ailleurs dans le code
                 }
-                
-                result = collection.insert_one(category_doc)
+
+                # Insertet en gérant les doublons explicitement pour renvoyer un message clair
+                from pymongo.errors import DuplicateKeyError
+                try:
+                    result = collection.insert_one(category_doc)
+                except DuplicateKeyError as dk:
+                    client.close()
+                    return JsonResponse({'success': False, 'error': 'Une catégorie avec ce nom existe déjà.'})
                 category_id = str(next_id)  # Utiliser l'ID numérique, pas l'ObjectId
                 
                 client.close()  # Fermer la connexion
@@ -375,7 +416,32 @@ def edit_category(request, category_id):
         return JsonResponse({'success': False, 'error': 'Le nom de la catégorie est requis.'})
     
     try:
-        categories = Category.objects.filter(user=request.user)
+        # Charger les catégories directement depuis MongoDB pour couvrir les cas
+        # où les documents sont présents uniquement dans la collection Mongo
+        from pymongo import MongoClient
+        from django.conf import settings
+
+        mongo_uri = settings.DATABASES['default']['CLIENT']['host']
+        client = MongoClient(mongo_uri)
+        db = client['journalDB']
+        collection = db['journal_category']
+
+        # Chercher par user_id scalar ou présence dans le tableau 'users'
+        user_categories_data = list(collection.find({'$or': [{'user_id': request.user.id}, {'users': request.user.id}]}))
+        client.close()
+
+        # Convertir en objets simples pour le template (compatibilité avec ORM objects)
+        categories = []
+        for cat_data in user_categories_data:
+            class CategoryProxy:
+                def __init__(self, data):
+                    # Djongo-compatible numeric 'id' may be stored in 'id' field
+                    self.id = data.get('id') or data.get('_id')
+                    self.name = data.get('name', '')
+                    self.icon = data.get('icon', '')
+                    # Expose user_id for debugging/compat
+                    self.user_id = data.get('user_id')
+            categories.append(CategoryProxy(cat_data))
     except Exception as e:
         print(f"❌ Erreur récupération catégories: {str(e)}")
         categories = []
@@ -385,23 +451,11 @@ def edit_category(request, category_id):
 
 @login_required
 def edit_category(request, category_id):
->>>>>>> origin/yassineJawadi
     if request.method == 'POST':
         category_name = (request.POST.get('categoryName') or '').strip()
         category_icon = request.POST.get('categoryIcon')
         if category_name:
             try:
-<<<<<<< HEAD
-                # Modifier le nom et l'icône de la catégorie (impacte tous les utilisateurs liés)
-                category.name = category_name
-                category.icon = category_icon
-                category.save()
-                return JsonResponse({'success': True, 'category': {'id': category.id, 'name': category.name, 'icon': category.icon}})
-            except Exception as e:
-                return JsonResponse({'success': False, 'error': str(e)})
-        return JsonResponse({'success': False, 'error': 'Category name is required.'})
-    return JsonResponse({'success': False, 'error': 'Invalid request method.'})
-=======
                 # Modification directe avec PyMongo
                 from pymongo import MongoClient
                 from django.conf import settings
@@ -412,23 +466,23 @@ def edit_category(request, category_id):
                 collection = db['journal_category']
                 
                 # Vérifier que la catégorie appartient bien à l'utilisateur
-                category = collection.find_one({
-                    'id': int(category_id),
-                    'user_id': request.user.id
-                })
-                
+                # Supporter les deux shapes: scalar 'user_id' ou liste 'users'
+                category = collection.find_one({'id': int(category_id), 'user_id': request.user.id})
+                used_filter = None
+                if category:
+                    used_filter = {'id': int(category_id), 'user_id': request.user.id}
+                else:
+                    category = collection.find_one({'id': int(category_id), 'users': request.user.id})
+                    if category:
+                        used_filter = {'id': int(category_id), 'users': request.user.id}
+
                 if not category:
                     client.close()
                     return JsonResponse({'success': False, 'error': 'Catégorie non trouvée'})
-                
-                # Mettre à jour la catégorie
-                collection.update_one(
-                    {'id': int(category_id), 'user_id': request.user.id},
-                    {'$set': {
-                        'name': category_name,
-                        'icon': category_icon or ''
-                    }}
-                )
+
+                # Mettre à jour la catégorie (mettre à jour les deux champs si possible)
+                update_payload = {'$set': {'name': category_name, 'icon': category_icon or ''}}
+                collection.update_one(used_filter, update_payload)
                 
                 client.close()
                 
@@ -446,25 +500,10 @@ def edit_category(request, category_id):
                 return JsonResponse({'success': False, 'error': str(e) or 'Erreur lors de la modification'})
         return JsonResponse({'success': False, 'error': 'Le nom de la catégorie est requis.'})
     return JsonResponse({'success': False, 'error': 'Méthode invalide.'})
->>>>>>> origin/yassineJawadi
 
 @login_required
 def delete_category(request, category_id):
     if request.method == 'POST':
-<<<<<<< HEAD
-        category = get_object_or_404(Category, id=category_id, users=request.user)
-        try:
-            # Détacher l'utilisateur de la catégorie (ne pas supprimer la catégorie globale)
-            category.users.remove(request.user)
-            return JsonResponse({'success': True})
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
-    return JsonResponse({'success': False, 'error': 'Invalid request method.'})
-
-@login_required
-def dashboard(request):
-    return render(request, 'dashboard.html')
-=======
         try:
             # Suppression directe avec PyMongo
             from pymongo import MongoClient
@@ -476,10 +515,10 @@ def dashboard(request):
             collection = db['journal_category']
             
             # Vérifier que la catégorie appartient bien à l'utilisateur avant suppression
-            result = collection.delete_one({
-                'id': int(category_id),
-                'user_id': request.user.id
-            })
+            # Essayer suppression par 'user_id' puis par 'users' pour compatibilité
+            result = collection.delete_one({'id': int(category_id), 'user_id': request.user.id})
+            if result.deleted_count == 0:
+                result = collection.delete_one({'id': int(category_id), 'users': request.user.id})
             
             client.close()
             
@@ -493,6 +532,7 @@ def dashboard(request):
             print(f"❌ Erreur suppression catégorie: {traceback.format_exc()}")
             return JsonResponse({'success': False, 'error': str(e) or 'Erreur lors de la suppression'})
     return JsonResponse({'success': False, 'error': 'Méthode invalide.'})
+
 
 @login_required  
 def dashboard_OLD_BACKUP(request):
@@ -723,7 +763,6 @@ def dashboard_OLD_BACKUP(request):
     }
     
     return render(request, 'dashboard.html', context)
->>>>>>> origin/yassineJawadi
 
 @login_required
 def gallery(request):
@@ -742,85 +781,25 @@ def profile(request):
     user_profile, created = UserProfile.objects.get_or_create(user=request.user)
     return render(request, 'profile.html', {'user_profile': user_profile})
 
-def signin(request):
-    if request.method == 'POST':
-        form = AuthenticationForm(request, data=request.POST)
-        if form.is_valid():
-            username = form.cleaned_data.get('username')
-            password = form.cleaned_data.get('password')
-            user = authenticate(username=username, password=password)
-            if user is not None:
-                login(request, user)
-                return redirect('category_management')
-    else:
-        form = AuthenticationForm()
-    return render(request, 'signin.html', {'form': form})
-
-def signup(request):
-    if request.method == 'POST':
-        form = CustomUserCreationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            user_profile, created = UserProfile.objects.get_or_create(user=user)
-            user_profile.date_of_birth = form.cleaned_data.get('date_of_birth')
-            user_profile.location = form.cleaned_data.get('location')
-            user_profile.save()
-            login(request, user)
-            return redirect('home')
-    else:
-        form = CustomUserCreationForm()
-    return render(request, 'signup.html', {'form': form})
-
-def statistics(request):
-    return render(request, 'statistics.html')
-
-@login_required
-def tags(request):
-    return render(request, 'tags.html')
-
-@login_required
-def view_notes(request):
-<<<<<<< HEAD
-    categories = Category.objects.filter(users=request.user)
-=======
-    categories = Category.objects.filter(user=request.user)
->>>>>>> origin/yassineJawadi
-    notes = Note.objects.filter(user=request.user).order_by('-created_at')
-    context = {
-        'categories': categories,
-        'notes': notes,
-<<<<<<< HEAD
-    }
-    return render(request, 'view_notes.html', context)
-
 
 @login_required
 def goals_list(request):
-    # Use direct MongoDB access to avoid JSON parsing issues with djongo
-    from pymongo import MongoClient
-    from django.conf import settings
-    
     client = MongoClient(settings.DATABASES['default']['CLIENT']['host'])
     db = client[settings.DATABASES['default']['NAME']]
     collection = db['journal_goal']
-    
-    # Get all goals for current user
+
     goals_data = list(collection.find({'user_id': request.user.id}).sort('created_at', -1))
-    
-    # Convert to Goal objects
     goals = []
     for goal_data in goals_data:
-        # Parse milestones if it's a JSON string
         milestones = goal_data.get('milestones', [])
         if isinstance(milestones, str):
-            import json
             try:
                 milestones = json.loads(milestones)
-            except:
+            except Exception:
                 milestones = []
         if not isinstance(milestones, list):
             milestones = []
-        
+
         goal = Goal(
             id=goal_data.get('_id'),
             user=request.user,
@@ -838,49 +817,37 @@ def goals_list(request):
             slug=goal_data.get('slug', ''),
             progress_cached=goal_data.get('progress_cached', 0),
         )
-        
-        # Add AI motivation to each goal
         try:
             goal.ai_motivation = generate_motivation_message(goal, request.user)
-            print(f"DEBUG: AI motivation generated for {goal.title}: {goal.ai_motivation['message'][:50]}")
-        except Exception as e:
-            print(f"DEBUG ERROR: Failed to generate AI motivation for {goal.title}: {e}")
-            import traceback
-            traceback.print_exc()
+        except Exception:
+            logger.exception('Failed to generate AI motivation for goal %s', goal.title)
             goal.ai_motivation = None
-        
         goals.append(goal)
-    
+
+    client.close()
     return render(request, 'goals/list.html', {'goals': goals})
 
 
 @login_required
 def goal_detail(request, slug):
-    # Use direct MongoDB access to avoid JSON parsing issues with djongo
-    from pymongo import MongoClient
-    from django.conf import settings
-    
     client = MongoClient(settings.DATABASES['default']['CLIENT']['host'])
     db = client[settings.DATABASES['default']['NAME']]
     collection = db['journal_goal']
-    
-    # Find goal by slug and user_id
+
     goal_data = collection.find_one({'slug': slug, 'user_id': request.user.id})
     if not goal_data:
+        client.close()
         raise Http404("Objectif non trouvé")
-    
-    # Parse milestones if it's a JSON string
+
     milestones = goal_data.get('milestones', [])
     if isinstance(milestones, str):
-        import json
         try:
             milestones = json.loads(milestones)
-        except:
+        except Exception:
             milestones = []
     if not isinstance(milestones, list):
         milestones = []
-    
-    # Create a Goal instance manually with the data
+
     goal = Goal(
         id=goal_data.get('_id'),
         user=request.user,
@@ -898,19 +865,19 @@ def goal_detail(request, slug):
         slug=goal_data.get('slug', ''),
         progress_cached=goal_data.get('progress_cached', 0),
     )
-    
-    # Generate AI predictions
+
     duration_min, duration_max, complexity = predict_goal_duration(goal)
     motivation_data = generate_motivation_message(goal, request.user)
-    
+
     context = {
         'goal': goal,
         'duration_min': duration_min,
         'duration_max': duration_max,
         'complexity': complexity,
-        'motivation': motivation_data
+        'motivation': motivation_data,
     }
-    
+
+    client.close()
     return render(request, 'goals/detail.html', context)
 
 
@@ -918,9 +885,8 @@ def goal_detail(request, slug):
 def goal_create(request):
     if request.method == 'POST':
         form = GoalForm(request.POST, user=request.user)
-        # log raw posted milestones for debugging
         try:
-            logging.getLogger(__name__).info('Posted milestones raw: %s', request.POST.get('milestones'))
+            logger.info('Posted milestones raw: %s', request.POST.get('milestones'))
         except Exception:
             pass
         if form.is_valid():
@@ -930,8 +896,7 @@ def goal_create(request):
             form.save_m2m()
             return redirect('goals_list')
         else:
-            # log errors for debugging
-            logging.getLogger(__name__).warning('Goal create form invalid: %s', form.errors.as_json())
+            logger.warning('Goal create form invalid: %s', form.errors.as_json())
     else:
         form = GoalForm(user=request.user)
     return render(request, 'goals/form.html', {'form': form, 'creating': True})
@@ -939,31 +904,24 @@ def goal_create(request):
 
 @login_required
 def goal_update(request, slug):
-    # Use direct MongoDB access to avoid JSON parsing issues
-    from pymongo import MongoClient
-    from django.conf import settings
-    
     client = MongoClient(settings.DATABASES['default']['CLIENT']['host'])
     db = client[settings.DATABASES['default']['NAME']]
     collection = db['journal_goal']
-    
-    # Find goal by slug and user_id
+
     goal_data = collection.find_one({'slug': slug, 'user_id': request.user.id})
     if not goal_data:
+        client.close()
         raise Http404("Objectif non trouvé")
-    
-    # Parse milestones if stored as JSON string
+
     milestones = goal_data.get('milestones', [])
     if isinstance(milestones, str):
         try:
-            import json
             milestones = json.loads(milestones)
-        except:
+        except Exception:
             milestones = []
     if not isinstance(milestones, list):
         milestones = []
-    
-    # Create a Goal instance for the form
+
     goal = Goal(
         id=goal_data.get('_id'),
         user=request.user,
@@ -981,11 +939,10 @@ def goal_update(request, slug):
         slug=goal_data.get('slug', ''),
         progress_cached=goal_data.get('progress_cached', 0),
     )
-    
+
     if request.method == 'POST':
         form = GoalForm(request.POST, user=request.user)
         if form.is_valid():
-            # Calculate progress from milestones
             milestones = form.cleaned_data.get('milestones', [])
             if isinstance(milestones, list) and len(milestones) > 0:
                 total = len(milestones)
@@ -993,190 +950,409 @@ def goal_update(request, slug):
                 progress = int((done_count / total) * 100)
             else:
                 progress = 0
-            
-            # Find by slug and user_id and update
-            result = collection.update_one(
-                {'slug': slug, 'user_id': request.user.id},
-                {'$set': {
-                    'title': form.cleaned_data['title'],
-                    'description': form.cleaned_data.get('description', ''),
-                    'status': form.cleaned_data['status'],
-                    'start_date': form.cleaned_data.get('start_date'),
-                    'end_date': form.cleaned_data.get('end_date'),
-                    'priority': form.cleaned_data.get('priority', Goal.PRIORITY_MEDIUM),
-                    'difficulty': form.cleaned_data.get('difficulty', 3),
-                    'reward': form.cleaned_data.get('reward', ''),
-                    'recurrence': form.cleaned_data.get('recurrence', ''),
-                    'motivation_level': form.cleaned_data.get('motivation_level', 5),
-                    'milestones': milestones,
-                    'category_id': form.cleaned_data.get('category').id if form.cleaned_data.get('category') else None,
-                    'progress_cached': progress
-                }}
-            )
-            
+
+            # Convert date objects to BSON-compatible datetimes before sending to PyMongo
+            start_date_val = _to_bson_datetime(form.cleaned_data.get('start_date'))
+            end_date_val = _to_bson_datetime(form.cleaned_data.get('end_date'))
+
+            result = collection.update_one({'slug': slug, 'user_id': request.user.id}, {'$set': {
+                'title': form.cleaned_data['title'],
+                'description': form.cleaned_data.get('description', ''),
+                'status': form.cleaned_data['status'],
+                'start_date': start_date_val,
+                'end_date': end_date_val,
+                'priority': form.cleaned_data.get('priority', Goal.PRIORITY_MEDIUM),
+                'difficulty': form.cleaned_data.get('difficulty', 3),
+                'reward': form.cleaned_data.get('reward', ''),
+                'recurrence': form.cleaned_data.get('recurrence', ''),
+                'motivation_level': form.cleaned_data.get('motivation_level', 5),
+                'milestones': milestones,
+                'category_id': form.cleaned_data.get('category').id if form.cleaned_data.get('category') else None,
+                'progress_cached': progress
+            }})
+
+            client.close()
             if result.modified_count > 0:
                 return redirect('goal_detail', slug=slug)
             else:
-                logging.getLogger(__name__).warning('No document updated for slug: %s', slug)
+                logger.warning('No document updated for slug: %s', slug)
         else:
-            logging.getLogger(__name__).warning('Goal update form invalid: %s', form.errors.as_json())
+            logger.warning('Goal update form invalid: %s', form.errors.as_json())
     else:
         form = GoalForm(instance=goal, user=request.user)
+
+    client.close()
     return render(request, 'goals/form.html', {'form': form, 'creating': False, 'goal': goal})
 
 
 @login_required
 def goal_delete(request, slug):
-    # Use direct MongoDB access to avoid JSON parsing issues
-    from pymongo import MongoClient
-    from django.conf import settings
-    
     client = MongoClient(settings.DATABASES['default']['CLIENT']['host'])
     db = client[settings.DATABASES['default']['NAME']]
     collection = db['journal_goal']
-    
-    # Find goal by slug and user_id
+
     goal_data = collection.find_one({'slug': slug, 'user_id': request.user.id})
     if not goal_data:
+        client.close()
         raise Http404("Objectif non trouvé")
-    
-    # Create a Goal instance for the template
-    goal = Goal(
-        id=goal_data.get('_id'),
-        user=request.user,
-        title=goal_data.get('title', ''),
-        description=goal_data.get('description', ''),
-        slug=goal_data.get('slug', ''),
-    )
-    
+
+    goal = Goal(id=goal_data.get('_id'), user=request.user, title=goal_data.get('title', ''), description=goal_data.get('description', ''), slug=goal_data.get('slug', ''))
+
     if request.method == 'POST':
-        # Delete by slug and user_id
         result = collection.delete_one({'slug': slug, 'user_id': request.user.id})
-        
+        client.close()
         if result.deleted_count > 0:
             return redirect('goals_list')
         else:
-            logging.getLogger(__name__).warning('No document deleted for slug: %s', slug)
+            logger.warning('No document deleted for slug: %s', slug)
+    client.close()
     return render(request, 'goals/confirm_delete.html', {'goal': goal})
-
+ 
 
 @csrf_protect
 @login_required
 @require_POST
 def toggle_milestone(request, slug):
-    """Toggle milestone done state. Expects JSON body: {"index": 0}. Returns {"ok": True, "done": True, "progress": 42} or error.
-    This view now requires POST and an authenticated user. It always returns JsonResponse on handled errors so the frontend can parse responses safely.
-    """
-    import json
-    from pymongo import MongoClient
-    from django.conf import settings
-    
-    # Use direct MongoDB access to avoid JSON parsing issues
-    client = MongoClient(settings.DATABASES['default']['CLIENT']['host'])
-    db = client[settings.DATABASES['default']['NAME']]
-    collection = db['journal_goal']
-    
-    # Find goal by slug and user_id
-    goal_data = collection.find_one({'slug': slug, 'user_id': request.user.id})
-    if not goal_data:
-        return JsonResponse({'ok': False, 'error': 'Objectif non trouvé'}, status=404)
-    
     try:
         data = json.loads(request.body.decode('utf-8'))
         idx = int(data.get('index', -1))
     except Exception:
         return JsonResponse({'ok': False, 'error': 'Invalid payload'}, status=400)
 
-    # Parse milestones if stored as JSON string
+    client = MongoClient(settings.DATABASES['default']['CLIENT']['host'])
+    db = client[settings.DATABASES['default']['NAME']]
+    collection = db['journal_goal']
+
+    goal_data = collection.find_one({'slug': slug, 'user_id': request.user.id})
+    if not goal_data:
+        client.close()
+        return JsonResponse({'ok': False, 'error': 'Objectif non trouvé'}, status=404)
+
     milestones = goal_data.get('milestones', [])
     if isinstance(milestones, str):
         try:
             milestones = json.loads(milestones)
-        except:
+        except Exception:
             milestones = []
     if not isinstance(milestones, list):
         milestones = []
-    
+
     if idx < 0 or idx >= len(milestones):
+        client.close()
         return JsonResponse({'ok': False, 'error': 'Invalid index'}, status=400)
 
-    # toggle
     current = bool(milestones[idx].get('done'))
     new_done = not current
 
-    # recalculate cached progress as percentage of completed milestones
     total = len(milestones)
-    # Count done after this toggle
     done_count = sum(1 for i, m in enumerate(milestones) if (i == idx and new_done) or (i != idx and m.get('done')))
     progress = int((done_count / total) * 100) if total > 0 else 0
-    
-    # Automatically mark goal as completed when all tasks are done
+
     current_status = goal_data.get('status', Goal.STATUS_ONGOING)
     new_status = current_status
     if total > 0 and done_count == total:
         new_status = Goal.STATUS_COMPLETED
-    # If goal was completed but not all tasks are done anymore, set it back to ongoing
     elif current_status == Goal.STATUS_COMPLETED and done_count < total:
         new_status = Goal.STATUS_ONGOING
-    
-    # Direct MongoDB update using pymongo
-    from pymongo import MongoClient
-    from django.conf import settings
-    
-    client = MongoClient(settings.DATABASES['default']['CLIENT']['host'])
-    db = client[settings.DATABASES['default']['NAME']]
-    collection = db['journal_goal']
-    
-    # Update milestone in-memory then write back the full milestones array to avoid
-    # dotted-path write errors when the DB stores milestones as a string.
+
     try:
-        # ensure each milestone is a dict
         for i, m in enumerate(milestones):
             if not isinstance(m, dict):
                 milestones[i] = {'title': str(m), 'done': False}
 
         milestones[idx]['done'] = bool(new_done)
 
-        # write the full milestones array back to the document
-        result = collection.update_one(
-            {'slug': slug, 'user_id': request.user.id},
-            {'$set': {
-                'milestones': milestones,
-                'progress_cached': progress,
-                'status': new_status
-            }}
-        )
+        result = collection.update_one({'slug': slug, 'user_id': request.user.id}, {'$set': {'milestones': milestones, 'progress_cached': progress, 'status': new_status}})
+        client.close()
 
         if result.modified_count == 0:
-            logging.getLogger(__name__).warning('No document updated in toggle_milestone for slug: %s', slug)
+            logger.warning('No document updated in toggle_milestone for slug: %s', slug)
             return JsonResponse({'ok': False, 'error': 'Update failed'}, status=500)
 
-        return JsonResponse({
-            'ok': True,
-            'done': new_done,
-            'progress': progress,
-            'status': new_status
-        })
+        return JsonResponse({'ok': True, 'done': new_done, 'progress': progress, 'status': new_status})
     except Exception as e:
-        logging.getLogger(__name__).exception('Error updating milestone for slug %s: %s', slug, e)
+        logger.exception('Error updating milestone for slug %s: %s', slug, e)
+        client.close()
         return JsonResponse({'ok': False, 'error': str(e)}, status=500)
 
+
 @login_required
-def notes_by_category(request, category_id):
-    category = get_object_or_404(Category, id=category_id, users=request.user)
-    notes = Note.objects.filter(user=request.user, category=category).order_by('-created_at')
-    categories = Category.objects.filter(users=request.user)
-=======
+def gallery(request):
+    """Vue principale de la galerie avec filtres et recherche"""
+    try:
+        media_list = Media.objects.filter(user=request.user)
+    except Exception as e:
+        logger.exception('Erreur récupération médias: %s', e)
+        media_list = Media.objects.none()
+
+    filter_form = GalleryFilterForm(user=request.user, data=request.GET or None)
+    if filter_form.is_valid():
+        search_query = filter_form.cleaned_data.get('search')
+        if search_query:
+            media_list = media_list.filter(Q(title__icontains=search_query) | Q(description__icontains=search_query) | Q(tags__name__icontains=search_query)).distinct()
+
+        media_type = filter_form.cleaned_data.get('media_type')
+        if media_type:
+            media_list = media_list.filter(media_type=media_type)
+
+        category = filter_form.cleaned_data.get('category')
+        if category:
+            media_list = media_list.filter(category=category)
+
+        is_favorite = filter_form.cleaned_data.get('is_favorite')
+        if is_favorite:
+            media_list = media_list.filter(is_favorite=True)
+
+        is_analyzed = filter_form.cleaned_data.get('is_analyzed')
+        if is_analyzed:
+            media_list = media_list.filter(is_analyzed=True)
+
+        sort_by = filter_form.cleaned_data.get('sort_by') or '-uploaded_at'
+        media_list = media_list.order_by(sort_by)
+    else:
+        media_list = media_list.order_by('-uploaded_at')
+
+    try:
+        stats = {
+            'total_media': Media.objects.filter(user=request.user).count(),
+            'total_images': Media.objects.filter(user=request.user, media_type='image').count(),
+            'total_videos': Media.objects.filter(user=request.user, media_type='video').count(),
+            'total_analyzed': Media.objects.filter(user=request.user, is_analyzed=True).count(),
+            'total_favorites': Media.objects.filter(user=request.user, is_favorite=True).count(),
+        }
+    except Exception as e:
+        logger.exception('Erreur stats: %s', e)
+        stats = {'total_media': 0, 'total_images': 0, 'total_videos': 0, 'total_analyzed': 0, 'total_favorites': 0}
+
+    paginator = Paginator(media_list, 12)
+    page_number = request.GET.get('page')
+    media_page = paginator.get_page(page_number)
+
+    context = {'media_list': media_page, 'filter_form': filter_form, 'stats': stats, 'view_mode': request.GET.get('view', 'grid')}
+    return render(request, 'gallery.html', context)
+
+
+@login_required
+def hello(request):
+    return render(request, 'hello.html')
+
+
+@login_required
+def modern_notes(request):
+    return render(request, 'modern_notes.html')
+
+
+@login_required
+def profile(request):
+    user_profile, created = UserProfile.objects.get_or_create(user=request.user)
+    return render(request, 'profile.html', {'user_profile': user_profile})
+
+
+def signin(request):
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user = authenticate(username=username, password=password)
+            if user is not None:
+                login(request, user)
+                return redirect('category_management')
+    else:
+        form = AuthenticationForm()
+    return render(request, 'signin.html', {'form': form})
+
+
+
+def signup(request):
+    if request.method == 'POST':
+        form = CustomUserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            user_profile, created = UserProfile.objects.get_or_create(user=user)
+            user_profile.date_of_birth = form.cleaned_data.get('date_of_birth')
+            user_profile.location = form.cleaned_data.get('location')
+            user_profile.save()
+            login(request, user)
+            return redirect('home')
+    else:
+        form = CustomUserCreationForm()
+    return render(request, 'signup.html', {'form': form})
+
+
+def statistics(request):
+    return render(request, 'statistics.html')
+
+
+@login_required
+def tags(request):
+    return render(request, 'tags.html')
+
+
+@login_required
+def view_notes(request):
+    # Chargement des catégories avec fallback MongoDB
+    categories = []
+    try:
+        # Essayer d'abord avec l'ORM Django
+        categories = list(Category.objects.filter(users=request.user))
+        
+        # Si pas de catégories trouvées avec l'ORM, essayer MongoDB
+        if not categories:
+            from pymongo import MongoClient
+            from django.conf import settings
+            
+            mongo_uri = settings.DATABASES['default']['CLIENT']['host']
+            client = MongoClient(mongo_uri)
+            db = client['journalDB']
+            collection = db['journal_category']
+            
+            # Chercher les catégories de l'utilisateur
+            user_categories_data = list(collection.find({
+                '$or': [
+                    {'user_id': request.user.id}, 
+                    {'users': request.user.id}
+                ]
+            }))
+            client.close()
+            
+            # Convertir en objets compatibles avec le template
+            for cat_data in user_categories_data:
+                class CategoryProxy:
+                    def __init__(self, data):
+                        self.id = data.get('id') or data.get('_id')
+                        self.name = data.get('name', '')
+                        self.icon = data.get('icon', '📁')
+                
+                categories.append(CategoryProxy(cat_data))
+                
+    except Exception as e:
+        print(f"Erreur chargement catégories: {e}")
+        categories = []
+    
+    notes = Note.objects.filter(user=request.user).order_by('-created_at')
+    context = {
+        'categories': categories,
+        'notes': notes,
         'category': None,  # Pas de catégorie filtrée pour cette vue
     }
     return render(request, 'view_notes.html', context)
 
+
 @login_required
 def notes_by_category(request, category_id):
-    category = get_object_or_404(Category, id=category_id, user=request.user)
-    notes = Note.objects.filter(user=request.user, category=category).order_by('-created_at')
-    categories = Category.objects.filter(user=request.user)
->>>>>>> origin/yassineJawadi
+    # Essayer d'abord de récupérer la catégorie via l'ORM Django
+    category = None
+    categories = []
+    notes = []
+    
+    try:
+        # Essayer ORM d'abord
+        category = get_object_or_404(Category, id=category_id, users=request.user)
+        notes = Note.objects.filter(user=request.user, category=category).order_by('-created_at')
+        categories = list(Category.objects.filter(users=request.user))
+    except Exception:
+        # Fallback vers MongoDB
+        try:
+            from pymongo import MongoClient
+            from django.conf import settings
+            from bson import ObjectId
+            
+            mongo_uri = settings.DATABASES['default']['CLIENT']['host']
+            client = MongoClient(mongo_uri)
+            db = client['journalDB']
+            collection = db['journal_category']
+
+            # Chercher la catégorie spécifique
+            cat_doc = None
+            try:
+                # Essayer avec l'ID numérique
+                cid_int = int(category_id)
+                cat_doc = collection.find_one({
+                    'id': cid_int,
+                    '$or': [
+                        {'user_id': request.user.id}, 
+                        {'users': request.user.id}
+                    ]
+                })
+            except (ValueError, TypeError):
+                pass
+
+            if not cat_doc:
+                # Essayer avec ObjectId
+                try:
+                    cat_doc = collection.find_one({
+                        '_id': ObjectId(str(category_id)),
+                        '$or': [
+                            {'user_id': request.user.id}, 
+                            {'users': request.user.id}
+                        ]
+                    })
+                except Exception:
+                    pass
+
+            # Créer un proxy pour la catégorie trouvée
+            if cat_doc:
+                class CategoryProxy:
+                    def __init__(self, data):
+                        self.id = data.get('id') or data.get('_id')
+                        self.name = data.get('name', 'Catégorie sans nom')
+                        self.icon = data.get('icon', '📁')
+                
+                category = CategoryProxy(cat_doc)
+                
+                # Récupérer les notes pour cette catégorie
+                try:
+                    category_filter_id = cat_doc.get('id') or cat_doc.get('_id')
+                    notes = Note.objects.filter(
+                        user=request.user, 
+                        category_id=int(category_filter_id)
+                    ).order_by('-created_at')
+                except Exception:
+                    notes = Note.objects.filter(user=request.user).order_by('-created_at')
+            else:
+                # Catégorie non trouvée
+                class CategoryProxy:
+                    def __init__(self, cid, name='Catégorie non trouvée'):
+                        self.id = cid
+                        self.name = name
+                        self.icon = '❓'
+                
+                category = CategoryProxy(category_id)
+                notes = []
+
+            # Charger toutes les catégories pour la sidebar
+            user_cats = list(collection.find({
+                '$or': [
+                    {'user_id': request.user.id}, 
+                    {'users': request.user.id}
+                ]
+            }))
+            
+            for cat_data in user_cats:
+                class CategoryProxy:
+                    def __init__(self, data):
+                        self.id = data.get('id') or data.get('_id')
+                        self.name = data.get('name', '')
+                        self.icon = data.get('icon', '📁')
+                
+                categories.append(CategoryProxy(cat_data))
+            
+            client.close()
+            
+        except Exception as e:
+            print(f"Erreur lors de la récupération de la catégorie: {e}")
+            # Fallback final
+            class CategoryProxy:
+                def __init__(self, cid):
+                    self.id = cid
+                    self.name = 'Erreur de chargement'
+                    self.icon = '⚠️'
+            
+            category = CategoryProxy(category_id)
+            notes = Note.objects.filter(user=request.user).order_by('-created_at')
+            categories = []
+
     context = {
         'category': category,
         'notes': notes,
@@ -1187,6 +1363,7 @@ def notes_by_category(request, category_id):
 @login_required
 def tag_create(request):
     return render(request, 'tags.html')
+
 
 @login_required
 def event_create(request):
@@ -1223,9 +1400,6 @@ def predict_emotion_api(request):
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
     except Exception as e:
-<<<<<<< HEAD
-        return JsonResponse({'error': str(e)}, status=500)
-=======
         return JsonResponse({'error': str(e)}, status=500)
 
 
@@ -1358,90 +1532,6 @@ def regenerate_recommendations(request, note_id):
     
     # Rediriger vers la génération de nouvelles recommandations
     return redirect('generate_recommendations', note_id=note_id)
-@login_required
-def gallery(request):
-    """Vue principale de la galerie avec filtres et recherche"""
-    
-    try:
-        # Récupérer tous les médias de l'utilisateur
-        media_list = Media.objects.filter(user=request.user)
-    except Exception as e:
-        # Si la table n'existe pas encore, créer une liste vide
-        print(f"Erreur lors de la récupération des médias: {e}")
-        media_list = Media.objects.none()
-    
-    # Initialiser le formulaire de filtre
-    filter_form = GalleryFilterForm(user=request.user, data=request.GET or None)
-    
-    # Appliquer les filtres
-    if filter_form.is_valid():
-        # Recherche textuelle
-        search_query = filter_form.cleaned_data.get('search')
-        if search_query:
-            media_list = media_list.filter(
-                Q(title__icontains=search_query) |
-                Q(description__icontains=search_query) |
-                Q(tags__name__icontains=search_query)
-            ).distinct()
-        
-        # Filtre par type de média
-        media_type = filter_form.cleaned_data.get('media_type')
-        if media_type:
-            media_list = media_list.filter(media_type=media_type)
-        
-        # Filtre par catégorie
-        category = filter_form.cleaned_data.get('category')
-        if category:
-            media_list = media_list.filter(category=category)
-        
-        # Filtre favoris
-        is_favorite = filter_form.cleaned_data.get('is_favorite')
-        if is_favorite:
-            media_list = media_list.filter(is_favorite=True)
-        
-        # Filtre analysés par IA
-        is_analyzed = filter_form.cleaned_data.get('is_analyzed')
-        if is_analyzed:
-            media_list = media_list.filter(is_analyzed=True)
-        
-        # Tri
-        sort_by = filter_form.cleaned_data.get('sort_by') or '-uploaded_at'
-        media_list = media_list.order_by(sort_by)
-    else:
-        media_list = media_list.order_by('-uploaded_at')
-    
-    # Statistiques pour le dashboard
-    try:
-        stats = {
-            'total_media': Media.objects.filter(user=request.user).count(),
-            'total_images': Media.objects.filter(user=request.user, media_type='image').count(),
-            'total_videos': Media.objects.filter(user=request.user, media_type='video').count(),
-            'total_analyzed': Media.objects.filter(user=request.user, is_analyzed=True).count(),
-            'total_favorites': Media.objects.filter(user=request.user, is_favorite=True).count(),
-        }
-    except Exception as e:
-        print(f"Erreur stats: {e}")
-        stats = {
-            'total_media': 0,
-            'total_images': 0,
-            'total_videos': 0,
-            'total_analyzed': 0,
-            'total_favorites': 0,
-        }
-    
-    # Pagination
-    paginator = Paginator(media_list, 12)  # 12 médias par page
-    page_number = request.GET.get('page')
-    media_page = paginator.get_page(page_number)
-    
-    context = {
-        'media_list': media_page,
-        'filter_form': filter_form,
-        'stats': stats,
-        'view_mode': request.GET.get('view', 'grid'),  # grid ou list
-    }
-    
-    return render(request, 'gallery.html', context)
 
 
 @login_required
@@ -1459,7 +1549,7 @@ def media_upload(request):
             # Validation du fichier
             if not file:
                 messages.error(request, '❌ Vous devez sélectionner un fichier à uploader.')
-                user_categories = Category.objects.filter(user=request.user)
+                user_categories = Category.objects.filter(users=request.user)
                 context = {
                     'single_form': MediaUploadForm(),
                     'multiple_form': MultipleMediaUploadForm(user=request.user),
@@ -1470,7 +1560,7 @@ def media_upload(request):
             # Validation de la catégorie
             if not category_id:
                 messages.error(request, '❌ Vous devez sélectionner une catégorie.')
-                user_categories = Category.objects.filter(user=request.user)
+                user_categories = Category.objects.filter(users=request.user)
                 context = {
                     'single_form': MediaUploadForm(),
                     'multiple_form': MultipleMediaUploadForm(user=request.user),
@@ -1486,7 +1576,7 @@ def media_upload(request):
                 validated_file = upload_form.clean_file()
             except forms.ValidationError as e:
                 messages.error(request, str(e.message))
-                user_categories = Category.objects.filter(user=request.user)
+                user_categories = Category.objects.filter(users=request.user)
                 context = {
                     'single_form': MediaUploadForm(),
                     'multiple_form': MultipleMediaUploadForm(user=request.user),
@@ -1535,7 +1625,7 @@ def media_upload(request):
             # Validation des fichiers
             if not files:
                 messages.error(request, '❌ Vous devez sélectionner au moins un fichier.')
-                user_categories = Category.objects.filter(user=request.user)
+                user_categories = Category.objects.filter(users=request.user)
                 context = {
                     'single_form': MediaUploadForm(),
                     'multiple_form': MultipleMediaUploadForm(user=request.user),
@@ -1550,7 +1640,7 @@ def media_upload(request):
                     f'📋 Maximum autorisé: 3 images\n'
                     f'Nombre sélectionné: {len(files)}'
                 )
-                user_categories = Category.objects.filter(user=request.user)
+                user_categories = Category.objects.filter(users=request.user)
                 context = {
                     'single_form': MediaUploadForm(),
                     'multiple_form': MultipleMediaUploadForm(user=request.user),
@@ -1569,7 +1659,7 @@ def media_upload(request):
                 # Validation de la catégorie pour ce fichier
                 if not category_id:
                     messages.error(request, f'❌ Vous devez sélectionner une catégorie pour l\'image "{file.name}".')
-                    user_categories = Category.objects.filter(user=request.user)
+                    user_categories = Category.objects.filter(users=request.user)
                     context = {
                         'single_form': MediaUploadForm(),
                         'multiple_form': MultipleMediaUploadForm(user=request.user),
@@ -1591,7 +1681,7 @@ def media_upload(request):
                     })
                 except forms.ValidationError as e:
                     messages.error(request, str(e.message))
-                    user_categories = Category.objects.filter(user=request.user)
+                    user_categories = Category.objects.filter(users=request.user)
                     context = {
                         'single_form': MediaUploadForm(),
                         'multiple_form': MultipleMediaUploadForm(user=request.user),
@@ -1656,8 +1746,8 @@ def media_upload(request):
     db = client['journalDB']
     collection = db['journal_category']
     
-    # Charger les catégories depuis MongoDB
-    user_categories_data = list(collection.find({'user_id': request.user.id}))
+    # Charger les catégories depuis MongoDB (recherche par 'user_id' scalar ou présence de l'utilisateur dans le tableau 'users')
+    user_categories_data = list(collection.find({'$or': [{'user_id': request.user.id}, {'users': request.user.id}]}))
     client.close()
     
     # Convertir en objets simples pour le template
@@ -1668,7 +1758,12 @@ def media_upload(request):
                 self.id = data.get('id')
                 self.name = data.get('name', '')
                 self.icon = data.get('icon', '')
-                self.user_id = data.get('user_id')
+                users = data.get('users')
+                # store primary user id for backward compatibility
+                try:
+                    self.user_id = users[0] if isinstance(users, list) and users else users
+                except Exception:
+                    self.user_id = users
         
         user_categories.append(CategoryProxy(cat_data))
     
@@ -1679,6 +1774,7 @@ def media_upload(request):
     }
     
     return render(request, 'media_upload.html', context)
+
 
 
 @login_required
@@ -1755,11 +1851,39 @@ def media_detail(request, media_id):
     return render(request, 'media_detail.html', context)
 
 
+
 @login_required
 def media_edit(request, media_id):
     """Vue pour éditer un média"""
     
     media = get_object_or_404(Media, id=media_id, user=request.user)
+    # Prepare user categories once (ORM preferred, fallback to Mongo)
+    try:
+        user_categories = list(Category.objects.filter(users=request.user))
+    except Exception:
+        user_categories = []
+
+    if not user_categories:
+        try:
+            from pymongo import MongoClient
+            from django.conf import settings
+            mongo_uri = settings.DATABASES['default']['CLIENT']['host']
+            client = MongoClient(mongo_uri)
+            db = client['journalDB']
+            collection = db['journal_category']
+            user_cats = list(collection.find({'$or': [{'user_id': request.user.id}, {'users': request.user.id}]}))
+            client.close()
+
+            user_categories = []
+            for cat_data in user_cats:
+                class CategoryProxy:
+                    def __init__(self, data):
+                        self.id = data.get('id') or data.get('_id')
+                        self.name = data.get('name', '')
+                        self.icon = data.get('icon', '')
+                user_categories.append(CategoryProxy(cat_data))
+        except Exception:
+            user_categories = []
     
     if request.method == 'POST':
         # Validation manuelle pour éviter les bugs Djongo avec ForeignKey validation
@@ -1800,7 +1924,7 @@ def media_edit(request, media_id):
                 context = {
                     'form': MediaEditForm(instance=media),
                     'media': media,
-                    'categories': Category.objects.filter(user=request.user),
+                    'categories': user_categories,
                 }
                 return render(request, 'media_edit.html', context)
         
@@ -1838,7 +1962,7 @@ def media_edit(request, media_id):
     context = {
         'form': form,
         'media': media,
-        'categories': Category.objects.filter(user=request.user),
+        'categories': user_categories,
     }
     
     return render(request, 'media_edit.html', context)
@@ -1879,6 +2003,7 @@ def media_delete(request, media_id):
     }
     
     return render(request, 'media_delete_confirm.html', context)
+
 
 @login_required
 def media_delete_tag(request, media_id, tag_id):
@@ -2024,6 +2149,7 @@ def media_analyze(request, media_id):
     return JsonResponse({'success': False, 'error': 'Méthode non autorisée'}, status=405)
 
 
+
 @login_required
 def smart_albums(request):
     """Vue pour gérer les albums intelligents"""
@@ -2035,4 +2161,4 @@ def smart_albums(request):
     }
     
     return render(request, 'smart_albums.html', context)
->>>>>>> origin/yassineJawadi
+

@@ -203,11 +203,7 @@
                         <i class="fas fa-book"></i>
                     </div>
                     <h5 class="card-title">Total des entrées</h5>
-<<<<<<< HEAD
-                    <h2 class="mb-0">42</h2>
-=======
                     <h2 class="mb-0">{{ total_notes }}</h2>
->>>>>>> origin/yassineJawadi
                 </div>
             </div>
         </div>
@@ -215,13 +211,6 @@
         <div class="col-md-3" data-aos="fade-up" data-aos-delay="200">
             <div class="card stat-card shadow-sm">
                 <div class="card-body">
-<<<<<<< HEAD
-                    <div class="stat-icon stat-success">
-                        <i class="fas fa-smile"></i>
-                    </div>
-                    <h5 class="card-title">Humeur moyenne</h5>
-                    <h2 class="mb-0">Positive</h2>
-=======
                     <div class="stat-icon stat-{{ mood_color }}">
                         <i class="fas fa-smile"></i>
                     </div>
@@ -230,7 +219,6 @@
                     {% if average_mood_score > 0 %}
                         <small class="text-muted">({{ average_mood_score }}/5)</small>
                     {% endif %}
->>>>>>> origin/yassineJawadi
                 </div>
             </div>
         </div>
@@ -242,11 +230,7 @@
                         <i class="fas fa-calendar-check"></i>
                     </div>
                     <h5 class="card-title">Séquence actuelle</h5>
-<<<<<<< HEAD
-                    <h2 class="mb-0">7 jours</h2>
-=======
                     <h2 class="mb-0">{{ current_streak }} jour{{ current_streak|pluralize }}</h2>
->>>>>>> origin/yassineJawadi
                 </div>
             </div>
         </div>
@@ -258,11 +242,7 @@
                         <i class="fas fa-image"></i>
                     </div>
                     <h5 class="card-title">Médias ajoutés</h5>
-<<<<<<< HEAD
-                    <h2 class="mb-0">18</h2>
-=======
                     <h2 class="mb-0">{{ total_media }}</h2>
->>>>>>> origin/yassineJawadi
                 </div>
             </div>
         </div>
@@ -275,77 +255,6 @@
             <div class="card shadow-sm mb-4" data-aos="fade-up">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Entrées récentes</h5>
-<<<<<<< HEAD
-                    <a href="#" class="text-decoration-none">Voir tout</a>
-                </div>
-                <div class="card-body p-0">
-                    <div class="list-group list-group-flush">
-                        <!-- Entry 1 -->
-                        <div class="list-group-item border-0 py-3">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <h6 class="mb-0">Une journée productive</h6>
-                                <span class="entry-date">
-                                    <span class="mood-indicator mood-happy"></span>
-                                    Aujourd'hui
-                                </span>
-                            </div>
-                            <p class="entry-preview mb-2">J'ai finalement terminé ce projet sur lequel je travaillais depuis des semaines. La sensation d'accomplissement est incroyable ! J'ai également pris le temps de méditer ce matin, ce qui m'a aidé à rester concentré toute la journée.</p>
-                            <div class="d-flex gap-2">
-                                <span class="badge bg-light text-dark">#travail</span>
-                                <span class="badge bg-light text-dark">#accomplissement</span>
-                            </div>
-                        </div>
-                        
-                        <!-- Entry 2 -->
-                        <div class="list-group-item border-0 py-3">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <h6 class="mb-0">Réflexions sur mon voyage</h6>
-                                <span class="entry-date">
-                                    <span class="mood-indicator mood-happy"></span>
-                                    Hier
-                                </span>
-                            </div>
-                            <p class="entry-preview mb-2">Le voyage à Paris était incroyable. J'ai visité le Louvre et la Tour Eiffel. Les photos que j'ai prises capturent parfaitement l'ambiance de la ville. Je dois planifier mon prochain voyage bientôt.</p>
-                            <div class="d-flex gap-2">
-                                <span class="badge bg-light text-dark">#voyage</span>
-                                <span class="badge bg-light text-dark">#paris</span>
-                                <span class="badge bg-light text-dark">#souvenirs</span>
-                            </div>
-                        </div>
-                        
-                        <!-- Entry 3 -->
-                        <div class="list-group-item border-0 py-3">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <h6 class="mb-0">Journée difficile</h6>
-                                <span class="entry-date">
-                                    <span class="mood-indicator mood-sad"></span>
-                                    Il y a 2 jours
-                                </span>
-                            </div>
-                            <p class="entry-preview mb-2">Aujourd'hui n'a pas été facile. J'ai eu du mal à me concentrer au travail et je me suis senti dépassé par mes responsabilités. Je dois trouver de meilleures stratégies pour gérer mon stress.</p>
-                            <div class="d-flex gap-2">
-                                <span class="badge bg-light text-dark">#stress</span>
-                                <span class="badge bg-light text-dark">#travail</span>
-                            </div>
-                        </div>
-                        
-                        <!-- Entry 4 -->
-                        <div class="list-group-item border-0 py-3">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <h6 class="mb-0">Nouvelle recette essayée</h6>
-                                <span class="entry-date">
-                                    <span class="mood-indicator mood-neutral"></span>
-                                    Il y a 3 jours
-                                </span>
-                            </div>
-                            <p class="entry-preview mb-2">J'ai essayé cette nouvelle recette de lasagnes végétariennes que j'ai trouvée en ligne. Le résultat était correct, mais je pense que je pourrais l'améliorer en ajoutant plus d'épices la prochaine fois.</p>
-                            <div class="d-flex gap-2">
-                                <span class="badge bg-light text-dark">#cuisine</span>
-                                <span class="badge bg-light text-dark">#recettes</span>
-                            </div>
-                        </div>
-                    </div>
-=======
                     <a href="{% url 'view_notes' %}" class="text-decoration-none">Voir tout</a>
                 </div>
                 <div class="card-body p-0">
@@ -382,26 +291,19 @@
                             </a>
                         </div>
                     {% endif %}
->>>>>>> origin/yassineJawadi
                 </div>
             </div>
             
             <!-- Mood Analysis -->
             <div class="card shadow-sm mb-4" data-aos="fade-up">
                 <div class="card-header bg-white">
-<<<<<<< HEAD
-                    <h5 class="mb-0">Analyse de l'humeur</h5>
-=======
                     <h5 class="mb-0">Analyse de l'humeur (7 derniers jours)</h5>
->>>>>>> origin/yassineJawadi
                 </div>
                 <div class="card-body">
                     <canvas id="moodChart" height="250"></canvas>
                 </div>
             </div>
             
-<<<<<<< HEAD
-=======
             <!-- Recommendations Analysis -->
             <div class="card shadow-sm mb-4" data-aos="fade-up">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
@@ -431,7 +333,6 @@
             </div>
             {% endif %}
             
->>>>>>> origin/yassineJawadi
             <!-- Writing Activity -->
             <div class="card shadow-sm" data-aos="fade-up">
                 <div class="card-header bg-white">
@@ -538,14 +439,6 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize tooltips
-<<<<<<< HEAD
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl)
-        });
-        
-        // Mood Chart
-=======
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
         var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl);
@@ -556,26 +449,10 @@
         var moodChartLabels = JSON.parse('{{ mood_chart_labels|escapejs }}');
         
         // Mood Chart - Amélioré pour refléter les données d'émotion
->>>>>>> origin/yassineJawadi
         var ctx = document.getElementById('moodChart').getContext('2d');
         var moodChart = new Chart(ctx, {
             type: 'line',
             data: {
-<<<<<<< HEAD
-                labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
-                datasets: [{
-                    label: 'Humeur',
-                    data: [3, 2, 4, 3, 5, 4, 5],
-                    backgroundColor: 'rgba(99, 102, 241, 0.2)',
-                    borderColor: '#6366f1',
-                    borderWidth: 2,
-                    tension: 0.4,
-                    pointBackgroundColor: '#6366f1',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2,
-                    pointRadius: 5,
-                    fill: true
-=======
                 labels: moodChartLabels || [],
                 datasets: [{
                     label: 'Humeur basée sur les émotions',
@@ -598,7 +475,6 @@
                     pointRadius: 6,
                     fill: true,
                     spanGaps: true
->>>>>>> origin/yassineJawadi
                 }]
             },
             options: {
@@ -608,14 +484,6 @@
                     y: {
                         beginAtZero: true,
                         max: 5,
-<<<<<<< HEAD
-                        ticks: {
-                            stepSize: 1,
-                            callback: function(value) {
-                                const labels = ['', 'Très négatif', 'Négatif', 'Neutre', 'Positif', 'Très positif'];
-                                return labels[value];
-                            }
-=======
                         min: 1,
                         ticks: {
                             stepSize: 1,
@@ -637,21 +505,11 @@
                     x: {
                         grid: {
                             display: false
->>>>>>> origin/yassineJawadi
                         }
                     }
                 },
                 plugins: {
                     legend: {
-<<<<<<< HEAD
-                        display: false
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const labels = ['Très négatif', 'Négatif', 'Neutre', 'Positif', 'Très positif'];
-                                return labels[context.parsed.y - 1];
-=======
                         display: true,
                         position: 'top',
                         labels: {
@@ -693,7 +551,7 @@
                                 return 'Humeur: ' + closestLabel + ' (' + value + '/5)';
                             }
                         },
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        backgroundColor: 'rgba(0, 0, 0, 0.😎',
                         titleColor: '#fff',
                         bodyColor: '#fff',
                         borderColor: '#6366f1',
@@ -772,7 +630,7 @@
                                     return 'Recommandations: ' + value;
                                 }
                             },
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            backgroundColor: 'rgba(0, 0, 0, 0.😎',
                             titleColor: '#fff',
                             bodyColor: '#fff',
                             borderColor: '#22c55e',
@@ -830,19 +688,11 @@
                                 label: function(context) {
                                     return context.label + ': ' + context.parsed + '%';
                                 }
->>>>>>> origin/yassineJawadi
                             }
                         }
                     }
                 }
-<<<<<<< HEAD
-            }
-        });
-    });
-</script>
-=======
             });
         }
  </script>
->>>>>>> origin/yassineJawadi
 {% endblock %}

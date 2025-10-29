@@ -1,18 +1,18 @@
 from django import forms
-<<<<<<< HEAD
-from django.contrib.auth.forms import UserCreationForm
-from .models import Note, Category
-from django.contrib.auth.models import User
-from .models import Goal
-=======
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.core.exceptions import ValidationError
-from .models import Media, MediaTag, SmartAlbum
-import mimetypes
-from django.contrib.auth.forms import UserCreationForm
-from .models import Note, Category
 from django.contrib.auth.models import User
->>>>>>> origin/yassineJawadi
+import mimetypes
+
+from .models import (
+    Note,
+    Category,
+    Goal,
+    Media,
+    MediaTag,
+    SmartAlbum,
+    Affirmation,
+)
 
 class CustomUserCreationForm(UserCreationForm):
     email = forms.EmailField(required=True)
@@ -24,13 +24,108 @@ class CustomUserCreationForm(UserCreationForm):
     class Meta(UserCreationForm.Meta):
         fields = UserCreationForm.Meta.fields + ('email', 'first_name', 'last_name', 'date_of_birth', 'location',)
 
-<<<<<<< HEAD
+
 class NoteForm(forms.ModelForm):
+    """Formulaire pour créer/éditer une Note.
+
+    Comportement compatible avec les deux variantes:
+    - Utilise un ModelChoiceField pour `category` et filtre par utilisateur si fourni.
+    - Sauvegarde tolérante: accepte soit une instance Category, soit un id/string venant d'un choix.
+    """
+
+    category = forms.ModelChoiceField(queryset=Category.objects.none(), required=False, widget=forms.Select(attrs={'class': 'form-control'}))
+
     class Meta:
         model = Note
         fields = ['title', 'content', 'location', 'category']
-=======
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control form-control-lg', 'placeholder': 'Donnez un titre à votre note...', 'required': 'required'}),
+            'content': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Écrivez votre note ici...', 'rows': 10}),
+            'location': forms.TextInput(attrs={'class': 'form-control mb-3', 'placeholder': 'Entrez un lieu ou utilisez votre position actuelle'}),
+            'category': forms.Select(attrs={'class': 'form-control'}),
+        }
 
+    def __init__(self, *args, **kwargs):
+        # Support passing `user` from views (e.g. NoteForm(user=request.user))
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        # Ensure the category queryset is filtered by the provided user
+        try:
+            if user:
+                qs = Category.objects.filter(users=user)
+                if qs.exists():
+                    # Normal case: ORM has Category objects linked to the user
+                    self.fields['category'].queryset = qs
+                else:
+                    # Fallback: categories may be stored directly in MongoDB and not
+                    # reflected as ORM objects. In that case, replace the field
+                    # with a ChoiceField populated from the Mongo collection so the
+                    # template shows options and the form still returns a PK value.
+                    try:
+                        from pymongo import MongoClient
+                        from django.conf import settings
+                        mongo_uri = settings.DATABASES['default']['CLIENT']['host']
+                        client = MongoClient(mongo_uri)
+                        db = client['journalDB']
+                        collection = db['journal_category']
+                        docs = list(collection.find({'$or': [{'user_id': user.id}, {'users': user.id}]}))
+                        client.close()
+                        choices = [('', '---------')]
+                        for d in docs:
+                            # prefer numeric 'id' (Djongo style) otherwise use _id
+                            cid = d.get('id') or d.get('_id')
+                            # ensure string/int stable representation
+                            choices.append((str(cid), d.get('name', '')))
+                        # replace ModelChoiceField with a ChoiceField
+                        self.fields['category'] = forms.ChoiceField(choices=choices, required=False, widget=forms.Select(attrs={'class': 'form-control'}))
+                    except Exception:
+                        # final defensive fallback
+                        self.fields['category'].queryset = Category.objects.none()
+            else:
+                self.fields['category'].queryset = Category.objects.none()
+        except Exception:
+            # Be defensive: if Category model/query fails, default to empty queryset
+            self.fields['category'].queryset = Category.objects.none()
+
+    def clean_category(self):
+        """Normalize category cleaned value:
+
+        - If the field returned a Category instance, keep it.
+        - If it returned a PK (string/int) from the ChoiceField fallback, return the PK
+          so assigning to a ForeignKey (category_id) will work when saving the model.
+        """
+        val = self.cleaned_data.get('category')
+        if val is None or val == '':
+            return None
+        # If it's already a Category instance, return it
+        if isinstance(val, Category):
+            return val
+
+        # If the fallback ChoiceField returned a PK (string/int), try to
+        # resolve it to a Category instance; if not present in ORM, create a
+        # lightweight Category with that PK so Django can assign the FK.
+        try:
+            cid = int(val)
+        except Exception:
+            # Not an int-like value; return as-is and let validation fail later
+            return val
+
+        try:
+            cat = Category.objects.filter(pk=cid).first()
+            if cat:
+                return cat
+        except Exception:
+            # ORM lookup failed; fall through to create lightweight instance
+            pass
+
+        # Create a transient Category instance with the given PK so the
+        # ModelForm can assign the FK (Django will store category_id on save).
+        try:
+            tmp = Category()
+            tmp.pk = cid
+            return tmp
+        except Exception:
+            return None
 # ==================== GALERIE INTELLIGENTE ====================
 
 class MediaUploadForm(forms.ModelForm):
@@ -74,7 +169,7 @@ class MediaUploadForm(forms.ModelForm):
         # Filtrer les catégories par utilisateur
         if user:
             from .models import Category
-            self.fields['category'].queryset = Category.objects.filter(user=user)
+            self.fields['category'].queryset = Category.objects.filter(users=user)
         else:
             from .models import Category
             self.fields['category'].queryset = Category.objects.none()
@@ -183,7 +278,7 @@ class MultipleMediaUploadForm(forms.Form):
         super().__init__(*args, **kwargs)
         if user:
             from .models import Category
-            self.fields['category'].queryset = Category.objects.filter(user=user)
+            self.fields['category'].queryset = Category.objects.filter(users=user)
     
     def clean_files(self):
         files = self.cleaned_data.get('files')
@@ -253,93 +348,6 @@ class MultipleMediaUploadForm(forms.Form):
                     f'Type détecté: {actual_mime}'
                 )
 
-
-class MediaEditForm(forms.ModelForm):
-    """Formulaire pour éditer les informations d'un média"""
-    
-    class Meta:
-        model = Media
-        fields = ['file', 'title', 'description', 'category', 'album', 'is_favorite']
-        widgets = {
-            'file': forms.FileInput(attrs={
-                'class': 'form-control',
-                'accept': 'image/jpeg,image/jpg,image/png'
-            }),
-            'title': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Titre du média'
-            }),
-            'description': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 4,
-                'placeholder': 'Description'
-            }),
-            'category': forms.Select(attrs={
-                'class': 'form-control'
-            }),
-            'album': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Nom de l\'album'
-            }),
-            'is_favorite': forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
-            })
-        }
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Le fichier est optionnel en édition (on garde l'ancien si non fourni)
-        self.fields['file'].required = False
-    
-    def clean_file(self):
-        file = self.cleaned_data.get('file')
-        
-        # Si aucun nouveau fichier, retourner None (on garde l'ancien)
-        if not file:
-            return None
-        
-        # Sinon, valider le nouveau fichier
-        # Vérifier la taille du fichier (50MB max)
-        if file.size > 52428800:  # 50MB
-            raise forms.ValidationError('❌ Le fichier ne doit pas dépasser 50MB.')
-        
-        # Vérifier l'extension (seulement JPG et PNG)
-        filename = file.name.lower()
-        ext = filename.split('.')[-1] if '.' in filename else ''
-        allowed_extensions = ['jpg', 'jpeg', 'png']
-        
-        # Bloquer EXPLICITEMENT les extensions non autorisées (incluant JFIF)
-        blocked_extensions = ['jfif', 'gif', 'webp', 'bmp', 'tiff', 'svg', 'mp4', 'avi', 'mov', 'mp3', 'wav']
-        
-        if ext in blocked_extensions:
-            raise forms.ValidationError(
-                f'❌ Extension ".{ext.upper()}" non autorisée!\n\n'
-                f'📋 Seules ces extensions sont acceptées: JPG, JPEG, PNG\n'
-                f'Votre fichier: {file.name}'
-            )
-        
-        if ext not in allowed_extensions:
-            raise forms.ValidationError(
-                f'❌ Extension ".{ext.upper()}" non reconnue!\n\n'
-                f'📋 Extensions acceptées: JPG, JPEG, PNG uniquement.\n'
-                f'Votre fichier: {file.name}'
-            )
-        
-        # Vérifier le type MIME pour plus de sécurité
-        allowed_mime_types = ['image/jpeg', 'image/jpg', 'image/png']
-        
-        # Vérifier aussi le content_type si disponible
-        if hasattr(file, 'content_type'):
-            actual_mime = file.content_type.lower()
-            if actual_mime not in allowed_mime_types:
-                raise forms.ValidationError(
-                    f'❌ Type de fichier non autorisé!\n\n'
-                    f'📋 Formats acceptés: Images JPG et PNG uniquement.\n'
-                    f'Type détecté: {actual_mime}\n'
-                    f'Votre fichier: {file.name}'
-                )
-        
-        return file
 
 
 class MediaTagForm(forms.ModelForm):
@@ -435,7 +443,7 @@ class GalleryFilterForm(forms.Form):
         super().__init__(*args, **kwargs)
         if user:
             from .models import Category
-            self.fields['category'].queryset = Category.objects.filter(user=user)
+            self.fields['category'].queryset = Category.objects.filter(users=user)
 
 class CustomUserCreationForm(UserCreationForm):
     email = forms.EmailField(required=True)
@@ -446,35 +454,7 @@ class CustomUserCreationForm(UserCreationForm):
 
     class Meta(UserCreationForm.Meta):
         fields = UserCreationForm.Meta.fields + ('email', 'first_name', 'last_name', 'date_of_birth', 'location',)
-class NoteForm(forms.ModelForm):
-    # Redéfinir le champ category comme ChoiceField pour éviter la validation de ForeignKey
-    category = forms.ChoiceField(
-        required=False,
-        widget=forms.Select(attrs={'class': 'form-control'})
-    )
-    
-    class Meta:
-        model = Note
-        fields = ['title', 'content', 'location']
->>>>>>> origin/yassineJawadi
-        widgets = {
-            'title': forms.TextInput(attrs={'class': 'form-control form-control-lg', 'placeholder': 'Donnez un titre à votre note...', 'required': 'required'}),
-            'content': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Écrivez votre note ici...', 'rows': 10}),
-            'location': forms.TextInput(attrs={'class': 'form-control mb-3', 'placeholder': 'Entrez un lieu ou utilisez votre position actuelle'}),
-<<<<<<< HEAD
-            'category': forms.Select(attrs={'class': 'form-control'}),
-=======
->>>>>>> origin/yassineJawadi
-        }
 
-    def __init__(self, *args, **kwargs):
-        user = kwargs.pop('user', None)
-        super(NoteForm, self).__init__(*args, **kwargs)
-        if user:
-<<<<<<< HEAD
-            # Adapter à ManyToMany: seules les catégories associées à l'utilisateur
-            # doivent être sélectionnables
-            self.fields['category'].queryset = Category.objects.filter(users=user)
 
 
 class GoalForm(forms.ModelForm):
@@ -492,8 +472,21 @@ class GoalForm(forms.ModelForm):
             'priority': forms.Select(attrs={'class': 'form-select form-select-sm'}),
             'difficulty': forms.NumberInput(attrs={'type': 'range', 'min': '1', 'max': '5', 'class': 'form-range', 'step': '1'}),
             'reward': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Récompense prévue (optionnel)'}),
-            'recurrence': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'ex: daily, weekly, monthly (optionnel)'}),
+            'recurrence': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'ex : quotidien, hebdomadaire, mensuel (optionnel)'}),
             'milestones': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Entrez les jalons en JSON simple: [{"title": "Étape 1", "due": "2025-10-31"}]'}),
+        }
+        labels = {
+            'title': 'Titre',
+            'description': 'Description',
+            'start_date': 'Date de début',
+            'end_date': 'Date de fin',
+            'status': 'Statut',
+            'motivation_level': 'Niveau de motivation',
+            'priority': 'Priorité',
+            'difficulty': 'Difficulté',
+            'reward': 'Récompense',
+            'recurrence': 'Récurrence',
+            'milestones': 'Jalons',
         }
 
     def __init__(self, *args, **kwargs):
@@ -555,31 +548,10 @@ class GoalForm(forms.ModelForm):
                 raise forms.ValidationError('Chaque jalon doit être un objet avec au moins une clé "title".')
 
         return parsed
-=======
-            # Charger les catégories sans validation de ForeignKey
-            try:
-                categories = [(cat.id, cat.name) for cat in Category.objects.filter(user=user)]
-                categories.insert(0, ('', 'Aucune catégorie (optionnel)'))
-                self.fields['category'].choices = categories
-            except:
-                self.fields['category'].choices = [('', 'Aucune catégorie (optionnel)')]
-    
-    def save(self, commit=True):
-        instance = super(NoteForm, self).save(commit=False)
-        # Gérer manuellement la catégorie
-        category_id = self.cleaned_data.get('category')
-        if category_id:
-            try:
-                instance.category = Category.objects.get(id=category_id)
-            except:
-                instance.category = None
-        else:
-            instance.category = None
         
-        if commit:
-            instance.save()
-        return instance
-            
+        
+        
+        
             
 class MediaUploadForm(forms.ModelForm):
     """Formulaire pour uploader un seul média"""
@@ -622,7 +594,7 @@ class MediaUploadForm(forms.ModelForm):
         # Filtrer les catégories par utilisateur
         if user:
             from .models import Category
-            self.fields['category'].queryset = Category.objects.filter(user=user)
+            self.fields['category'].queryset = Category.objects.filter(users=user)
         else:
             from .models import Category
             self.fields['category'].queryset = Category.objects.none()
@@ -731,7 +703,7 @@ class MultipleMediaUploadForm(forms.Form):
         super().__init__(*args, **kwargs)
         if user:
             from .models import Category
-            self.fields['category'].queryset = Category.objects.filter(user=user)
+            self.fields['category'].queryset = Category.objects.filter(users=user)
     
     def clean_files(self):
         files = self.cleaned_data.get('files')
@@ -903,7 +875,6 @@ class MediaTagForm(forms.ModelForm):
             })
         }
 
-
 class SmartAlbumForm(forms.ModelForm):
     """Formulaire pour créer un album intelligent"""
     
@@ -924,7 +895,6 @@ class SmartAlbumForm(forms.ModelForm):
                 'class': 'form-control'
             })
         }
-
 
 class GalleryFilterForm(forms.Form):
     """Formulaire pour filtrer la galerie"""
@@ -983,7 +953,7 @@ class GalleryFilterForm(forms.Form):
         super().__init__(*args, **kwargs)
         if user:
             from .models import Category
-            self.fields['category'].queryset = Category.objects.filter(user=user)
+            self.fields['category'].queryset = Category.objects.filter(users=user)
 
 
 
@@ -996,4 +966,3 @@ class AffirmationForm(forms.ModelForm):
         widgets = {
             "text": forms.Textarea(attrs={"rows":2, "placeholder":"I am calm and focused..."}),
         }
->>>>>>> origin/yassineJawadi
